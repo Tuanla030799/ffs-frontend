@@ -1,0 +1,19 @@
+<template>
+  <section class="space-y-4"><div class="flex items-center justify-between"><h2 class="text-2xl font-black">Quản lý order</h2><button class="rounded-xl border bg-white px-4 py-2 font-bold" @click="load">Reload</button></div><p v-if="error" class="rounded-xl bg-red-50 p-3 text-red-700">{{ error }}</p><div class="overflow-x-auto rounded-3xl border bg-white"><table class="w-full text-left text-sm"><thead><tr class="border-b"><th class="p-3">Code</th><th>Customer</th><th>Status</th><th>Payment</th><th>Shipping</th><th>Total</th><th></th></tr></thead><tbody><tr v-for="row in rows" :key="row.id" class="border-b"><td class="p-3 font-bold">{{ row.code || row.id }}</td><td>{{ row.customerName }}<br><span class="text-slate-400">{{ row.customerPhone }}</span></td><td><select :value="row.status" class="rounded border p-2" @change="updateStatus(row.id, ($event.target as HTMLSelectElement).value)"><option>PENDING</option><option>CONFIRMED</option><option>CANCELLED</option><option>COMPLETED</option></select></td><td>{{ row.paymentMethod }} / {{ row.paymentStatus }}</td><td>{{ row.shippingMethod }} / {{ row.shippingStatus }}</td><td>{{ money(row.totalAmount) }}</td><td><button class="font-bold" @click="open(row.id)">Detail</button></td></tr></tbody></table></div><div v-if="detail" class="rounded-3xl border bg-white p-5"><h3 class="text-xl font-black">Order {{ detail.code || detail.id }}</h3><p class="mt-2 text-slate-600">{{ detail.shippingAddress }}</p><div class="mt-4 grid gap-3 md:grid-cols-3"><input v-model="payment.paymentMethod" class="rounded-xl border p-3" placeholder="paymentMethod"><input v-model="payment.paymentStatus" class="rounded-xl border p-3" placeholder="paymentStatus"><button class="rounded-xl bg-slate-950 text-white" @click="savePayment(detail.id)">Update payment</button><input v-model="shipping.shippingMethod" class="rounded-xl border p-3" placeholder="shippingMethod"><input v-model="shipping.shippingStatus" class="rounded-xl border p-3" placeholder="shippingStatus"><input v-model="shipping.trackingCode" class="rounded-xl border p-3" placeholder="trackingCode"><button class="rounded-xl bg-slate-950 py-3 text-white md:col-span-3" @click="saveShipping(detail.id)">Update shipping</button></div><h4 class="mt-6 font-black">Status history</h4><ul class="mt-2 space-y-2"><li v-for="h in history" :key="h.id" class="rounded-xl bg-slate-50 p-3">{{ h.createdAt }} - <b>{{ h.status }}</b> {{ h.note }}</li></ul></div></section>
+</template>
+<script setup lang="ts">
+import { onMounted, reactive, ref } from 'vue'
+import { orderApi } from '@/modules/sales/order/api'
+import { getErrorMessage } from '@/modules/shared/hooks'
+import { money } from '@/modules/shared/types'
+import type { Order, OrderStatusHistory } from '@/modules/sales/order/types'
+const rows = ref<Order[]>([]); const detail = ref<Order | null>(null); const history = ref<OrderStatusHistory[]>([]); const error = ref('')
+const payment = reactive({ paymentMethod: 'COD', paymentStatus: 'PAID', paidAt: new Date().toISOString() })
+const shipping = reactive({ shippingMethod: 'GHN', shippingStatus: 'SHIPPING', trackingCode: '' })
+async function load() { try { rows.value = (await orderApi.adminList({ limit: 50 })).items } catch (err) { error.value = getErrorMessage(err) } }
+async function updateStatus(id: string, status: string) { await orderApi.updateStatus(id, { status, note: 'Updated by admin' }); await load() }
+async function open(id: string) { detail.value = await orderApi.detail(id); history.value = await orderApi.history(id).catch(() => []) }
+async function savePayment(id: string) { await orderApi.updatePayment(id, payment); await open(id); await load() }
+async function saveShipping(id: string) { await orderApi.updateShipping(id, shipping); await open(id); await load() }
+onMounted(load)
+</script>
