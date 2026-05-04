@@ -24,6 +24,7 @@ const props = withDefaults(
     variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'dark'
     size?: 'sm' | 'md' | 'lg'
     block?: boolean
+    square?: boolean
     loading?: boolean
     disabled?: boolean
     nativeType?: 'button' | 'submit' | 'reset'
@@ -32,6 +33,7 @@ const props = withDefaults(
     variant: 'primary',
     size: 'md',
     block: false,
+    square: false,
     loading: false,
     disabled: false,
     nativeType: 'button',
@@ -49,9 +51,9 @@ const classes = computed(() => {
   }
 
   const sizes = {
-    sm: 'min-h-9 rounded-[var(--ui-radius-sm)] px-3 py-2 text-sm',
-    md: 'min-h-11 rounded-[var(--ui-radius-md)] px-4 py-3 text-sm',
-    lg: 'min-h-12 rounded-[var(--ui-radius-md)] px-5 py-3.5 text-base',
+    sm: props.square ? 'h-9 w-9 rounded-[var(--ui-radius-sm)] p-1 text-sm' : 'min-h-9 rounded-[var(--ui-radius-sm)] px-3 py-2 text-sm',
+    md: props.square ? 'h-11 w-11 rounded-[var(--ui-radius-md)] p-1 text-sm' : 'min-h-11 rounded-[var(--ui-radius-md)] px-4 py-3 text-sm',
+    lg: props.square ? 'h-12 w-12 rounded-[var(--ui-radius-md)] p-1 text-base' : 'min-h-12 rounded-[var(--ui-radius-md)] px-5 py-3.5 text-base',
   }
 
   return cn(

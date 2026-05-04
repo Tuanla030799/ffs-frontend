@@ -7,150 +7,73 @@
     :loading="loading"
     :error="error"
     :status-options="['ACTIVE', 'INACTIVE', 'DRAFT']"
-    :show-modal="Boolean(editing)"
-    :modal-title="editing === 'new' ? 'Tạo product' : 'Cập nhật product'"
+    :show-modal="false"
     :confirm-open="Boolean(deleting)"
     :confirm-text="`Xóa product ${deleting?.name || ''}?`"
     @create="openCreate"
     @reload="load"
     @search="load"
-    @close="editing = null"
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
   >
-    <template #form>
-      <form
-        class="space-y-5"
-        @submit.prevent="save"
-      >
-        <div class="grid gap-3 md:grid-cols-3">
-          <input v-model="form.name" class="rounded-xl border border-slate-200 p-3" placeholder="Name" required>
-          <input v-model="form.slug" class="rounded-xl border border-slate-200 p-3" placeholder="Slug" required>
-          <input v-model="form.categoryId" class="rounded-xl border border-slate-200 p-3" placeholder="Category ID" required>
-          <input v-model="form.shortDescription" class="rounded-xl border border-slate-200 p-3 md:col-span-2" placeholder="Short description">
-          <select v-model="form.status" class="rounded-xl border border-slate-200 p-3">
-            <option>ACTIVE</option>
-            <option>INACTIVE</option>
-            <option>DRAFT</option>
-          </select>
-          <label class="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm font-bold">
-            <input v-model="form.isFeatured" type="checkbox">
-            Featured
-          </label>
-          <input v-model.number="form.featuredOrder" class="rounded-xl border border-slate-200 p-3" placeholder="Featured order">
-          <FileUpload v-model="uploaded" scope="admin" accept="image/*" title="Upload product image" @uploaded="addImage" />
+    <form class="grid gap-3 border-b border-slate-200 bg-white p-3 md:grid-cols-[180px_180px_auto]" @submit.prevent="load">
+      <UiSelect v-model="query.brandId" placeholder="Tất cả brand" label="Tất cả brand">
+        <option v-for="brand in masterData?.brands || []" :key="brand.id" :value="brand.id">{{ brand.name }}</option>
+      </UiSelect>
+      <UiSelect v-model="query.gender" placeholder="Tất cả gender" label="Tất cả gender">
+        <option v-for="gender in masterData?.productGenders || []" :key="gender.value" :value="gender.value">{{ gender.label }}</option>
+      </UiSelect>
+      <UiButton native-type="submit" variant="secondary">Lọc thêm</UiButton>
+    </form>
+    <UiTable :columns="columns" :rows="rows" :loading="loading" density="sm" sticky-header striped row-key="id" min-width="min-w-[920px]" empty-text="Không có product.">
+      <template #cell-name="{ row }">
+        <span class="font-bold text-slate-950">{{ row.name }}</span>
+      </template>
+      <template #cell-brandName="{ row }">{{ row.brandName || '-' }}</template>
+      <template #cell-gender="{ row }">{{ genderLabel(row.gender) }}</template>
+      <template #cell-status="{ row }"><span :class="badgeClass(row.status)">{{ row.status }}</span></template>
+      <template #cell-isFeatured="{ row }">{{ row.isFeatured ? 'Yes' : 'No' }}</template>
+      <template #cell-stock="{ row }">{{ row.stock ?? '-' }}</template>
+      <template #cell-price="{ row }">{{ money(row.salePrice || row.price) }}</template>
+      <template #cell-actions="{ row }">
+        <div class="space-x-3">
+            <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton>
+            <UiButton variant="danger" @click="deleting = row">Delete</UiButton>
         </div>
-
-        <EditorJsField v-model="form.descriptionJson" />
-
-        <section class="rounded-2xl border border-slate-200 p-4">
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="font-black">Images</h3>
-            <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" @click="addEmptyImage">+ Image</button>
-          </div>
-          <div class="grid gap-2 md:grid-cols-3">
-            <div v-for="(image, i) in imageList" :key="i" class="rounded-xl border border-slate-200 p-3">
-              <input v-model="image.fileId" class="mb-2 w-full rounded border border-slate-200 p-2" placeholder="fileId">
-              <input v-model="image.altText" class="mb-2 w-full rounded border border-slate-200 p-2" placeholder="alt">
-              <select v-model="image.imageType" class="mb-2 w-full rounded border border-slate-200 p-2">
-                <option>MAIN</option>
-                <option>GALLERY</option>
-              </select>
-              <label class="text-sm"><input v-model="image.isPrimary" type="checkbox"> Primary</label>
-            </div>
-          </div>
-        </section>
-
-        <section class="rounded-2xl border border-slate-200 p-4">
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="font-black">Variants</h3>
-            <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" @click="addVariant">+ Variant</button>
-          </div>
-          <div class="grid gap-2 md:grid-cols-2">
-            <div v-for="variant in variantList" :key="variant.clientId || variant.id" class="grid gap-2 rounded-xl border border-slate-200 p-3">
-              <input v-model="variant.name" class="rounded border border-slate-200 p-2" placeholder="Name">
-              <input v-model="variant.colorName" class="rounded border border-slate-200 p-2" placeholder="Color name">
-              <input v-model="variant.colorCode" class="rounded border border-slate-200 p-2" placeholder="#000000">
-              <input v-model="variant.imageFileId" class="rounded border border-slate-200 p-2" placeholder="Image file ID">
-              <select v-model="variant.status" class="rounded border border-slate-200 p-2">
-                <option>ACTIVE</option>
-                <option>INACTIVE</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <section class="rounded-2xl border border-slate-200 p-4">
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="font-black">SKUs</h3>
-            <button type="button" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" @click="addSku">+ SKU</button>
-          </div>
-          <div class="grid gap-2 md:grid-cols-2">
-            <div v-for="sku in skuList" :key="sku.id || sku.skuCode" class="grid gap-2 rounded-xl border border-slate-200 p-3">
-              <input v-model="sku.variantClientId" class="rounded border border-slate-200 p-2" placeholder="variantClientId">
-              <input v-model="sku.variantId" class="rounded border border-slate-200 p-2" placeholder="variantId">
-              <input v-model="sku.skuCode" class="rounded border border-slate-200 p-2" placeholder="SKU code">
-              <input v-model="sku.size" class="rounded border border-slate-200 p-2" placeholder="Size">
-              <input v-model.number="sku.price" class="rounded border border-slate-200 p-2" placeholder="Price">
-              <input v-model.number="sku.salePrice" class="rounded border border-slate-200 p-2" placeholder="Sale price">
-              <input v-model.number="sku.stock" class="rounded border border-slate-200 p-2" placeholder="Stock">
-            </div>
-          </div>
-        </section>
-
-        <div class="flex justify-end gap-2">
-          <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @click="editing = null">Cancel</button>
-          <button class="rounded-xl bg-slate-950 px-4 py-2 font-bold text-white">Save</button>
-        </div>
-      </form>
-    </template>
-
-    <table class="w-full min-w-[920px] text-left text-sm">
-      <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-        <tr><th class="p-3">Name</th><th>Slug</th><th>Status</th><th>Featured</th><th>Stock</th><th>Price</th><th class="text-right">Actions</th></tr>
-      </thead>
-      <tbody>
-        <tr v-if="!rows.length" class="border-t"><td colspan="7" class="p-8 text-center text-slate-500">Không có product.</td></tr>
-        <tr v-for="row in rows" :key="row.id" class="border-t">
-          <td class="p-3 font-bold text-slate-950">{{ row.name }}</td>
-          <td>{{ row.slug }}</td>
-          <td><span :class="badgeClass(row.status)">{{ row.status }}</span></td>
-          <td>{{ row.isFeatured ? 'Yes' : 'No' }}</td>
-          <td>{{ row.stock ?? '-' }}</td>
-          <td>{{ money(row.salePrice || row.price) }}</td>
-          <td class="space-x-3 text-right">
-            <button class="font-bold text-slate-700" @click="openEdit(row.id)">Edit</button>
-            <button class="font-bold text-red-600" @click="deleting = row">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      </template>
+    </UiTable>
   </CrudShell>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import CrudShell from '@/pages/admin/CrudShell.vue'
-import EditorJsField from '@/components/editor/EditorJsField.vue'
-import FileUpload from '@/components/common/FileUpload.vue'
+import { UiButton, UiSelect, UiTable } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { money } from '@/modules/shared/types'
-import type { Product, ProductPayload } from '@/modules/catalog/product/types'
-import type { UploadedFile } from '@/services/file.service'
+import { useMasterData } from '@/modules/shared/master-data/hooks'
+import type { Product } from '@/modules/catalog/product/types'
 
+const router = useRouter()
 const rows = ref<Product[]>([])
 const loading = ref(false)
 const error = ref('')
-const editing = ref<Product | 'new' | null>(null)
 const deleting = ref<Product | null>(null)
-const uploaded = ref<UploadedFile | null>(null)
-const query = reactive({ keyword: '', status: '' })
-const form = reactive<ProductPayload>({ categoryId: '', name: '', slug: '', shortDescription: '', descriptionJson: { time: Date.now(), blocks: [] }, status: 'ACTIVE', isFeatured: false, featuredOrder: 0, images: [], variants: [], skus: [] })
-
-const imageList = computed(() => ensureImages())
-const variantList = computed(() => ensureVariants())
-const skuList = computed(() => ensureSkus())
+const query = reactive({ keyword: '', status: '', brandId: '', gender: '' })
+const { data: masterData, load: loadMasterData } = useMasterData('admin')
+const columns = [
+  { key: 'name', label: 'Name' },
+  { key: 'slug', label: 'Slug' },
+  { key: 'brandName', label: 'Brand' },
+  { key: 'gender', label: 'Gender' },
+  { key: 'status', label: 'Status' },
+  { key: 'isFeatured', label: 'Featured' },
+  { key: 'stock', label: 'Stock' },
+  { key: 'price', label: 'Price' },
+  { key: 'actions', label: 'Actions', align: 'right' },
+] as const
 
 function badgeClass(status: string) {
   if (status === 'ACTIVE') return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
@@ -158,50 +81,28 @@ function badgeClass(status: string) {
   return 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600'
 }
 
-function reset(row?: Product) {
-  form.categoryId = row?.categoryId || ''
-  form.name = row?.name || ''
-  form.slug = row?.slug || ''
-  form.shortDescription = row?.shortDescription || ''
-  form.descriptionJson = row?.descriptionJson || { time: Date.now(), blocks: [] }
-  form.status = row?.status || 'ACTIVE'
-  form.isFeatured = !!row?.isFeatured
-  form.featuredOrder = row?.featuredOrder || 0
-  form.images = [...(row?.images || [])]
-  form.variants = [...(row?.variants || [])]
-  form.skus = [...(row?.skus || [])]
+function openCreate() {
+  void router.push({ name: 'admin-product-create' })
 }
 
-function openCreate() { editing.value = 'new'; reset() }
-async function openEdit(id: string) { const row = await productApi.adminDetail(id); editing.value = row; reset(row) }
-function ensureImages() { form.images ||= []; return form.images }
-function ensureVariants() { form.variants ||= []; return form.variants }
-function ensureSkus() { form.skus ||= []; return form.skus }
-function addVariant() { const variants = ensureVariants(); const clientId = crypto.randomUUID(); variants.push({ clientId, name: '', colorName: '', colorCode: '#000000', status: 'ACTIVE', sortOrder: variants.length }) }
-function addSku() { const variants = ensureVariants(); ensureSkus().push({ variantClientId: variants[0]?.clientId, skuCode: '', size: '', price: 0, salePrice: null, stock: 0, status: 'ACTIVE' }) }
-function addImage(file: UploadedFile) { const images = ensureImages(); images.push({ fileId: String(file.fileId), altText: form.name, imageType: images.length ? 'GALLERY' : 'MAIN', sortOrder: images.length, isPrimary: images.length === 0 }) }
-function addEmptyImage() { const images = ensureImages(); images.push({ imageType: 'GALLERY', sortOrder: images.length, isPrimary: false }) }
+function openEdit(id: string) {
+  void router.push({ name: 'admin-product-edit', params: { id } })
+}
+
+function genderLabel(value?: string) {
+  if (!value) return '-'
+  return masterData.value?.productGenders.find((item) => item.value === value)?.label || value
+}
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (await productApi.adminList({ keyword: query.keyword, status: query.status, limit: 50 })).items
+    rows.value = (await productApi.adminList({ keyword: query.keyword, status: query.status, brandId: query.brandId || undefined, gender: query.gender || undefined, limit: 50 })).items
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
     loading.value = false
-  }
-}
-
-async function save() {
-  try {
-    if (editing.value === 'new') await productApi.create(form)
-    else if (editing.value) await productApi.update(editing.value.id, form)
-    editing.value = null
-    await load()
-  } catch (err) {
-    error.value = getErrorMessage(err)
   }
 }
 
@@ -212,5 +113,5 @@ async function confirmRemove() {
   await load()
 }
 
-onMounted(load)
+onMounted(async () => { await Promise.allSettled([loadMasterData(), load()]) })
 </script>

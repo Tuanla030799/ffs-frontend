@@ -23,16 +23,18 @@
           <div><p class="text-xs font-bold uppercase text-slate-400">Total</p><p class="font-black text-rose-600">{{ money(detail.totalAmount) }}</p></div>
         </div>
         <div class="grid gap-3 md:grid-cols-3">
-          <select v-model="statusForm.status" class="rounded-xl border border-slate-200 p-3"><option>PENDING</option><option>CONFIRMED</option><option>SHIPPING</option><option>COMPLETED</option><option>CANCELLED</option></select>
-          <input v-model="statusForm.note" class="rounded-xl border border-slate-200 p-3" placeholder="Status note">
-          <button class="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white" @click="saveStatus(detail.id)">Update status</button>
-          <input v-model="payment.paymentMethod" class="rounded-xl border border-slate-200 p-3" placeholder="paymentMethod">
-          <input v-model="payment.paymentStatus" class="rounded-xl border border-slate-200 p-3" placeholder="paymentStatus">
-          <button class="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white" @click="savePayment(detail.id)">Update payment</button>
-          <input v-model="shipping.shippingMethod" class="rounded-xl border border-slate-200 p-3" placeholder="shippingMethod">
-          <input v-model="shipping.shippingStatus" class="rounded-xl border border-slate-200 p-3" placeholder="shippingStatus">
-          <input v-model="shipping.trackingCode" class="rounded-xl border border-slate-200 p-3" placeholder="trackingCode">
-          <button class="rounded-xl bg-slate-950 py-3 font-bold text-white md:col-span-3" @click="saveShipping(detail.id)">Update shipping</button>
+          <UiSelect v-model="statusForm.status" label="Trạng thái"><option>PENDING</option><option>CONFIRMED</option><option>SHIPPING</option><option>COMPLETED</option><option>CANCELLED</option></UiSelect>
+          <UiInput v-model="statusForm.note" placeholder="Status note"  label="Status note"/>
+          <UiButton variant="dark" @click="saveStatus(detail.id)">Update status</UiButton>
+          <UiInput v-model="payment.paymentMethod" placeholder="paymentMethod"  label="Phương thức thanh toán"/>
+          <UiInput v-model="payment.paymentStatus" placeholder="paymentStatus"  label="Trạng thái thanh toán"/>
+          <UiButton variant="dark" @click="savePayment(detail.id)">Update payment</UiButton>
+          <UiInput v-model="shipping.shippingMethod" placeholder="shippingMethod"  label="Phương thức vận chuyển"/>
+          <UiInput v-model="shipping.shippingStatus" placeholder="shippingStatus"  label="Trạng thái vận chuyển"/>
+          <UiInput v-model="shipping.trackingCode" placeholder="trackingCode"  label="Mã vận đơn"/>
+          <div class="md:col-span-3">
+            <UiButton block variant="dark" @click="saveShipping(detail.id)">Update shipping</UiButton>
+          </div>
         </div>
         <div class="rounded-2xl border border-slate-200">
           <h4 class="border-b border-slate-200 p-3 font-black">Items</h4>
@@ -44,27 +46,31 @@
         <div class="rounded-2xl border border-slate-200">
           <h4 class="border-b border-slate-200 p-3 font-black">Status history</h4>
           <div v-if="!history.length" class="p-4 text-sm text-slate-500">Chưa có history.</div>
-          <div v-for="h in history" :key="h.id" class="border-b border-slate-100 p-3 text-sm last:border-b-0">{{ h.createdAt }} - <b>{{ h.status }}</b> {{ h.note }}</div>
+          <div v-for="h in history" :key="h.id" class="border-b border-slate-100 p-3 text-sm last:border-b-0">{{ formatDateTime(h.createdAt) }} - <b>{{ h.status }}</b> {{ h.note }}</div>
         </div>
       </div>
     </template>
 
-    <table class="w-full min-w-[960px] text-left text-sm">
-      <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-3">Code</th><th>Customer</th><th>Status</th><th>Payment</th><th>Shipping</th><th>Total</th><th>Created</th><th class="text-right">Actions</th></tr></thead>
-      <tbody>
-        <tr v-if="!rows.length" class="border-t"><td colspan="8" class="p-8 text-center text-slate-500">Không có order.</td></tr>
-        <tr v-for="row in rows" :key="row.id" class="border-t"><td class="p-3 font-black">{{ row.code || row.id }}</td><td>{{ row.customerName }}<br><span class="text-slate-400">{{ row.customerPhone }}</span></td><td><span :class="badgeClass(row.status)">{{ row.status }}</span></td><td>{{ row.paymentMethod }} / {{ row.paymentStatus }}</td><td>{{ row.shippingMethod }} / {{ row.shippingStatus }}</td><td>{{ money(row.totalAmount) }}</td><td>{{ row.createdAt || '-' }}</td><td class="text-right"><button class="font-bold text-slate-700" @click="open(row.id)">Detail</button></td></tr>
-      </tbody>
-    </table>
+    <UiTable :columns="columns" :rows="rows" :loading="loading" density="sm" sticky-header striped row-key="id" min-width="min-w-[960px]" empty-text="Không có order.">
+      <template #cell-code="{ row }"><span class="font-black text-slate-950">{{ row.code || row.id }}</span></template>
+      <template #cell-customer="{ row }">{{ row.customerName }}<br><span class="text-slate-400">{{ row.customerPhone }}</span></template>
+      <template #cell-status="{ row }"><span :class="badgeClass(row.status)">{{ row.status }}</span></template>
+      <template #cell-payment="{ row }">{{ row.paymentMethod }} / {{ row.paymentStatus }}</template>
+      <template #cell-shipping="{ row }">{{ row.shippingMethod }} / {{ row.shippingStatus }}</template>
+      <template #cell-totalAmount="{ row }">{{ money(row.totalAmount) }}</template>
+      <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      <template #cell-actions="{ row }"><UiButton variant="ghost" @click="open(row.id)">Detail</UiButton></template>
+    </UiTable>
   </CrudShell>
 </template>
 
 <script setup lang="ts">
+import { UiButton, UiInput, UiSelect, UiTable } from '@/components/ui'
 import { onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import { orderApi } from '@/modules/sales/order/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
-import { money } from '@/modules/shared/types'
+import { money, formatDateTime } from '@/modules/shared/types'
 import type { Order, OrderStatusHistory } from '@/modules/sales/order/types'
 
 const rows = ref<Order[]>([])
@@ -76,6 +82,16 @@ const query = reactive({ keyword: '', status: '' })
 const statusForm = reactive({ status: 'CONFIRMED', note: 'Updated by admin' })
 const payment = reactive({ paymentMethod: 'COD', paymentStatus: 'PAID', paidAt: new Date().toISOString() })
 const shipping = reactive({ shippingMethod: 'GHN', shippingStatus: 'SHIPPING', trackingCode: '' })
+const columns = [
+  { key: 'code', label: 'Code' },
+  { key: 'customer', label: 'Customer' },
+  { key: 'status', label: 'Status' },
+  { key: 'payment', label: 'Payment' },
+  { key: 'shipping', label: 'Shipping' },
+  { key: 'totalAmount', label: 'Total' },
+  { key: 'createdAt', label: 'Created' },
+  { key: 'actions', label: 'Actions', align: 'right' },
+] as const
 
 function badgeClass(status: string) {
   if (['CONFIRMED', 'COMPLETED'].includes(status)) return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'

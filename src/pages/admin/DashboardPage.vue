@@ -1,11 +1,24 @@
 <template>
   <div class="space-y-6">
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div v-for="card in cards" :key="card.label" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-sm font-bold text-slate-500">{{ card.label }}</p><p class="mt-3 text-3xl font-black">{{ card.value }}</p><p class="mt-2 text-xs text-slate-400">{{ card.hint }}</p></div></div>
-    <div class="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-slate-600">Nếu backend chưa có thống kê riêng, dashboard lấy số lượng từ list endpoints với `limit` nhỏ để làm overview.</div>
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <UiCard
+        v-for="card in cards"
+        :key="card.label"
+        :title="card.label"
+        padding="md"
+      >
+        <p class="text-3xl font-black">{{ card.value }}</p>
+        <p class="mt-2 text-xs text-slate-400">{{ card.hint }}</p>
+      </UiCard>
+    </div>
+    <UiAlert>
+      Nếu backend chưa có thống kê riêng, dashboard lấy số lượng từ list endpoints với `limit` nhỏ để làm overview.
+    </UiAlert>
   </div>
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { UiAlert, UiCard } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import { orderApi } from '@/modules/sales/order/api'
 import { customerApi } from '@/modules/customer/api'

@@ -1,30 +1,164 @@
 <template>
   <main>
-    <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div v-if="error" class="mb-4 rounded-2xl bg-red-50 p-4 text-red-700">{{ error }}</div>
-      <div class="grid gap-6 lg:grid-cols-[1.4fr_.6fr]">
-        <div class="overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-xl">
-          <img v-if="hero?.imageUrl" :src="hero.imageUrl" class="h-80 w-full object-cover opacity-80" alt="hero">
-          <div class="p-8"><p class="text-sm font-bold uppercase tracking-widest text-sky-300">Fresh Shoes</p><h1 class="mt-3 max-w-2xl text-4xl font-black tracking-tight sm:text-6xl">{{ hero?.title || 'Giày đẹp, giá tốt, mua cực nhanh' }}</h1><p class="mt-4 max-w-xl text-slate-300">{{ hero?.subtitle || 'Storefront hiện đại kết nối trực tiếp API backend Spring Boot.' }}</p><RouterLink to="/products" class="mt-6 inline-flex rounded-full bg-white px-6 py-3 font-bold text-slate-950 no-underline">Mua ngay</RouterLink></div>
+    <section class="pb-8">
+      <div class="animate-hero-image relative min-h-[calc(100svh-128px)] w-full overflow-hidden bg-[#e8e8e5] shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px]">
+        <img
+          v-if="heroImage"
+          :src="heroImage"
+          :alt="hero?.title || 'WALK banner'"
+          class="absolute inset-0 h-full w-full object-cover grayscale"
+        >
+        <div class="absolute inset-0 bg-gradient-to-r from-white/88 via-white/42 to-transparent" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+        <div class="relative z-10 flex min-h-[calc(100svh-128px)] flex-col justify-end px-4 py-10 md:min-h-[620px] md:justify-center md:px-10 lg:px-16">
+          <div class="animate-banner-copy max-w-[34rem] text-black drop-shadow-[0_10px_28px_rgba(255,255,255,0.75)]">
+            <p class="text-xs font-black uppercase tracking-[0.2em] md:text-sm">{{ hero?.title ? 'Walk story' : 'We find' }}</p>
+            <h1 class="mt-5 max-w-2xl text-4xl font-black leading-[0.96] tracking-tight sm:text-5xl lg:text-7xl">
+              {{ hero?.title || "SHOES YOU DIDN'T KNOW YOU NEED" }}
+            </h1>
+            <p class="mt-5 max-w-sm text-sm font-medium leading-6 text-black/75 md:mt-7 md:text-base md:leading-7">
+              {{ hero?.subtitle || 'Một đôi giày phù hợp sẽ đưa bạn đến những nơi tuyệt vời.' }}
+            </p>
+            <RouterLink
+              :to="hero?.linkUrl || '/products'"
+              class="mt-7 inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black uppercase tracking-wide text-white no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:mt-8 md:px-7 md:py-4"
+            >
+              Khám phá ngay
+            </RouterLink>
+          </div>
         </div>
-        <div class="grid gap-4"><RouterLink v-for="category in categories.slice(0, 4)" :key="category.id" :to="`/products?categorySlug=${category.slug}`" class="rounded-3xl border border-slate-200 bg-white p-5 no-underline shadow-sm hover:shadow-md"><p class="text-xs font-bold uppercase text-slate-400">Category</p><h3 class="mt-1 text-xl font-black text-slate-950">{{ category.name }}</h3><p class="mt-2 line-clamp-2 text-sm text-slate-500">{{ category.description }}</p></RouterLink></div>
       </div>
     </section>
-    <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"><div class="mb-5 flex items-end justify-between"><div><p class="text-sm font-bold uppercase text-[var(--ui-primary)]">Featured</p><h2 class="text-3xl font-black">Sản phẩm nổi bật</h2></div><RouterLink to="/products" class="font-bold text-slate-700">Xem tất cả</RouterLink></div><div v-if="loading" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"><div v-for="i in 8" :key="i" class="h-80 animate-pulse rounded-3xl bg-slate-200" /></div><div v-else-if="featured.length" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"><ProductCard v-for="product in featured" :key="product.id" :product="product" /></div><div v-else class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">Chưa có sản phẩm nổi bật.</div></section>
+
+    <section v-if="collections.length" class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
+      <SectionHeader title="Bạn đang tìm?" to="/products" label="Xem tất cả" />
+      <div class="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-4">
+        <RouterLink
+          v-for="(collection, index) in collections.slice(0, 4)"
+          :key="collection.id"
+          :to="`/collections/${collection.slug}`"
+          class="animate-fade-up group overflow-hidden bg-[#f7f7f5] text-black no-underline shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl"
+          :style="{ animationDelay: `${index * 80}ms` }"
+        >
+          <div class="aspect-[4/3] bg-[#eeeeeb]">
+            <img
+              v-if="coverUrl(collection)"
+              :src="coverUrl(collection)"
+              :alt="collection.name"
+              class="h-full w-full object-cover grayscale transition duration-500 group-hover:scale-105 group-hover:grayscale-0"
+            >
+          </div>
+          <div class="p-5 md:p-6">
+            <h3 class="font-black">{{ collection.name }}</h3>
+            <p class="mt-2 line-clamp-2 text-sm text-black/65">{{ collection.description || `${collection.productCount || 0} sản phẩm` }}</p>
+            <span class="mt-6 inline-block text-2xl transition group-hover:translate-x-2">→</span>
+          </div>
+        </RouterLink>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8">
+      <SectionHeader title="Sản phẩm nổi bật" to="/products" label="Xem tất cả" />
+      <div v-if="loading" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-5">
+        <div v-for="i in 5" :key="i" class="h-80 animate-pulse bg-black/10" />
+      </div>
+      <div v-else-if="featured.length" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-5">
+        <ProductCard
+          v-for="(product, index) in featured.slice(0, 5)"
+          :key="product.id"
+          :product="product"
+          class="animate-fade-up"
+          :style="{ animationDelay: `${index * 70}ms` }"
+        />
+      </div>
+      <div v-else class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60">
+        Chưa có sản phẩm nổi bật.
+      </div>
+    </section>
+
+    <section v-if="randomBlog" class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+      <SectionHeader title="Một bài blog hay" to="/blogs" label="Xem tất cả blog" />
+      <RouterLink
+        :to="`/blogs/${randomBlog.slug}`"
+        class="animate-fade-up grid bg-[#f7f7f5] text-black no-underline shadow-sm ring-1 ring-black/5 md:grid-cols-[1.15fr_1fr]"
+      >
+        <img
+          v-if="coverUrl(randomBlog)"
+          :src="coverUrl(randomBlog)"
+          :alt="randomBlog.title"
+          class="h-64 w-full object-cover grayscale transition duration-500 hover:grayscale-0 md:h-full md:min-h-72"
+        >
+        <div v-else class="min-h-72 bg-[#e8e8e5]" />
+        <div class="flex flex-col justify-center p-5 md:p-10">
+          <p class="text-sm font-semibold">{{ formatDateTime(randomBlog.publishedAt || randomBlog.createdAt) }}</p>
+          <h2 class="mt-5 max-w-md text-2xl font-black leading-tight md:text-3xl">{{ randomBlog.title }}</h2>
+          <p class="mt-5 max-w-md text-sm leading-6 text-black/65">{{ randomBlog.excerpt }}</p>
+          <span class="mt-8 inline-flex w-fit bg-black px-6 py-3 text-xs font-black uppercase tracking-wide text-white">
+            Đọc ngay →
+          </span>
+        </div>
+      </RouterLink>
+    </section>
   </main>
 </template>
+
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import { productApi } from '@/modules/catalog/product/api'
-import { categoryApi } from '@/modules/catalog/category/api'
+import { collectionApi } from '@/modules/content/collection/api'
+import { blogApi } from '@/modules/content/blog/api'
 import { bannerApi } from '@/modules/content/banner/api'
-import { getErrorMessage } from '@/modules/shared/hooks'
+import { resolveFileUrl } from '@/lib/fileUrl'
+import { formatDateTime } from '@/modules/shared/types'
 import type { Product } from '@/modules/catalog/product/types'
-import type { Category } from '@/modules/catalog/category/types'
+import type { Collection } from '@/modules/content/collection/types'
+import type { Blog } from '@/modules/content/blog/types'
 import type { LandingBanner } from '@/modules/content/banner/types'
-const loading = ref(true); const error = ref(''); const featured = ref<Product[]>([]); const categories = ref<Category[]>([]); const banners = ref<LandingBanner[]>([])
+
+const loading = ref(true)
+const featured = ref<Product[]>([])
+const collections = ref<Collection[]>([])
+const banners = ref<LandingBanner[]>([])
+const randomBlog = ref<Blog | null>(null)
 const hero = computed(() => banners.value[0])
-onMounted(async () => { try { const [bannerRows, categoryRows, productRows] = await Promise.all([bannerApi.publicList(), categoryApi.publicList(), productApi.featured(12)]); banners.value = bannerRows; categories.value = categoryRows; featured.value = productRows } catch (err) { error.value = getErrorMessage(err) } finally { loading.value = false } })
+const heroImage = computed(() => resolveFileUrl(hero.value?.imageUrl || ''))
+
+const SectionHeader = defineComponent({
+  props: {
+    title: { type: String, required: true },
+    to: { type: String, required: true },
+    label: { type: String, default: 'Xem tất cả' },
+  },
+  setup(props) {
+    return () => h('div', { class: 'mb-8 flex items-center justify-between gap-4' }, [
+      h('h2', { class: 'text-2xl font-black uppercase tracking-tight' }, props.title),
+      h(RouterLink, { to: props.to, class: 'text-sm font-semibold text-black no-underline hover:opacity-60' }, () => `${props.label} →`),
+    ])
+  },
+})
+
+function coverUrl(row: { coverUrl?: string; imageUrl?: string }) {
+  return resolveFileUrl(row.coverUrl || row.imageUrl || '')
+}
+
+onMounted(async () => {
+  try {
+    const [bannerRows, productRows, collectionRows, blogRows] = await Promise.all([
+      bannerApi.publicList(),
+      productApi.featured(10),
+      collectionApi.list({ page: 1, limit: 8 }),
+      blogApi.list({ page: 1, limit: 20 }),
+    ])
+    banners.value = bannerRows
+    featured.value = productRows
+    collections.value = collectionRows.items
+    const availableBlogs = blogRows.items
+    const randomIndex = Math.floor(Math.random() * availableBlogs.length)
+    randomBlog.value = availableBlogs.length ? availableBlogs[randomIndex] || null : null
+  } finally {
+    loading.value = false
+  }
+})
 </script>

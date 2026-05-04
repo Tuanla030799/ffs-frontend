@@ -2,30 +2,30 @@
   <CrudShell v-model:keyword="query.keyword" v-model:status="query.status" title="Quản lý coupon" description="Mã giảm giá percent/fixed, giới hạn thời gian và usage." :loading="loading" :error="error" :show-modal="Boolean(editing)" :modal-title="editing === 'new' ? 'Tạo coupon' : 'Cập nhật coupon'" :confirm-open="Boolean(deleting)" :confirm-text="`Xóa coupon ${deleting?.code || ''}?`" @create="openCreate" @reload="load" @search="load" @close="editing = null" @cancel-delete="deleting = null" @confirm-delete="confirmRemove">
     <template #form>
       <form class="grid gap-3 md:grid-cols-3" @submit.prevent="save">
-        <input v-model="form.code" class="rounded-xl border border-slate-200 p-3" placeholder="Code" required>
-        <input v-model="form.name" class="rounded-xl border border-slate-200 p-3" placeholder="Name" required>
-        <select v-model="form.discountType" class="rounded-xl border border-slate-200 p-3"><option>PERCENT</option><option>FIXED</option></select>
-        <input v-model.number="form.discountValue" class="rounded-xl border border-slate-200 p-3" placeholder="Discount value">
-        <input v-model.number="form.maxDiscount" class="rounded-xl border border-slate-200 p-3" placeholder="Max discount">
-        <input v-model.number="form.minOrderAmount" class="rounded-xl border border-slate-200 p-3" placeholder="Min order">
-        <input v-model.number="form.usageLimit" class="rounded-xl border border-slate-200 p-3" placeholder="Usage limit">
-        <input v-model="form.startsAt" type="datetime-local" class="rounded-xl border border-slate-200 p-3">
-        <input v-model="form.endsAt" type="datetime-local" class="rounded-xl border border-slate-200 p-3">
-        <select v-model="form.status" class="rounded-xl border border-slate-200 p-3"><option>ACTIVE</option><option>INACTIVE</option></select>
-        <div class="flex justify-end gap-2 md:col-span-3"><button type="button" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @click="editing = null">Cancel</button><button class="rounded-xl bg-slate-950 px-4 py-2 font-bold text-white">Save</button></div>
+        <UiInput v-model="form.code" placeholder="Code" required  label="Code"/>
+        <UiInput v-model="form.name" placeholder="Name" required  label="Name"/>
+        <UiSelect v-model="form.discountType" label="Loại giảm giá"><option>PERCENT</option><option>FIXED</option></UiSelect>
+        <UiInput v-model.number="form.discountValue" placeholder="Discount value"  label="Discount value"/>
+        <UiInput v-model.number="form.maxDiscount" placeholder="Max discount"  label="Max discount"/>
+        <UiInput v-model.number="form.minOrderAmount" placeholder="Min order"  label="Min order"/>
+        <UiInput v-model.number="form.usageLimit" placeholder="Usage limit"  label="Usage limit"/>
+        <UiInput v-model="form.startsAt" type="datetime-local"  label="Bắt đầu"/>
+        <UiInput v-model="form.endsAt" type="datetime-local"  label="Kết thúc"/>
+        <UiSelect v-model="form.status" label="Trạng thái"><option>ACTIVE</option><option>INACTIVE</option></UiSelect>
+        <div class="flex justify-end gap-2 md:col-span-3"><UiButton native-type="button" variant="secondary" @click="editing = null">Cancel</UiButton><UiButton native-type="submit" variant="dark">Save</UiButton></div>
       </form>
     </template>
-    <table class="w-full min-w-[880px] text-left text-sm">
-      <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-3">Code</th><th>Name</th><th>Type</th><th>Value</th><th>Min order</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
-      <tbody>
-        <tr v-if="!rows.length" class="border-t"><td colspan="7" class="p-8 text-center text-slate-500">Không có coupon.</td></tr>
-        <tr v-for="row in rows" :key="row.id" class="border-t"><td class="p-3 font-black">{{ row.code }}</td><td>{{ row.name }}</td><td>{{ row.discountType }}</td><td>{{ row.discountValue }}</td><td>{{ money(row.minOrderAmount) }}</td><td><span :class="badgeClass(row.status)">{{ row.status }}</span></td><td class="space-x-3 text-right"><button class="font-bold text-slate-700" @click="openEdit(row)">Edit</button><button class="font-bold text-red-600" @click="deleting = row">Delete</button></td></tr>
-      </tbody>
-    </table>
+    <UiTable :columns="columns" :rows="rows" :loading="loading" density="sm" sticky-header striped row-key="id" min-width="min-w-[880px]" empty-text="Không có coupon.">
+      <template #cell-code="{ row }"><span class="font-black text-slate-950">{{ row.code }}</span></template>
+      <template #cell-minOrderAmount="{ row }">{{ money(row.minOrderAmount) }}</template>
+      <template #cell-status="{ row }"><span :class="badgeClass(row.status)">{{ row.status }}</span></template>
+      <template #cell-actions="{ row }"><div class="space-x-3"><UiButton variant="ghost" @click="openEdit(row)">Edit</UiButton><UiButton variant="danger" @click="deleting = row">Delete</UiButton></div></template>
+    </UiTable>
   </CrudShell>
 </template>
 
 <script setup lang="ts">
+import { UiButton, UiInput, UiSelect, UiTable } from '@/components/ui'
 import { onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import { couponApi } from '@/modules/promotion/coupon/api'
@@ -40,6 +40,15 @@ const editing = ref<Coupon | 'new' | null>(null)
 const deleting = ref<Coupon | null>(null)
 const query = reactive({ keyword: '', status: '' })
 const form = reactive<CouponPayload>({ code: '', name: '', discountType: 'PERCENT', discountValue: 0, maxDiscount: 0, minOrderAmount: 0, usageLimit: 0, startsAt: '', endsAt: '', status: 'ACTIVE' })
+const columns = [
+  { key: 'code', label: 'Code' },
+  { key: 'name', label: 'Name' },
+  { key: 'discountType', label: 'Type' },
+  { key: 'discountValue', label: 'Value' },
+  { key: 'minOrderAmount', label: 'Min order' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: 'Actions', align: 'right' },
+] as const
 
 function badgeClass(status: string) { return status === 'ACTIVE' ? 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700' : 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600' }
 function fill(r?: Coupon) { Object.assign(form, { code: r?.code || '', name: r?.name || '', discountType: r?.discountType || 'PERCENT', discountValue: r?.discountValue || 0, maxDiscount: r?.maxDiscount || 0, minOrderAmount: r?.minOrderAmount || 0, usageLimit: r?.usageLimit || 0, startsAt: r?.startsAt || '', endsAt: r?.endsAt || '', status: r?.status || 'ACTIVE' }) }

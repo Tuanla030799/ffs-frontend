@@ -1,5 +1,9 @@
 import { onBeforeUnmount, ref } from "vue";
-import type { NoticeState } from "@/types/designer";
+
+type NoticeState<T extends string = string> = {
+  type: T;
+  text: string;
+} | null;
 
 export function useTimedNotice<
   T extends string = "info" | "success" | "warning" | "error",
