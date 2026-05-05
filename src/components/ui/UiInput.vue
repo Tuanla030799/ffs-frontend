@@ -2,6 +2,7 @@
   <label :class="wrapperClasses">
     <span v-if="label" class="mb-1.5 block text-sm font-semibold text-[var(--ui-text)]">
       {{ label }}
+      <span v-if="required" class="text-[var(--text-error,var(--ui-danger))]"> * </span>
     </span>
     <input
       :value="modelValue"
@@ -37,6 +38,7 @@ const props = withDefaults(
     min?: string | number
     max?: string | number
     disabled?: boolean
+    required?: boolean
     class?: string
   }>(),
   {
@@ -49,6 +51,7 @@ const props = withDefaults(
     min: undefined,
     max: undefined,
     disabled: false,
+    required: false,
     class: '',
   },
 )

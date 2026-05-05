@@ -15,7 +15,7 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     as?: 'div' | 'form'
-    layout?: 'vertical' | 'inline'
+    layout?: 'vertical' | 'inline' | 'none'
   }>(),
   {
     as: 'div',
@@ -31,7 +31,8 @@ const forwardedAttrs = computed(() => {
 })
 const classes = computed(() =>
   cn(
-    props.layout === 'inline' ? 'flex flex-wrap items-end gap-3' : 'space-y-4',
+    props.layout === 'inline' && 'flex flex-wrap items-end gap-3',
+    props.layout === 'vertical' && 'space-y-4',
     attrs.class as string | undefined,
   ),
 )

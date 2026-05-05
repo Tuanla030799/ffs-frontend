@@ -32,6 +32,8 @@ import { cn } from '@/utils/cn'
 const items = [
   { label: 'Dashboard', to: '/admin/dashboard' },
   { label: 'Categories', to: '/admin/categories' },
+  { label: 'Sizes', to: '/admin/sizes' },
+  { label: 'Colors', to: '/admin/colors' },
   { label: 'Brands', to: '/admin/brands' },
   { label: 'Products', to: '/admin/products' },
   { label: 'Collections', to: '/admin/collections' },

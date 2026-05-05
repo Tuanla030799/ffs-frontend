@@ -19,12 +19,13 @@ export interface UploadFileOptions {
 }
 
 function normalizeUploadedFile(row: Record<string, any>): UploadedFile {
-  const url = row.url || row.fileUrl || row.file_url || ''
+  const path = row.path || row.filePath || row.file_path || ''
+  const url = row.url || row.fileUrl || row.file_url || path
 
   return {
     fileId: row.fileId || row.file_id || row.id,
     url: resolveFileUrl(url),
-    path: row.path || row.filePath || row.file_path || '',
+    path,
     name: row.name || row.originalName || row.original_name,
     mimeType: row.mimeType || row.mime_type || row.mimetype,
     size: row.size,

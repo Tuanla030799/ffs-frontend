@@ -3,6 +3,7 @@ export interface ProductImage {
   id?: string
   fileId?: string
   url?: string
+  imageUrl?: string
   altText?: string
   imageType?: 'MAIN' | 'GALLERY' | string
   sortOrder?: number
@@ -12,6 +13,7 @@ export interface ProductVariant {
   id?: string
   clientId?: string
   name: string
+  colorId?: string
   colorName?: string
   colorCode?: string
   imageFileId?: string
@@ -24,11 +26,40 @@ export interface ProductSku {
   variantClientId?: string
   variantId?: string
   skuCode: string
+  sizeId?: string
   size: string
   price: number
   salePrice?: number | null
   stock: number
   status?: Status
+}
+export type ProductPayload = Omit<
+  Product,
+  | 'id'
+  | 'categoryName'
+  | 'brandName'
+  | 'brandSlug'
+  | 'price'
+  | 'salePrice'
+  | 'stock'
+  | 'images'
+  | 'variants'
+  | 'skus'
+> & {
+  images?: Array<Omit<ProductImage, 'id' | 'url'>>
+  variants?: Array<
+    Omit<ProductVariant, 'id' | 'colorName' | 'colorCode' | 'imageFileId'> & {
+      id?: string | null
+      imageFileId?: string | null
+    }
+  >
+  skus?: Array<
+    Omit<ProductSku, 'id' | 'variantId' | 'variantClientId' | 'size'> & {
+      id?: string | null
+      variantId?: string | null
+      variantClientId?: string | null
+    }
+  >
 }
 export type ProductGender = 'MALE' | 'FEMALE' | 'UNISEX' | string
 export interface Product {
@@ -53,6 +84,29 @@ export interface Product {
   salePrice?: number
   stock?: number
 }
+
+export interface ProductFeatured {
+  id: string
+  categoryId?: string
+  categoryName?: string
+  brandId?: string | null
+  brandName?: string
+  brandSlug?: string
+  gender?: ProductGender
+  name: string
+  slug: string
+  shortDescription?: string
+  status: Status
+  isFeatured?: boolean
+  featuredOrder?: number
+  minPrice: number
+  minSalePrice: number
+  totalStock: number
+  primaryFileId: string
+  primaryImageUrl: string
+  createdAt: string
+}
+
 export interface ProductListQuery {
   categoryId?: string
   categorySlug?: string
@@ -68,7 +122,3 @@ export interface ProductListQuery {
   limit?: number
   status?: string
 }
-export type ProductPayload = Omit<
-  Product,
-  'id' | 'categoryName' | 'brandName' | 'brandSlug' | 'price' | 'salePrice' | 'stock'
->

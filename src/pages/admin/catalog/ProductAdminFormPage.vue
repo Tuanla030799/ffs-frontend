@@ -19,9 +19,9 @@
       <div class="space-y-5">
         <UiCard title="Thông tin cơ bản" padding="md">
           <div class="grid gap-3 md:grid-cols-3">
-            <UiInput v-model="form.name" placeholder="Name *" required label="Name" />
-            <UiInput v-model="form.slug" placeholder="Slug *" required label="Slug" />
-            <UiSelect v-model="form.categoryId" placeholder="Category *" label="Category">
+            <UiInput v-model="form.name" placeholder="Name" required label="Name" />
+            <UiInput v-model="form.slug" placeholder="Slug" required label="Slug" />
+            <UiSelect v-model="form.categoryId" placeholder="Category" label="Category">
               <option
                 v-for="category in masterData?.categories || []"
                 :key="category.id"
@@ -88,17 +88,45 @@
               class="grid gap-2 rounded-xl border border-slate-200 p-3"
             >
               <UiInput v-model="variant.name" placeholder="Name" label="Name" />
-              <UiInput v-model="variant.colorName" placeholder="Color name" label="Color name" />
-              <UiInput v-model="variant.colorCode" placeholder="#000000" label="Mã màu" />
-              <UiInput
-                v-model="variant.imageFileId"
-                placeholder="Image file ID"
-                label="Image file ID"
+              <SizeColorPicker
+                v-model="variant.colorId"
+                :options="masterData?.colors || []"
+                title="Chọn màu"
+                placeholder="Chọn màu"
+                variant="color"
+              />
+              <ImageUpload
+                :model-value="variantUploadValue(variant)"
+                scope="admin"
+                accept="image/*"
+                title="Upload variant image"
+                trigger-text="Chọn ảnh variant"
+                :preview-alt="
+                  variant.name || selectedColorLabel(variant.colorId) || 'Variant image'
+                "
+                :preview-title="
+                  variant.name || selectedColorLabel(variant.colorId) || 'Variant image'
+                "
+                @uploaded="(file) => assignVariantImage(variant, file)"
+                @update:model-value="(file) => !file && clearVariantImage(variant)"
               />
               <UiSelect v-model="variant.status" label="Trạng thái">
                 <option>ACTIVE</option>
                 <option>INACTIVE</option>
               </UiSelect>
+              <UiInput
+                v-model.number="variant.sortOrder"
+                placeholder="Sort order"
+                label="Sort order"
+              />
+              <UiButton
+                native-type="button"
+                variant="danger"
+                size="sm"
+                @click="removeVariant(variant)"
+              >
+                Xóa variant
+              </UiButton>
             </div>
           </div>
         </UiCard>
@@ -115,17 +143,37 @@
               :key="sku.id || sku.skuCode"
               class="grid gap-2 rounded-xl border border-slate-200 p-3"
             >
-              <UiInput
-                v-model="sku.variantClientId"
-                placeholder="variantClientId"
-                label="Variant client ID"
-              />
-              <UiInput v-model="sku.variantId" placeholder="variantId" label="Variant ID" />
+              <UiSelect
+                :model-value="skuVariantValue(sku)"
+                placeholder="Chọn variant"
+                label="Variant"
+                @update:model-value="(value) => selectSkuVariant(sku, value)"
+              >
+                <option
+                  v-for="option in skuVariantOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </UiSelect>
               <UiInput v-model="sku.skuCode" placeholder="SKU code" label="SKU code" />
-              <UiInput v-model="sku.size" placeholder="Size" label="Size" />
+              <SizeColorPicker
+                v-model="sku.sizeId"
+                :options="masterData?.sizes || []"
+                title="Chọn size"
+                placeholder="Chọn size"
+              />
               <UiInput v-model.number="sku.price" placeholder="Price" label="Price" />
               <UiInput v-model.number="sku.salePrice" placeholder="Sale price" label="Sale price" />
               <UiInput v-model.number="sku.stock" placeholder="Stock" label="Stock" />
+              <UiSelect v-model="sku.status" label="Trạng thái">
+                <option>ACTIVE</option>
+                <option>INACTIVE</option>
+              </UiSelect>
+              <UiButton native-type="button" variant="danger" size="sm" @click="removeSku(sku)">
+                Xóa SKU
+              </UiButton>
             </div>
           </div>
         </UiCard>
@@ -137,38 +185,36 @@
             v-model="uploaded"
             scope="admin"
             accept="image/*"
-            title="Upload product image"
+            title="Thêm ảnh sản phẩm"
+            description="Ảnh đầu tiên sẽ là ảnh chính, các ảnh sau là gallery."
+            trigger-text="Thêm ảnh"
             @uploaded="addImage"
           />
-          <div class="mt-3">
-            <UiButton native-type="button" variant="outline" size="sm" @click="addEmptyImage"
-              >+ Image row</UiButton
-            >
-          </div>
           <div class="mt-3 grid gap-2">
             <div
               v-for="(image, i) in imageList"
               :key="i"
-              class="rounded-xl border border-slate-200 p-3"
+              class="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[104px_minmax(0,1fr)]"
             >
-              <UiInput v-model="image.fileId" class="mb-2" placeholder="fileId" label="File ID" />
-              <UiInput v-model="image.altText" class="mb-2" placeholder="alt" label="Alt text" />
-              <UiSelect v-model="image.imageType" class="mb-2" label="Loại ảnh">
-                <option>MAIN</option>
-                <option>GALLERY</option>
-              </UiSelect>
-              <UiCheckbox v-model="image.isPrimary" label="Primary" />
+              <ImagePreview
+                :src="resolveFileUrl(image.imageUrl || image.url)"
+                :alt="image.altText || form.name"
+                :title="image.altText || form.name || 'Product image'"
+              />
+              <div class="space-y-2">
+                <UiInput v-model="image.altText" placeholder="alt" label="Alt text" />
+                <div class="flex items-center justify-between gap-3">
+                  <UiCheckbox
+                    :model-value="Boolean(image.isPrimary)"
+                    label="Primary"
+                    @update:model-value="(value) => setPrimaryImage(i, value)"
+                  />
+                  <UiButton native-type="button" variant="danger" size="sm" @click="removeImage(i)">
+                    Xóa ảnh
+                  </UiButton>
+                </div>
+              </div>
             </div>
-          </div>
-        </UiCard>
-
-        <UiCard title="Actions" padding="md">
-          <p class="mt-1 text-sm text-slate-500">
-            Form này tách route riêng để dễ nhập dữ liệu dài.
-          </p>
-          <div class="mt-4 grid gap-2">
-            <UiButton native-type="submit" :loading="saving">Lưu product</UiButton>
-            <UiButton native-type="button" variant="secondary" @click="goBack">Hủy</UiButton>
           </div>
         </UiCard>
       </aside>
@@ -181,11 +227,20 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import EditorJsField from '@/components/editor/EditorJsField.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
+import ImageUpload from '@/components/common/ImageUpload.vue'
+import ImagePreview from '@/components/common/ImagePreview.vue'
+import SizeColorPicker from '@/components/common/SizeColorPicker.vue'
 import { UiAlert, UiButton, UiCard, UiCheckbox, UiForm, UiInput, UiSelect } from '@/components/ui'
+import { resolveFileUrl } from '@/lib/fileUrl'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
-import type { Product, ProductPayload } from '@/modules/catalog/product/types'
+import type {
+  Product,
+  ProductPayload,
+  ProductSku,
+  ProductVariant,
+} from '@/modules/catalog/product/types'
 import type { UploadedFile } from '@/services/file.service'
 
 const route = useRoute()
@@ -194,7 +249,9 @@ const isEdit = computed(() => Boolean(route.params.id))
 const saving = ref(false)
 const error = ref('')
 const uploaded = ref<UploadedFile | null>(null)
-const form = reactive<ProductPayload>({
+type ProductForm = Omit<Product, 'id'>
+
+const form = reactive<ProductForm>({
   categoryId: '',
   brandId: null,
   gender: 'UNISEX',
@@ -213,6 +270,12 @@ const { data: masterData, load: loadMasterData } = useMasterData('admin')
 const imageList = computed(() => ensureImages())
 const variantList = computed(() => ensureVariants())
 const skuList = computed(() => ensureSkus())
+const skuVariantOptions = computed(() =>
+  variantList.value.map((variant, index) => ({
+    value: variantSelectValue(variant),
+    label: variant.name || selectedColorLabel(variant.colorId) || `Variant ${index + 1}`,
+  })),
+)
 
 function reset(row?: Product) {
   form.categoryId = row?.categoryId || ''
@@ -226,8 +289,30 @@ function reset(row?: Product) {
   form.isFeatured = !!row?.isFeatured
   form.featuredOrder = row?.featuredOrder || 0
   form.images = [...(row?.images || [])]
-  form.variants = [...(row?.variants || [])]
-  form.skus = [...(row?.skus || [])]
+  form.variants = (row?.variants || []).map((variant, index) => ({
+    ...variant,
+    id: variant.id || undefined,
+    clientId: variant.clientId || crypto.randomUUID(),
+    name: variant.name || '',
+    colorId: variant.colorId || '',
+    imageFileId: variant.imageFileId || undefined,
+    status: variant.status || 'ACTIVE',
+    sortOrder: variant.sortOrder ?? index,
+  }))
+  form.skus = (row?.skus || []).map((sku) => ({
+    ...sku,
+    id: sku.id || undefined,
+    variantId: sku.variantId || undefined,
+    variantClientId: sku.variantClientId || undefined,
+    skuCode: sku.skuCode || '',
+    sizeId: sku.sizeId || '',
+    size: sku.size || '',
+    price: Number(sku.price || 0),
+    salePrice: sku.salePrice ?? null,
+    stock: Number(sku.stock || 0),
+    status: sku.status || 'ACTIVE',
+  }))
+  normalizeImages()
 }
 
 function ensureImages() {
@@ -248,17 +333,26 @@ function addVariant() {
   variants.push({
     clientId,
     name: '',
-    colorName: '',
-    colorCode: '#000000',
+    colorId: '',
     status: 'ACTIVE',
     sortOrder: variants.length,
   })
 }
+function removeVariant(variant: ProductVariant) {
+  const variants = ensureVariants()
+  const index = variants.indexOf(variant)
+  if (index >= 0) variants.splice(index, 1)
+  const value = variantSelectValue(variant)
+  form.skus = ensureSkus().filter((sku) => skuVariantValue(sku) !== value)
+}
 function addSku() {
   const variants = ensureVariants()
+  const firstVariant = variants[0]
   ensureSkus().push({
-    variantClientId: variants[0]?.clientId,
+    variantId: firstVariant?.id,
+    variantClientId: firstVariant?.id ? undefined : firstVariant?.clientId,
     skuCode: '',
+    sizeId: '',
     size: '',
     price: 0,
     salePrice: null,
@@ -266,29 +360,197 @@ function addSku() {
     status: 'ACTIVE',
   })
 }
+function removeSku(sku: ProductSku) {
+  const skus = ensureSkus()
+  const index = skus.indexOf(sku)
+  if (index >= 0) skus.splice(index, 1)
+}
+function selectedColorLabel(colorId?: string) {
+  const color = masterData.value?.colors.find((item) => item.id === colorId)
+  return color?.label || color?.value || ''
+}
 function addImage(file: UploadedFile) {
   const images = ensureImages()
   images.push({
     fileId: String(file.fileId),
+    url: file.url || file.path,
     altText: form.name,
     imageType: images.length ? 'GALLERY' : 'MAIN',
     sortOrder: images.length,
     isPrimary: images.length === 0,
   })
+  uploaded.value = null
+  normalizeImages()
 }
-function addEmptyImage() {
+function uploadedValue(fileId?: string | number | null, url?: string) {
+  if (!fileId) return null
+  return {
+    fileId,
+    url: resolveFileUrl(url || ''),
+    path: '',
+  } satisfies UploadedFile
+}
+function variantUploadValue(variant: ProductVariant) {
+  return uploadedValue(variant.imageFileId, variant.imageUrl)
+}
+function assignVariantImage(variant: ProductVariant, file: UploadedFile) {
+  variant.imageFileId = String(file.fileId)
+  variant.imageUrl = file.url || file.path
+}
+function clearVariantImage(variant: ProductVariant) {
+  variant.imageFileId = ''
+  variant.imageUrl = ''
+}
+function removeImage(index: number) {
   const images = ensureImages()
-  images.push({ imageType: 'GALLERY', sortOrder: images.length, isPrimary: false })
+  images.splice(index, 1)
+  normalizeImages()
+}
+function setPrimaryImage(index: number, value: boolean) {
+  const images = ensureImages()
+  if (!value) {
+    const image = images[index]
+    if (image) image.isPrimary = false
+    normalizeImages()
+    return
+  }
+
+  images.forEach((image, imageIndex) => {
+    image.isPrimary = imageIndex === index
+  })
+  normalizeImages()
+}
+function normalizeImages() {
+  const images = ensureImages()
+  const primaryIndex = images.findIndex((image) => image.isPrimary)
+  images.forEach((image, index) => {
+    image.sortOrder = index
+    image.isPrimary = primaryIndex === -1 ? index === 0 : index === primaryIndex
+    if (image.isPrimary) {
+      image.imageType = 'MAIN'
+    } else if (!image.imageType || image.imageType === 'MAIN') {
+      image.imageType = 'GALLERY'
+    }
+  })
+}
+function variantSelectValue(variant: ProductVariant) {
+  if (variant.id) return `id:${variant.id}`
+  if (variant.clientId) return `client:${variant.clientId}`
+  return ''
+}
+function skuVariantValue(sku: ProductSku) {
+  if (sku.variantId) return `id:${sku.variantId}`
+  if (sku.variantClientId) return `client:${sku.variantClientId}`
+  return ''
+}
+function selectSkuVariant(sku: ProductSku, value: string) {
+  sku.variantClientId = undefined
+  sku.variantId = undefined
+
+  if (value.startsWith('client:')) {
+    sku.variantClientId = value.slice('client:'.length)
+    return
+  }
+
+  if (value.startsWith('id:')) {
+    sku.variantId = value.slice('id:'.length)
+  }
+}
+function trimText(value?: string | null) {
+  return (value || '').trim()
+}
+function numberOrZero(value: unknown) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue : 0
+}
+function validateProduct() {
+  const msg =
+    required(form.name, 'Name') ||
+    required(form.slug, 'Slug') ||
+    required(form.categoryId, 'Category ID')
+  if (msg) return msg
+
+  const skus = ensureSkus()
+  if (!skus.length) return 'Cần có ít nhất 1 SKU.'
+
+  for (const [index, variant] of variantList.value.entries()) {
+    const label = `Variant #${index + 1}`
+    if (!trimText(variant.name)) return `${label}: Name là bắt buộc.`
+    if (!trimText(variant.colorId)) return `${label}: Color là bắt buộc.`
+  }
+
+  const skuCodes = new Set<string>()
+  for (const [index, sku] of skus.entries()) {
+    const label = `SKU #${index + 1}`
+    const skuCode = trimText(sku.skuCode)
+    const sizeId = trimText(sku.sizeId)
+    const price = numberOrZero(sku.price)
+    const stock = numberOrZero(sku.stock)
+    const salePrice =
+      sku.salePrice === null || sku.salePrice === undefined ? null : Number(sku.salePrice)
+
+    if (!skuCode) return `${label}: SKU code là bắt buộc.`
+    if (!sizeId) return `${label}: Size là bắt buộc.`
+    if (variantList.value.length && !skuVariantValue(sku)) return `${label}: Variant là bắt buộc.`
+    if (skuCodes.has(skuCode)) return `SKU code "${skuCode}" bị trùng.`
+    if (price < 0) return `${label}: Price phải >= 0.`
+    if (stock < 0) return `${label}: Stock phải >= 0.`
+    if (salePrice !== null && salePrice > price) return `${label}: Sale price phải <= price.`
+    skuCodes.add(skuCode)
+  }
+
+  if (ensureImages().filter((image) => image.isPrimary).length > 1) {
+    return 'Chỉ được có một ảnh Primary.'
+  }
+
+  return ''
+}
+function buildPayload(): ProductPayload {
+  normalizeImages()
+  return {
+    ...form,
+    name: trimText(form.name),
+    slug: trimText(form.slug),
+    shortDescription: trimText(form.shortDescription),
+    brandId: form.brandId || null,
+    gender: form.gender || 'UNISEX',
+    featuredOrder: numberOrZero(form.featuredOrder),
+    images: ensureImages().map((image, index) => ({
+      fileId: image.fileId,
+      altText: trimText(image.altText),
+      imageType: image.isPrimary ? 'MAIN' : 'GALLERY',
+      sortOrder: index,
+      isPrimary: Boolean(image.isPrimary),
+    })),
+    variants: ensureVariants().map((variant, index) => ({
+      id: variant.id || null,
+      clientId: variant.clientId || crypto.randomUUID(),
+      name: trimText(variant.name),
+      colorId: trimText(variant.colorId),
+      imageFileId: variant.imageFileId || null,
+      status: variant.status || 'ACTIVE',
+      sortOrder: numberOrZero(variant.sortOrder ?? index),
+    })),
+    skus: ensureSkus().map((sku) => ({
+      id: sku.id || null,
+      variantId: sku.variantId || null,
+      variantClientId: sku.variantClientId || null,
+      skuCode: trimText(sku.skuCode),
+      sizeId: trimText(sku.sizeId),
+      price: numberOrZero(sku.price),
+      salePrice:
+        sku.salePrice === null || sku.salePrice === undefined ? null : Number(sku.salePrice),
+      stock: numberOrZero(sku.stock),
+      status: sku.status || 'ACTIVE',
+    })),
+  }
 }
 function goBack() {
   void router.push({ name: 'admin-products' })
 }
 
 async function save() {
-  const msg =
-    required(form.name, 'Name') ||
-    required(form.slug, 'Slug') ||
-    required(form.categoryId, 'Category ID')
+  const msg = validateProduct()
   if (msg) {
     error.value = msg
     return
@@ -296,9 +558,10 @@ async function save() {
   saving.value = true
   error.value = ''
   try {
-    const payload = { ...form, brandId: form.brandId || null, gender: form.gender || 'UNISEX' }
+    const payload = buildPayload()
     if (isEdit.value) await productApi.update(String(route.params.id), payload)
     else await productApi.create(payload)
+    if (isEdit.value) reset(await productApi.adminDetail(String(route.params.id)))
     goBack()
   } catch (err) {
     error.value = getErrorMessage(err)

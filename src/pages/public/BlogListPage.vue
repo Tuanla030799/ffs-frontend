@@ -5,10 +5,15 @@
         <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">Journal</p>
         <h1 class="mt-3 text-3xl font-black uppercase md:text-4xl">Blog</h1>
       </div>
-      <UiForm as="form" class="flex gap-2" @submit.prevent="search">
-        <UiInput v-model="query.keyword" placeholder="Tìm bài viết" label="Tìm bài viết" />
-        <UiButton native-type="submit">Tìm</UiButton>
-      </UiForm>
+      <FilterForm
+        v-model:keyword="query.keyword"
+        :card="false"
+        class="flex gap-2"
+        search-placeholder="Tìm bài viết"
+        search-label="Tìm bài viết"
+        submit-label="Tìm"
+        @search="search"
+      />
     </header>
 
     <div v-if="loading" class="grid gap-4 md:grid-cols-3 md:gap-6">
@@ -47,7 +52,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { UiButton, UiForm, UiInput } from '@/components/ui'
+import FilterForm from '@/components/common/FilterForm.vue'
 import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { formatDateTime } from '@/modules/shared/types'

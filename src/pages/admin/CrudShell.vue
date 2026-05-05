@@ -25,37 +25,28 @@
       </div>
     </div>
 
-    <UiCard v-if="searchable || statusFilter" title="Bộ lọc" padding="sm">
-      <UiForm
-        as="form"
-        class="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_auto]"
-        @submit.prevent="$emit('search')"
-      >
-        <UiInput
-          v-if="searchable"
-          :model-value="keyword"
-          :placeholder="searchPlaceholder"
-          @update:model-value="$emit('update:keyword', String($event))"
-        />
-        <UiSelect
-          v-if="statusFilter"
-          :model-value="status"
-          @update:model-value="$emit('update:status', String($event))"
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option v-for="option in statusOptions" :key="option" :value="option">
-            {{ option }}
-          </option>
-        </UiSelect>
-        <UiButton> Tìm kiếm </UiButton>
-      </UiForm>
-    </UiCard>
+    <FilterForm
+      v-if="showFilters"
+      :keyword="keyword"
+      :status="status"
+      :searchable="searchable"
+      :status-filter="statusFilter"
+      :search-placeholder="searchPlaceholder"
+      :status-options="statusOptions"
+      :class="filterClass"
+      @update:keyword="$emit('update:keyword', $event)"
+      @update:status="$emit('update:status', $event)"
+      @search="$emit('search')"
+    >
+      <slot name="filters" />
+    </FilterForm>
 
     <UiAlert v-if="error" variant="error">
       {{ error }}
     </UiAlert>
 
     <slot />
+
     <div
       v-if="showModal"
       class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/40 p-4"
@@ -79,37 +70,36 @@
           <slot name="form" />
         </div>
       </div>
-      v>
+    </div>
 
-      <div
-        v-if="confirmOpen"
-        class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 p-4"
-      >
-        <div class="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
-          <h3 class="text-lg font-black text-slate-950">
-            {{ confirmTitle }}
-          </h3>
-          <p class="mt-2 text-sm text-slate-600">
-            {{ confirmText }}
-          </p>
-          <div class="mt-5 flex justify-end gap-2">
-            <UiButton
-              native-type="button"
-              variant="secondary"
-              size="sm"
-              @click="$emit('cancel-delete')"
-            >
-              Hủy
-            </UiButton>
-            <UiButton
-              native-type="button"
-              variant="danger"
-              size="sm"
-              @click="$emit('confirm-delete')"
-            >
-              Xóa
-            </UiButton>
-          </div>
+    <div
+      v-if="confirmOpen"
+      class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 p-4"
+    >
+      <div class="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+        <h3 class="text-lg font-black text-slate-950">
+          {{ confirmTitle }}
+        </h3>
+        <p class="mt-2 text-sm text-slate-600">
+          {{ confirmText }}
+        </p>
+        <div class="mt-5 flex justify-end gap-2">
+          <UiButton
+            native-type="button"
+            variant="secondary"
+            size="sm"
+            @click="$emit('cancel-delete')"
+          >
+            Hủy
+          </UiButton>
+          <UiButton
+            native-type="button"
+            variant="danger"
+            size="sm"
+            @click="$emit('confirm-delete')"
+          >
+            Xóa
+          </UiButton>
         </div>
       </div>
     </div>
@@ -117,8 +107,10 @@
 </template>
 
 <script setup lang="ts">
-import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect } from '@/components/ui'
-withDefaults(
+import { computed, useSlots } from 'vue'
+import FilterForm from '@/components/common/FilterForm.vue'
+import { UiAlert, UiButton } from '@/components/ui'
+const props = withDefaults(
   defineProps<{
     title: string
     description?: string
@@ -131,6 +123,7 @@ withDefaults(
     status?: string
     statusFilter?: boolean
     statusOptions?: string[]
+    filterClass?: string
     showModal?: boolean
     modalTitle?: string
     modalDescription?: string
@@ -149,6 +142,7 @@ withDefaults(
     status: '',
     statusFilter: true,
     statusOptions: () => ['ACTIVE', 'INACTIVE'],
+    filterClass: '',
     showModal: false,
     modalTitle: '',
     modalDescription: '',
@@ -157,6 +151,9 @@ withDefaults(
     confirmText: 'Thao tác này không thể hoàn tác.',
   },
 )
+
+const slots = useSlots()
+const showFilters = computed(() => props.searchable || props.statusFilter || Boolean(slots.filters))
 
 defineEmits<{
   create: []

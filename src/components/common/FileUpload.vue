@@ -13,7 +13,7 @@
 
       <template #extra>
         <UiButton
-          v-if="modelValue"
+          v-if="showClear && modelValue"
           variant="outline"
           size="sm"
           :disabled="disabled || uploading"
@@ -29,7 +29,7 @@
     </UiAlert>
 
     <div
-      v-if="modelValue"
+      v-if="showPreview && modelValue"
       class="rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3"
     >
       <div class="flex gap-3">
@@ -74,6 +74,8 @@ const props = withDefaults(
     maxSizeMb?: number
     disabled?: boolean
     triggerText?: string
+    showPreview?: boolean
+    showClear?: boolean
   }>(),
   {
     modelValue: null,
@@ -84,6 +86,8 @@ const props = withDefaults(
     maxSizeMb: 10,
     disabled: false,
     triggerText: 'Chọn file',
+    showPreview: true,
+    showClear: true,
   },
 )
 

@@ -19,20 +19,18 @@
       <h3 class="line-clamp-2 text-sm font-bold text-black">
         {{ product.name }}
       </h3>
+      <p>
+        {{ product.brandName }}
+      </p>
       <p class="line-clamp-2 min-h-9 text-xs text-black/70">
-        {{ product.brandName || product.shortDescription || product.categoryName || 'Shoes' }}
+        {{ product.shortDescription }}
       </p>
       <div class="flex items-end gap-2">
-        <span class="text-sm font-extrabold text-black">{{
-          money(product.salePrice || product.price)
+        <span class="text-sm font-extrabold text-black">{{ money(product.minSalePrice) }}</span>
+        <span v-if="product.minPrice" class="text-sm text-slate-400 line-through">{{
+          money(product.minPrice)
         }}</span>
-        <span
-          v-if="product.salePrice && product.price"
-          class="text-sm text-slate-400 line-through"
-          >{{ money(product.price) }}</span
-        >
       </div>
-      <p class="text-xs text-black/60">⊙ {{ product.stock ?? '6.3k' }} lượt xem</p>
     </div>
   </RouterLink>
 </template>
@@ -40,12 +38,8 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { money } from '@/modules/shared/types'
-import type { Product } from '@/modules/catalog/product/types'
-const props = defineProps<{ product: Product }>()
-const image = computed(
-  () =>
-    props.product.images?.find((item) => item.isPrimary)?.url ||
-    props.product.images?.[0]?.url ||
-    '',
-)
+import type { ProductFeatured } from '@/modules/catalog/product/types'
+import { resolveFileUrl } from '@/lib/fileUrl'
+const props = defineProps<{ product: ProductFeatured }>()
+const image = computed(() => resolveFileUrl(props.product.primaryImageUrl))
 </script>

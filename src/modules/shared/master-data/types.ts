@@ -8,8 +8,16 @@ export interface MasterDataEntity {
 }
 
 export interface MasterDataOption {
+  id?: string
   value: string
   label: string
+  status?: Status
+  sortOrder?: number
+  createdAt?: string
+}
+
+export interface MasterDataColorOption extends MasterDataOption {
+  colorCode?: string | null
 }
 
 export interface MasterData {
@@ -19,4 +27,6 @@ export interface MasterData {
   productGenders: MasterDataOption[]
   productStatuses: MasterDataOption[]
   commonStatuses: MasterDataOption[]
+  sizes: MasterDataOption[]
+  colors: MasterDataColorOption[]
 }

@@ -7,26 +7,23 @@
     :loading="loading"
     :error="error"
     :status-options="['ACTIVE', 'INACTIVE', 'DRAFT']"
+    filter-class="grid items-end gap-3 md:grid-cols-[minmax(220px,1fr)_150px_170px_170px_140px_170px_auto]"
     :show-modal="false"
     :confirm-open="Boolean(deleting)"
     :confirm-text="`Xóa product ${deleting?.name || ''}?`"
     @create="openCreate"
     @reload="load"
-    @search="load"
+    @search="search"
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
   >
-    <UiForm
-      as="form"
-      class="grid gap-3 border-b border-slate-200 bg-white p-3 md:grid-cols-[180px_180px_auto]"
-      @submit.prevent="load"
-    >
-      <UiSelect v-model="query.brandId" placeholder="Tất cả brand" label="Tất cả brand">
+    <template #filters>
+      <UiSelect v-model="query.brandId" placeholder="Tất cả brand">
         <option v-for="brand in masterData?.brands || []" :key="brand.id" :value="brand.id">
           {{ brand.name }}
         </option>
       </UiSelect>
-      <UiSelect v-model="query.gender" placeholder="Tất cả gender" label="Tất cả gender">
+      <UiSelect v-model="query.gender" placeholder="Tất cả gender">
         <option
           v-for="gender in masterData?.productGenders || []"
           :key="gender.value"
@@ -35,8 +32,25 @@
           {{ gender.label }}
         </option>
       </UiSelect>
-      <UiButton native-type="submit" variant="secondary">Lọc thêm</UiButton>
-    </UiForm>
+      <SizeColorPicker
+        v-model="query.size"
+        :options="masterData?.sizes || []"
+        title="Chọn size lọc"
+        placeholder="Tất cả size"
+        value-field="value"
+        clearable
+      />
+      <SizeColorPicker
+        v-model="query.color"
+        :options="masterData?.colors || []"
+        title="Chọn màu lọc"
+        placeholder="Tất cả màu"
+        variant="color"
+        value-field="value"
+        clearable
+      />
+    </template>
+
     <UiTable
       :columns="columns"
       :rows="rows"
@@ -70,10 +84,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import SizeColorPicker from '@/components/common/SizeColorPicker.vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
-import { UiButton, UiForm, UiSelect, UiTable } from '@/components/ui'
+import { UiButton, UiSelect, UiTable } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { money } from '@/modules/shared/types'
@@ -85,7 +100,16 @@ const rows = ref<Product[]>([])
 const loading = ref(false)
 const error = ref('')
 const deleting = ref<Product | null>(null)
-const query = reactive({ keyword: '', status: '', brandId: '', gender: '' })
+const query = reactive({
+  keyword: '',
+  status: '',
+  brandId: '',
+  gender: '',
+  size: '',
+  color: '',
+  page: 1,
+  limit: 50,
+})
 const { data: masterData, load: loadMasterData } = useMasterData('admin')
 const columns = [
   { key: 'name', label: 'Name' },
@@ -130,7 +154,10 @@ async function load() {
         status: query.status,
         brandId: query.brandId || undefined,
         gender: query.gender || undefined,
-        limit: 50,
+        size: query.size || undefined,
+        color: query.color || undefined,
+        page: query.page,
+        limit: query.limit,
       })
     ).items
   } catch (err) {
@@ -139,6 +166,16 @@ async function load() {
     loading.value = false
   }
 }
+
+function search() {
+  query.page = 1
+  void load()
+}
+
+watch(
+  () => [query.status, query.brandId, query.gender, query.size, query.color],
+  () => search(),
+)
 
 async function confirmRemove() {
   if (!deleting.value) return

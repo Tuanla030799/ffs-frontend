@@ -33,12 +33,22 @@
           required
           label="Slug"
         />
-        <UiInput
-          v-model="form.parentId"
+        <UiSelect
+          :model-value="form.parentId || ''"
           class="rounded-xl border border-slate-200 p-3"
-          placeholder="Parent ID"
-          label="Parent ID"
-        />
+          label="Parent category"
+          @update:model-value="form.parentId = $event || null"
+        >
+          <option value="">Không có parent</option>
+          <option
+            v-for="option in parentOptions"
+            :key="option.id"
+            :value="option.id"
+            :disabled="option.disabled"
+          >
+            {{ option.label }}
+          </option>
+        </UiSelect>
         <UiSelect
           v-model="form.status"
           class="rounded-xl border border-slate-200 p-3"
@@ -83,7 +93,7 @@
       <template #cell-name="{ row }">
         <span class="font-bold text-slate-950">{{ row.name }}</span>
       </template>
-      <template #cell-parentId="{ row }">{{ row.parentId || '-' }}</template>
+      <template #cell-parentId="{ row }">{{ parentName(row.parentId) }}</template>
       <template #cell-status="{ row }"
         ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
       >
@@ -128,6 +138,43 @@ const commonStatuses = computed(
       { value: 'INACTIVE', label: 'INACTIVE' },
     ],
 )
+const currentCategoryId = computed(() =>
+  editing.value && editing.value !== 'new' ? editing.value.id : '',
+)
+const categoryById = computed(() => new Map(rows.value.map((row) => [row.id, row])))
+const parentOptions = computed(() => {
+  const childrenByParent = new Map<string, Category[]>()
+  for (const row of rows.value) {
+    const parentKey =
+      row.parentId && rows.value.some((candidate) => candidate.id === row.parentId)
+        ? row.parentId
+        : ''
+    childrenByParent.set(parentKey, [...(childrenByParent.get(parentKey) || []), row])
+  }
+
+  for (const children of childrenByParent.values()) {
+    children.sort(
+      (left, right) =>
+        Number(left.sortOrder || 0) - Number(right.sortOrder || 0) ||
+        left.name.localeCompare(right.name),
+    )
+  }
+
+  const options: Array<{ id: string; label: string; disabled: boolean }> = []
+  const walk = (parentId: string, depth: number) => {
+    for (const row of childrenByParent.get(parentId) || []) {
+      options.push({
+        id: row.id,
+        label: `${'-- '.repeat(depth)}${row.name}`,
+        disabled: isCurrentOrDescendant(row.id),
+      })
+      walk(row.id, depth + 1)
+    }
+  }
+
+  walk('', 0)
+  return options
+})
 const columns = [
   { key: 'name', label: 'Name' },
   { key: 'slug', label: 'Slug' },
@@ -141,6 +188,26 @@ function badgeClass(status: string) {
   return status === 'ACTIVE'
     ? 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
     : 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600'
+}
+
+function parentName(parentId?: string | null) {
+  return parentId ? categoryById.value.get(parentId)?.name || parentId : '-'
+}
+
+function isCurrentOrDescendant(categoryId: string) {
+  const currentId = currentCategoryId.value
+  if (!currentId) return false
+  if (categoryId === currentId) return true
+
+  let parentId = categoryById.value.get(categoryId)?.parentId || ''
+  const visited = new Set<string>()
+  while (parentId && !visited.has(parentId)) {
+    if (parentId === currentId) return true
+    visited.add(parentId)
+    parentId = categoryById.value.get(parentId)?.parentId || ''
+  }
+
+  return false
 }
 
 function fill(row?: Category) {

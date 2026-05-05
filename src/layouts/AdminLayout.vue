@@ -41,6 +41,8 @@ const appStore = useAppStore()
 const quickLinks = [
   { label: 'Dashboard', to: '/admin/dashboard' },
   { label: 'Products', to: '/admin/products' },
+  { label: 'Sizes', to: '/admin/sizes' },
+  { label: 'Colors', to: '/admin/colors' },
   { label: 'Brands', to: '/admin/brands' },
   { label: 'Collections', to: '/admin/collections' },
   { label: 'Blogs', to: '/admin/blogs' },

@@ -140,13 +140,13 @@ import { blogApi } from '@/modules/content/blog/api'
 import { bannerApi } from '@/modules/content/banner/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { formatDateTime } from '@/modules/shared/types'
-import type { Product } from '@/modules/catalog/product/types'
+import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { Collection } from '@/modules/content/collection/types'
 import type { Blog } from '@/modules/content/blog/types'
 import type { LandingBanner } from '@/modules/content/banner/types'
 
 const loading = ref(true)
-const featured = ref<Product[]>([])
+const featured = ref<ProductFeatured[]>([])
 const collections = ref<Collection[]>([])
 const banners = ref<LandingBanner[]>([])
 const randomBlog = ref<Blog | null>(null)

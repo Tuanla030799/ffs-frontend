@@ -20,6 +20,8 @@ const emptyMasterData = (): MasterData => ({
     { value: 'ACTIVE', label: 'Hoạt động' },
     { value: 'INACTIVE', label: 'Ẩn' },
   ],
+  sizes: [],
+  colors: [],
 })
 
 let publicCache: MasterData | null = null

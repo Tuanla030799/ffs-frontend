@@ -7,6 +7,8 @@ import ProductDetailPage from '@/pages/public/ProductDetailPage.vue'
 import LoginPage from '@/pages/admin/LoginPage.vue'
 import DashboardPage from '@/pages/admin/DashboardPage.vue'
 import CategoryAdminPage from '@/pages/admin/catalog/CategoryAdminPage.vue'
+import SizeAdminPage from '@/pages/admin/catalog/SizeAdminPage.vue'
+import ColorAdminPage from '@/pages/admin/catalog/ColorAdminPage.vue'
 import ProductAdminPage from '@/pages/admin/catalog/ProductAdminPage.vue'
 import ProductAdminFormPage from '@/pages/admin/catalog/ProductAdminFormPage.vue'
 import OrderAdminPage from '@/pages/admin/sales/OrderAdminPage.vue'
@@ -92,6 +94,18 @@ const routes: RouteRecordRaw[] = [
         name: 'admin-categories',
         component: CategoryAdminPage,
         meta: { title: 'Categories', description: 'CRUD danh mục sản phẩm.' },
+      },
+      {
+        path: 'sizes',
+        name: 'admin-sizes',
+        component: SizeAdminPage,
+        meta: { title: 'Sizes', description: 'CRUD master data size cho SKU.' },
+      },
+      {
+        path: 'colors',
+        name: 'admin-colors',
+        component: ColorAdminPage,
+        meta: { title: 'Colors', description: 'CRUD master data màu cho variant.' },
       },
       {
         path: 'products',

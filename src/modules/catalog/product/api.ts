@@ -1,14 +1,21 @@
 import { httpClient } from '@/lib/http/httpClient'
 import { unwrapList, type Paginated } from '@/modules/shared/types'
 import type { ApiEnvelope } from '@/types/http'
-import type { Product, ProductListQuery, ProductPayload, ProductSku, ProductVariant } from './types'
+import type {
+  Product,
+  ProductFeatured,
+  ProductListQuery,
+  ProductPayload,
+  ProductSku,
+  ProductVariant,
+} from './types'
 export const productApi = {
   async list(params?: ProductListQuery) {
     const res = await httpClient.get<ApiEnvelope<unknown>>('/api/products', { params })
     return unwrapList<Product>(res.data.data, params?.page, params?.limit) as Paginated<Product>
   },
   async featured(limit = 12) {
-    const res = await httpClient.get<ApiEnvelope<Product[]>>('/api/products/featured', {
+    const res = await httpClient.get<ApiEnvelope<ProductFeatured[]>>('/api/products/featured', {
       params: { limit },
     })
     return res.data.data || []

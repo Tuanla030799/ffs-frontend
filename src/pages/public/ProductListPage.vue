@@ -1,66 +1,94 @@
 <template>
-  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-8">
-    <header class="mb-7 md:mb-10">
-      <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">Shop</p>
-      <h1 class="mt-3 text-3xl font-black uppercase md:text-4xl">Cửa hàng</h1>
-      <p class="mt-3 max-w-xl text-black/65">Filter theo category, size, color, giá và keyword.</p>
-    </header>
-
-    <UiForm
-      as="form"
-      class="mb-7 grid gap-3 border border-black/10 bg-[#f7f7f5] p-3 md:mb-8 md:grid-cols-6 md:p-4"
-      @submit.prevent="search"
+  <main class="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+    <header
+      class="sticky top-0 z-20 -mx-4 mb-6 border-b border-black/10 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
     >
-      <UiInput
-        v-model="query.keyword"
-        class="md:col-span-2"
-        placeholder="Tìm giày"
-        label="Tìm giày"
-      />
-      <UiSelect v-model="query.categorySlug" label="Danh mục">
-        <option value="">Tất cả category</option>
-        <option v-for="c in masterData?.categories || []" :key="c.id" :value="c.slug">
-          {{ c.name }}
-        </option>
-      </UiSelect>
-      <UiSelect v-model="selectedBrandSlug" label="Thương hiệu">
-        <option value="">Tất cả brand</option>
-        <option v-for="brand in masterData?.brands || []" :key="brand.id" :value="brand.slug">
-          {{ brand.name }}
-        </option>
-      </UiSelect>
-      <UiSelect v-model="query.gender" label="Giới tính">
-        <option value="">Tất cả gender</option>
-        <option
-          v-for="gender in masterData?.productGenders || []"
-          :key="gender.value"
-          :value="gender.value"
-        >
-          {{ gender.label }}
-        </option>
-      </UiSelect>
-      <UiInput v-model="query.size" placeholder="Size" label="Size" />
-      <UiInput v-model="query.color" placeholder="Color" label="Color" />
-      <UiButton native-type="submit">Lọc</UiButton>
-      <UiInput v-model.number="query.minPrice" placeholder="Giá từ" label="Giá từ" />
-      <UiInput v-model.number="query.maxPrice" placeholder="Giá đến" label="Giá đến" />
-    </UiForm>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-black md:text-3xl">Cửa hàng</h1>
+          <p class="mt-1 text-sm text-black/60">{{ total }} sản phẩm</p>
+        </div>
+        <div class="flex items-center gap-4 text-sm font-semibold">
+          <button
+            class="hidden hover:text-black/60 lg:inline-flex"
+            type="button"
+            @click="showFilters = !showFilters"
+          >
+            {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+          </button>
+          <button
+            class="hover:text-black/60 lg:hidden"
+            type="button"
+            @click="mobileFiltersOpen = !mobileFiltersOpen"
+          >
+            Filters
+          </button>
+          <span class="text-black/40">Sort By</span>
+        </div>
+      </div>
+    </header>
 
     <div v-if="error" class="mb-4 border border-red-200 bg-red-50 p-4 text-red-700">
       {{ error }}
     </div>
-    <div v-if="loading" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-4">
-      <div v-for="i in 8" :key="i" class="h-80 animate-pulse bg-black/10" />
-    </div>
-    <div v-else-if="products.length" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-4">
-      <ProductCard v-for="product in products" :key="product.id" :product="product" />
-    </div>
-    <div
-      v-else
-      class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
-    >
-      Không tìm thấy sản phẩm.
-    </div>
+
+    <section class="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
+      <aside v-show="showFilters" class="hidden w-64 shrink-0 lg:block">
+        <div class="sticky top-28 max-h-[calc(100vh-7rem)] overflow-y-auto pr-4">
+          <ProductFilterSidebar
+            v-model:keyword="query.keyword"
+            v-model:category-slug="query.categorySlug"
+            v-model:brand-slug="selectedBrandSlug"
+            v-model:gender="query.gender"
+            v-model:size="query.size"
+            v-model:color="query.color"
+            v-model:min-price="query.minPrice"
+            v-model:max-price="query.maxPrice"
+            :categories="masterData?.categories || []"
+            :brands="masterData?.brands || []"
+            :genders="masterData?.productGenders || []"
+            @search="search"
+            @reset="resetFilters"
+          />
+        </div>
+      </aside>
+
+      <div>
+        <div v-if="mobileFiltersOpen" class="mb-5 border border-black/10 p-4 lg:hidden">
+          <ProductFilterSidebar
+            v-model:keyword="query.keyword"
+            v-model:category-slug="query.categorySlug"
+            v-model:brand-slug="selectedBrandSlug"
+            v-model:gender="query.gender"
+            v-model:size="query.size"
+            v-model:color="query.color"
+            v-model:min-price="query.minPrice"
+            v-model:max-price="query.maxPrice"
+            :categories="masterData?.categories || []"
+            :brands="masterData?.brands || []"
+            :genders="masterData?.productGenders || []"
+            @search="search"
+            @reset="resetFilters"
+          />
+        </div>
+
+        <div v-if="loading" class="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div v-for="i in 9" :key="i" class="h-96 animate-pulse bg-black/10" />
+        </div>
+        <div
+          v-else-if="products.length"
+          class="grid gap-x-4 gap-y-10 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <ProductCard v-for="product in products" :key="product.id" :product="product" />
+        </div>
+        <div
+          v-else
+          class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
+        >
+          Không tìm thấy sản phẩm.
+        </div>
+      </div>
+    </section>
 
     <div class="mt-8 flex justify-center gap-2">
       <UiButton variant="outline" :disabled="page <= 1" @click="go(page - 1)">Trước</UiButton>
@@ -75,7 +103,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { UiButton, UiForm, UiInput, UiSelect } from '@/components/ui'
+import { UiButton } from '@/components/ui'
+import ProductFilterSidebar from '@/components/storefront/ProductFilterSidebar.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
@@ -88,6 +117,8 @@ const loading = ref(false)
 const error = ref('')
 const products = ref<Product[]>([])
 const total = ref(0)
+const showFilters = ref(true)
+const mobileFiltersOpen = ref(false)
 const selectedBrandSlug = ref(String(route.query.brand || route.query.brandSlug || ''))
 const query = reactive<ProductListQuery>({
   keyword: String(route.query.keyword || ''),
@@ -129,6 +160,17 @@ function search() {
   query.page = 1
   void router.replace({ query: routeQuery() })
   void load()
+}
+function resetFilters() {
+  query.keyword = ''
+  query.categorySlug = ''
+  selectedBrandSlug.value = ''
+  query.gender = ''
+  query.size = ''
+  query.color = ''
+  query.minPrice = undefined
+  query.maxPrice = undefined
+  search()
 }
 function go(next: number) {
   query.page = next
