@@ -106,13 +106,9 @@
       <template #cell-name="{ row }"
         ><span class="font-black text-slate-950">{{ row.name }}</span></template
       >
-      <template #cell-cover="{ row }"
-        ><img
-          v-if="coverUrl(row)"
-          :src="coverUrl(row)"
-          class="h-12 w-20 rounded-lg object-cover"
-          :alt="row.name"
-        /><span v-else>-</span></template
+      <template #cell-cover="{ row }">
+        <ImagePreview class="w-20" v-if="coverUrl(row)" :src="coverUrl(row)" :title="row.name" />
+        <span v-else>-</span></template
       >
       <template #cell-status="{ row }"
         ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
@@ -145,6 +141,7 @@ import { formatDateTime } from '@/modules/shared/types'
 import type { Collection, CollectionPayload } from '@/modules/content/collection/types'
 import type { Product } from '@/modules/catalog/product/types'
 import type { UploadedFile } from '@/services/file.service'
+import ImagePreview from '@/components/common/ImagePreview.vue'
 
 const rows = ref<Collection[]>([])
 const products = ref<Product[]>([])

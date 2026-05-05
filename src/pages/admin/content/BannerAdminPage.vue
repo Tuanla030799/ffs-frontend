@@ -65,18 +65,16 @@
         </div>
       </template>
       <template #cell-preview="{ row }">
-        <img
-          v-if="row.imageUrl"
+        <ImagePreview
+          class="w-20"
+          v-if="resolveFileUrl(row.imageUrl)"
           :src="resolveFileUrl(row.imageUrl)"
-          class="h-12 w-20 rounded-lg object-cover"
-          :alt="row.title"
-        /><span v-else>-</span>
+          :title="row.title"
+        />
+        <span v-else>-</span>
       </template>
       <template #cell-status="{ row }">
         <span :class="badgeClass(row.status)">{{ row.status }}</span>
-      </template>
-      <template #cell-linkUrl="{ row }">
-        <span class="block max-w-xs truncate">{{ row.linkUrl }}</span>
       </template>
       <template #cell-actions="{ row }">
         <div class="space-x-3">
@@ -99,6 +97,7 @@ import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import type { LandingBanner, LandingBannerPayload } from '@/modules/content/banner/types'
 import type { UploadedFile } from '@/services/file.service'
+import ImagePreview from '@/components/common/ImagePreview.vue'
 
 const rows = ref<LandingBanner[]>([])
 const loading = ref(false)
@@ -126,12 +125,11 @@ const commonStatuses = computed(
     ],
 )
 const columns = [
-  { key: 'title', label: 'Title' },
-  { key: 'preview', label: 'Preview' },
-  { key: 'status', label: 'Status' },
-  { key: 'sortOrder', label: 'Sort' },
-  { key: 'linkUrl', label: 'Link' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'title', label: 'Tên' },
+  { key: 'preview', label: 'Ảnh' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'sortOrder', label: 'Thứ tự' },
+  { key: 'actions', label: 'Hành động', align: 'right' },
 ] as const
 
 function badgeClass(status: string) {
