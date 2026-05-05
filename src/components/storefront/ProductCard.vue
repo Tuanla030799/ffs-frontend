@@ -10,11 +10,8 @@
         :src="image"
         :alt="product.name"
         class="h-full w-full object-contain transition duration-300 group-hover:scale-105"
-      >
-      <div
-        v-else
-        class="flex h-full items-center justify-center text-sm text-slate-400"
-      >
+      />
+      <div v-else class="flex h-full items-center justify-center text-sm text-slate-400">
         No image
       </div>
     </div>
@@ -26,17 +23,16 @@
         {{ product.brandName || product.shortDescription || product.categoryName || 'Shoes' }}
       </p>
       <div class="flex items-end gap-2">
-        <span class="text-sm font-extrabold text-black">{{ money(product.salePrice || product.price) }}</span>
+        <span class="text-sm font-extrabold text-black">{{
+          money(product.salePrice || product.price)
+        }}</span>
         <span
           v-if="product.salePrice && product.price"
           class="text-sm text-slate-400 line-through"
-        >{{
-          money(product.price)
-        }}</span>
+          >{{ money(product.price) }}</span
+        >
       </div>
-      <p class="text-xs text-black/60">
-        ⊙ {{ product.stock ?? '6.3k' }} lượt xem
-      </p>
+      <p class="text-xs text-black/60">⊙ {{ product.stock ?? '6.3k' }} lượt xem</p>
     </div>
   </RouterLink>
 </template>
@@ -47,6 +43,9 @@ import { money } from '@/modules/shared/types'
 import type { Product } from '@/modules/catalog/product/types'
 const props = defineProps<{ product: Product }>()
 const image = computed(
-  () => props.product.images?.find((item) => item.isPrimary)?.url || props.product.images?.[0]?.url || '',
+  () =>
+    props.product.images?.find((item) => item.isPrimary)?.url ||
+    props.product.images?.[0]?.url ||
+    '',
 )
 </script>

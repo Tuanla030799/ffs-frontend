@@ -1,6 +1,8 @@
 <template>
   <Teleport to="body">
-    <div class="pointer-events-none fixed inset-x-0 top-4 z-[60] flex justify-center px-4 sm:justify-end sm:px-6">
+    <div
+      class="pointer-events-none fixed inset-x-0 top-4 z-[60] flex justify-center px-4 sm:justify-end sm:px-6"
+    >
       <div class="flex w-full max-w-sm flex-col gap-2">
         <TransitionGroup name="toast">
           <div
@@ -11,10 +13,7 @@
           >
             <div class="flex items-start gap-3">
               <div class="min-w-0 flex-1">
-                <div
-                  v-if="item.title"
-                  class="text-sm font-semibold text-[var(--ui-text)]"
-                >
+                <div v-if="item.title" class="text-sm font-semibold text-[var(--ui-text)]">
                   {{ item.title }}
                 </div>
                 <div class="text-sm leading-6 text-[var(--ui-text-muted)]">

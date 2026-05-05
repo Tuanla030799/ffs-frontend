@@ -12,9 +12,8 @@ export function useMasterData(scope: 'public' | 'admin' = 'public') {
     loading.value = true
     error.value = ''
     try {
-      data.value = scope === 'admin'
-        ? await masterDataApi.admin(force)
-        : await masterDataApi.public(force)
+      data.value =
+        scope === 'admin' ? await masterDataApi.admin(force) : await masterDataApi.public(force)
       return data.value
     } catch (err) {
       error.value = getErrorMessage(err)

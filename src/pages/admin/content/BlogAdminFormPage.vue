@@ -2,8 +2,10 @@
   <section class="space-y-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="text-sm font-bold uppercase text-slate-400">Blogs</p>
-        <h2 class="text-2xl font-black text-slate-950">{{ isEdit ? 'Cập nhật blog' : 'Tạo blog' }}</h2>
+        <p class="text-sm font-bold text-slate-400 uppercase">Blogs</p>
+        <h2 class="text-2xl font-black text-slate-950">
+          {{ isEdit ? 'Cập nhật blog' : 'Tạo blog' }}
+        </h2>
       </div>
       <div class="flex gap-2">
         <UiButton variant="secondary" @click="goBack">Quay lại</UiButton>
@@ -17,15 +19,31 @@
       <div class="space-y-5">
         <UiCard title="Thông tin bài viết" padding="md">
           <div class="grid gap-3 md:grid-cols-3">
-            <UiInput v-model="form.title" placeholder="Title *" required @update:model-value="syncSlug"  label="Title"/>
-            <UiInput v-model="form.slug" placeholder="Slug"  label="Slug"/>
+            <UiInput
+              v-model="form.title"
+              placeholder="Title *"
+              required
+              @update:model-value="syncSlug"
+              label="Title"
+            />
+            <UiInput v-model="form.slug" placeholder="Slug" label="Slug" />
             <UiSelect v-model="form.status" label="Trạng thái">
               <option>DRAFT</option>
               <option>ACTIVE</option>
               <option>INACTIVE</option>
             </UiSelect>
-            <UiInput v-model="form.publishedAt" type="datetime-local" placeholder="Published at"  label="Published at"/>
-            <UiTextarea v-model="form.excerpt" class="md:col-span-2" placeholder="Excerpt"  label="Excerpt"/>
+            <UiInput
+              v-model="form.publishedAt"
+              type="datetime-local"
+              placeholder="Published at"
+              label="Published at"
+            />
+            <UiTextarea
+              v-model="form.excerpt"
+              class="md:col-span-2"
+              placeholder="Excerpt"
+              label="Excerpt"
+            />
           </div>
         </UiCard>
 
@@ -40,11 +58,19 @@
 
       <aside class="space-y-5">
         <UiCard title="Cover image" padding="md">
-          <FileUpload v-model="uploaded" scope="admin" accept="image/*" title="Upload cover" @uploaded="(file) => form.coverFileId = String(file.fileId)" />
+          <FileUpload
+            v-model="uploaded"
+            scope="admin"
+            accept="image/*"
+            title="Upload cover"
+            @uploaded="(file) => (form.coverFileId = String(file.fileId))"
+          />
         </UiCard>
 
         <UiCard title="Publish" padding="md">
-          <p class="mt-1 text-sm text-slate-500">Nếu status ACTIVE mà publishedAt trống, backend sẽ tự set ngày publish.</p>
+          <p class="mt-1 text-sm text-slate-500">
+            Nếu status ACTIVE mà publishedAt trống, backend sẽ tự set ngày publish.
+          </p>
           <div class="mt-4 grid gap-2">
             <UiButton native-type="submit" :loading="saving">Lưu blog</UiButton>
             <UiButton native-type="button" variant="secondary" @click="goBack">Hủy</UiButton>
@@ -74,21 +100,67 @@ const saving = ref(false)
 const error = ref('')
 const uploaded = ref<UploadedFile | null>(null)
 const editorData = ref<unknown>(emptyDoc())
-const form = reactive<BlogPayload>({ title: '', slug: '', excerpt: '', contentJson: '', coverFileId: '', status: 'DRAFT', publishedAt: '' })
+const form = reactive<BlogPayload>({
+  title: '',
+  slug: '',
+  excerpt: '',
+  contentJson: '',
+  coverFileId: '',
+  status: 'DRAFT',
+  publishedAt: '',
+})
 
-function slugify(value: string) { return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }
-function syncSlug() { if (!form.slug) form.slug = slugify(form.title) }
-function parseEditor(value: unknown) { try { const data = typeof value === 'string' ? JSON.parse(value || '{}') : value as any; return Array.isArray(data?.blocks) ? data : emptyDoc() } catch { return emptyDoc() } }
-function fill(row?: Blog) { Object.assign(form, { title: row?.title || '', slug: row?.slug || '', excerpt: row?.excerpt || '', contentJson: '', coverFileId: row?.coverFileId || '', status: row?.status || 'DRAFT', publishedAt: row?.publishedAt?.slice(0, 16) || '' }); editorData.value = parseEditor(row?.contentJson); uploaded.value = null }
-function goBack() { void router.push({ name: 'admin-blogs' }) }
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+function syncSlug() {
+  if (!form.slug) form.slug = slugify(form.title)
+}
+function parseEditor(value: unknown) {
+  try {
+    const data = typeof value === 'string' ? JSON.parse(value || '{}') : (value as any)
+    return Array.isArray(data?.blocks) ? data : emptyDoc()
+  } catch {
+    return emptyDoc()
+  }
+}
+function fill(row?: Blog) {
+  Object.assign(form, {
+    title: row?.title || '',
+    slug: row?.slug || '',
+    excerpt: row?.excerpt || '',
+    contentJson: '',
+    coverFileId: row?.coverFileId || '',
+    status: row?.status || 'DRAFT',
+    publishedAt: row?.publishedAt?.slice(0, 16) || '',
+  })
+  editorData.value = parseEditor(row?.contentJson)
+  uploaded.value = null
+}
+function goBack() {
+  void router.push({ name: 'admin-blogs' })
+}
 
 async function save() {
   const msg = required(form.title, 'Title')
-  if (msg) { error.value = msg; return }
+  if (msg) {
+    error.value = msg
+    return
+  }
   saving.value = true
   error.value = ''
   try {
-    const payload = { ...form, slug: form.slug || slugify(form.title), contentJson: JSON.stringify(editorData.value || emptyDoc()), publishedAt: form.publishedAt || undefined }
+    const payload = {
+      ...form,
+      slug: form.slug || slugify(form.title),
+      contentJson: JSON.stringify(editorData.value || emptyDoc()),
+      publishedAt: form.publishedAt || undefined,
+    }
     if (isEdit.value) await blogApi.update(String(route.params.id), payload)
     else await blogApi.create(payload)
     goBack()

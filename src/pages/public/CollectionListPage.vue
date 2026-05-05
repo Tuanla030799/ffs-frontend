@@ -1,12 +1,12 @@
 <template>
   <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-8">
-    <header class="mb-7 flex flex-col gap-4 md:mb-10 sm:flex-row sm:items-end sm:justify-between">
+    <header class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between md:mb-10">
       <div>
-        <p class="text-sm font-bold uppercase tracking-[0.18em] text-black/50">Collections</p>
+        <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">Collections</p>
         <h1 class="mt-3 text-3xl font-black uppercase md:text-4xl">Bộ sưu tập</h1>
       </div>
       <form class="flex gap-2" @submit.prevent="search">
-        <UiInput v-model="query.keyword" placeholder="Tìm bộ sưu tập"  label="Tìm bộ sưu tập"/>
+        <UiInput v-model="query.keyword" placeholder="Tìm bộ sưu tập" label="Tìm bộ sưu tập" />
         <UiButton native-type="submit">Tìm</UiButton>
       </form>
     </header>
@@ -27,16 +27,21 @@
             :src="coverUrl(row)"
             :alt="row.name"
             class="h-full w-full object-cover grayscale transition group-hover:grayscale-0"
-          >
+          />
         </div>
         <div class="p-6">
-          <p class="text-xs font-bold uppercase tracking-[0.16em] text-black/50">{{ row.productCount || 0 }} sản phẩm</p>
+          <p class="text-xs font-bold tracking-[0.16em] text-black/50 uppercase">
+            {{ row.productCount || 0 }} sản phẩm
+          </p>
           <h2 class="mt-2 text-2xl font-black">{{ row.name }}</h2>
           <p class="mt-3 line-clamp-2 text-sm leading-6 text-black/65">{{ row.description }}</p>
         </div>
       </RouterLink>
     </div>
-    <div v-else class="border border-dashed border-black/20 bg-[#f7f7f5] p-12 text-center text-black/60">
+    <div
+      v-else
+      class="border border-dashed border-black/20 bg-[#f7f7f5] p-12 text-center text-black/60"
+    >
       Không tìm thấy bộ sưu tập.
     </div>
   </main>

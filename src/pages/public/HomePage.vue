@@ -1,27 +1,41 @@
 <template>
   <main>
     <section class="pb-8">
-      <div class="animate-hero-image relative min-h-[calc(100svh-128px)] w-full overflow-hidden bg-[#e8e8e5] shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px]">
+      <div
+        class="animate-hero-image relative min-h-[calc(100svh-128px)] w-full overflow-hidden bg-[#e8e8e5] shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px]"
+      >
         <img
           v-if="heroImage"
           :src="heroImage"
           :alt="hero?.title || 'WALK banner'"
           class="absolute inset-0 h-full w-full object-cover grayscale"
-        >
+        />
         <div class="absolute inset-0 bg-gradient-to-r from-white/88 via-white/42 to-transparent" />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-        <div class="relative z-10 flex min-h-[calc(100svh-128px)] flex-col justify-end px-4 py-10 md:min-h-[620px] md:justify-center md:px-10 lg:px-16">
-          <div class="animate-banner-copy max-w-[34rem] text-black drop-shadow-[0_10px_28px_rgba(255,255,255,0.75)]">
-            <p class="text-xs font-black uppercase tracking-[0.2em] md:text-sm">{{ hero?.title ? 'Walk story' : 'We find' }}</p>
-            <h1 class="mt-5 max-w-2xl text-4xl font-black leading-[0.96] tracking-tight sm:text-5xl lg:text-7xl">
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
+        />
+        <div
+          class="relative z-10 flex min-h-[calc(100svh-128px)] flex-col justify-end px-4 py-10 md:min-h-[620px] md:justify-center md:px-10 lg:px-16"
+        >
+          <div
+            class="animate-banner-copy max-w-[34rem] text-black drop-shadow-[0_10px_28px_rgba(255,255,255,0.75)]"
+          >
+            <p class="text-xs font-black tracking-[0.2em] uppercase md:text-sm">
+              {{ hero?.title ? 'Walk story' : 'We find' }}
+            </p>
+            <h1
+              class="mt-5 max-w-2xl text-4xl leading-[0.96] font-black tracking-tight sm:text-5xl lg:text-7xl"
+            >
               {{ hero?.title || "SHOES YOU DIDN'T KNOW YOU NEED" }}
             </h1>
-            <p class="mt-5 max-w-sm text-sm font-medium leading-6 text-black/75 md:mt-7 md:text-base md:leading-7">
+            <p
+              class="mt-5 max-w-sm text-sm leading-6 font-medium text-black/75 md:mt-7 md:text-base md:leading-7"
+            >
               {{ hero?.subtitle || 'Một đôi giày phù hợp sẽ đưa bạn đến những nơi tuyệt vời.' }}
             </p>
             <RouterLink
               :to="hero?.linkUrl || '/products'"
-              class="mt-7 inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black uppercase tracking-wide text-white no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:mt-8 md:px-7 md:py-4"
+              class="mt-7 inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:mt-8 md:px-7 md:py-4"
             >
               Khám phá ngay
             </RouterLink>
@@ -30,7 +44,10 @@
       </div>
     </section>
 
-    <section v-if="collections.length" class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
+    <section
+      v-if="collections.length"
+      class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8"
+    >
       <SectionHeader title="Bạn đang tìm?" to="/products" label="Xem tất cả" />
       <div class="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-4">
         <RouterLink
@@ -46,11 +63,13 @@
               :src="coverUrl(collection)"
               :alt="collection.name"
               class="h-full w-full object-cover grayscale transition duration-500 group-hover:scale-105 group-hover:grayscale-0"
-            >
+            />
           </div>
           <div class="p-5 md:p-6">
             <h3 class="font-black">{{ collection.name }}</h3>
-            <p class="mt-2 line-clamp-2 text-sm text-black/65">{{ collection.description || `${collection.productCount || 0} sản phẩm` }}</p>
+            <p class="mt-2 line-clamp-2 text-sm text-black/65">
+              {{ collection.description || `${collection.productCount || 0} sản phẩm` }}
+            </p>
             <span class="mt-6 inline-block text-2xl transition group-hover:translate-x-2">→</span>
           </div>
         </RouterLink>
@@ -71,7 +90,10 @@
           :style="{ animationDelay: `${index * 70}ms` }"
         />
       </div>
-      <div v-else class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60">
+      <div
+        v-else
+        class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
+      >
         Chưa có sản phẩm nổi bật.
       </div>
     </section>
@@ -87,13 +109,19 @@
           :src="coverUrl(randomBlog)"
           :alt="randomBlog.title"
           class="h-64 w-full object-cover grayscale transition duration-500 hover:grayscale-0 md:h-full md:min-h-72"
-        >
+        />
         <div v-else class="min-h-72 bg-[#e8e8e5]" />
         <div class="flex flex-col justify-center p-5 md:p-10">
-          <p class="text-sm font-semibold">{{ formatDateTime(randomBlog.publishedAt || randomBlog.createdAt) }}</p>
-          <h2 class="mt-5 max-w-md text-2xl font-black leading-tight md:text-3xl">{{ randomBlog.title }}</h2>
+          <p class="text-sm font-semibold">
+            {{ formatDateTime(randomBlog.publishedAt || randomBlog.createdAt) }}
+          </p>
+          <h2 class="mt-5 max-w-md text-2xl leading-tight font-black md:text-3xl">
+            {{ randomBlog.title }}
+          </h2>
           <p class="mt-5 max-w-md text-sm leading-6 text-black/65">{{ randomBlog.excerpt }}</p>
-          <span class="mt-8 inline-flex w-fit bg-black px-6 py-3 text-xs font-black uppercase tracking-wide text-white">
+          <span
+            class="mt-8 inline-flex w-fit bg-black px-6 py-3 text-xs font-black tracking-wide text-white uppercase"
+          >
             Đọc ngay →
           </span>
         </div>
@@ -132,10 +160,15 @@ const SectionHeader = defineComponent({
     label: { type: String, default: 'Xem tất cả' },
   },
   setup(props) {
-    return () => h('div', { class: 'mb-8 flex items-center justify-between gap-4' }, [
-      h('h2', { class: 'text-2xl font-black uppercase tracking-tight' }, props.title),
-      h(RouterLink, { to: props.to, class: 'text-sm font-semibold text-black no-underline hover:opacity-60' }, () => `${props.label} →`),
-    ])
+    return () =>
+      h('div', { class: 'mb-8 flex items-center justify-between gap-4' }, [
+        h('h2', { class: 'text-2xl font-black uppercase tracking-tight' }, props.title),
+        h(
+          RouterLink,
+          { to: props.to, class: 'text-sm font-semibold text-black no-underline hover:opacity-60' },
+          () => `${props.label} →`,
+        ),
+      ])
   },
 })
 

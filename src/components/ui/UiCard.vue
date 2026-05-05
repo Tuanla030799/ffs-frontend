@@ -1,21 +1,12 @@
 <template>
   <section :class="wrapperClass">
-    <header
-      v-if="hasHeader"
-      :class="headerClasses"
-    >
+    <header v-if="hasHeader" :class="headerClasses">
       <slot name="header">
         <div>
-          <h3
-            v-if="title"
-            class="text-sm font-semibold text-[var(--ui-text)] sm:text-base"
-          >
+          <h3 v-if="title" class="text-sm font-semibold text-[var(--ui-text)] sm:text-base">
             {{ title }}
           </h3>
-          <p
-            v-if="description"
-            class="mt-1 text-sm leading-6 text-[var(--ui-text-soft)]"
-          >
+          <p v-if="description" class="mt-1 text-sm leading-6 text-[var(--ui-text-soft)]">
             {{ description }}
           </p>
         </div>
@@ -52,14 +43,21 @@ const props = withDefaults(
 )
 
 const slots = useSlots()
-const hasHeader = computed(() => Boolean(props.title || props.description || slots.header || slots.extra))
-const wrapperClass = computed(() => cn(
-  'overflow-hidden bg-[var(--color-white)]',
-  props.bordered && 'border border-[var(--ui-border)]',
-  props.shadow && 'shadow-[var(--ui-shadow)]',
-  'rounded-[16px]',
-))
-const headerClasses = computed(() => 'flex items-start justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3 sm:px-5')
+const hasHeader = computed(() =>
+  Boolean(props.title || props.description || slots.header || slots.extra),
+)
+const wrapperClass = computed(() =>
+  cn(
+    'overflow-hidden bg-[var(--color-white)]',
+    props.bordered && 'border border-[var(--ui-border)]',
+    props.shadow && 'shadow-[var(--ui-shadow)]',
+    'rounded-[16px]',
+  ),
+)
+const headerClasses = computed(
+  () =>
+    'flex items-start justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3 sm:px-5',
+)
 const contentClasses = computed(() => {
   const paddings = {
     none: '',

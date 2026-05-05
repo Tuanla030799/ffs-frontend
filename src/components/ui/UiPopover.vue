@@ -1,8 +1,5 @@
 <template>
-  <div
-    ref="rootRef"
-    class="relative inline-flex"
-  >
+  <div ref="rootRef" class="relative inline-flex">
     <div @click="toggle">
       <slot name="trigger">
         <button
@@ -21,14 +18,8 @@
       leave-from-class="translate-y-0 opacity-100"
       leave-to-class="translate-y-1 opacity-0"
     >
-      <div
-        v-if="open"
-        :class="panelClasses"
-      >
-        <div
-          v-if="title"
-          class="mb-1 text-sm font-semibold text-[var(--ui-text)]"
-        >
+      <div v-if="open" :class="panelClasses">
+        <div v-if="title" class="mb-1 text-sm font-semibold text-[var(--ui-text)]">
           {{ title }}
         </div>
         <div class="text-sm leading-6 text-[var(--ui-text-muted)]">
@@ -43,25 +34,30 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { cn } from '@/utils/cn'
 
-const props = withDefaults(defineProps<{
-  triggerText?: string
-  title?: string
-  content?: string
-  placement?: 'left' | 'right'
-}>(), {
-  triggerText: 'Xem thêm',
-  title: '',
-  content: '',
-  placement: 'left',
-})
+const props = withDefaults(
+  defineProps<{
+    triggerText?: string
+    title?: string
+    content?: string
+    placement?: 'left' | 'right'
+  }>(),
+  {
+    triggerText: 'Xem thêm',
+    title: '',
+    content: '',
+    placement: 'left',
+  },
+)
 
 const open = ref(false)
 const rootRef = ref<HTMLElement | null>(null)
 
-const panelClasses = computed(() => cn(
-  'absolute top-full z-30 mt-2 w-72 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-2xl',
-  props.placement === 'right' ? 'right-0' : 'left-0',
-))
+const panelClasses = computed(() =>
+  cn(
+    'absolute top-full z-30 mt-2 w-72 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-2xl',
+    props.placement === 'right' ? 'right-0' : 'left-0',
+  ),
+)
 
 function toggle() {
   open.value = !open.value

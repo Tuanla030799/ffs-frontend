@@ -1,12 +1,12 @@
 <template>
   <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-8">
-    <header class="mb-7 flex flex-col gap-4 md:mb-10 sm:flex-row sm:items-end sm:justify-between">
+    <header class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between md:mb-10">
       <div>
-        <p class="text-sm font-bold uppercase tracking-[0.18em] text-black/50">Journal</p>
+        <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">Journal</p>
         <h1 class="mt-3 text-3xl font-black uppercase md:text-4xl">Blog</h1>
       </div>
       <form class="flex gap-2" @submit.prevent="search">
-        <UiInput v-model="query.keyword" placeholder="Tìm bài viết"  label="Tìm bài viết"/>
+        <UiInput v-model="query.keyword" placeholder="Tìm bài viết" label="Tìm bài viết" />
         <UiButton native-type="submit">Tìm</UiButton>
       </form>
     </header>
@@ -25,15 +25,20 @@
           :src="coverUrl(row) || '/assets/home.jpg'"
           :alt="row.title"
           class="aspect-[4/3] w-full object-cover grayscale transition group-hover:grayscale-0"
-        >
+        />
         <div class="p-6">
-          <p class="text-sm text-black/50">{{ formatDateTime(row.publishedAt || row.createdAt) }}</p>
-          <h2 class="mt-3 line-clamp-2 text-2xl font-black leading-tight">{{ row.title }}</h2>
+          <p class="text-sm text-black/50">
+            {{ formatDateTime(row.publishedAt || row.createdAt) }}
+          </p>
+          <h2 class="mt-3 line-clamp-2 text-2xl leading-tight font-black">{{ row.title }}</h2>
           <p class="mt-3 line-clamp-3 text-sm leading-6 text-black/65">{{ row.excerpt }}</p>
         </div>
       </RouterLink>
     </div>
-    <div v-else class="border border-dashed border-black/20 bg-[#f7f7f5] p-12 text-center text-black/60">
+    <div
+      v-else
+      class="border border-dashed border-black/20 bg-[#f7f7f5] p-12 text-center text-black/60"
+    >
       Không tìm thấy bài viết.
     </div>
   </main>

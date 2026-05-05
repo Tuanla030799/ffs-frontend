@@ -1,9 +1,6 @@
 <template>
   <div class="space-y-2">
-    <div
-      v-if="label"
-      class="text-sm font-medium text-[var(--ui-text-muted)]"
-    >
+    <div v-if="label" class="text-sm font-medium text-[var(--ui-text-muted)]">
       {{ label }}
     </div>
     <div :class="stacked ? 'space-y-2' : 'flex flex-wrap gap-2'">
@@ -19,11 +16,13 @@
           class="sr-only"
           :name="name"
           @change="emit('update:modelValue', option.value)"
-        >
+        />
         <span :class="dotClasses(option.value)">
           <span class="h-2 w-2 rounded-full bg-current" />
         </span>
-        <span class="min-w-0 flex-1 text-sm font-medium text-[var(--ui-text)]">{{ option.label }}</span>
+        <span class="min-w-0 flex-1 text-sm font-medium text-[var(--ui-text)]">{{
+          option.label
+        }}</span>
       </label>
     </div>
   </div>
@@ -34,21 +33,24 @@ import { cn } from '@/utils/cn'
 
 type Option = { label: string; value: string | number }
 
-const props = withDefaults(defineProps<{
-  modelValue?: string | number
-  options?: Option[]
-  disabled?: boolean
-  label?: string
-  name?: string
-  stacked?: boolean
-}>(), {
-  modelValue: '',
-  options: () => [],
-  disabled: false,
-  label: '',
-  name: 'ui-radio',
-  stacked: false,
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string | number
+    options?: Option[]
+    disabled?: boolean
+    label?: string
+    name?: string
+    stacked?: boolean
+  }>(),
+  {
+    modelValue: '',
+    options: () => [],
+    disabled: false,
+    label: '',
+    name: 'ui-radio',
+    stacked: false,
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | number]

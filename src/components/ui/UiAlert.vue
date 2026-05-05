@@ -8,15 +8,18 @@
 import { computed } from 'vue'
 import { cn } from '@/utils/cn'
 
-const props = withDefaults(defineProps<{
-  variant?: 'info' | 'success' | 'warning' | 'error'
-  message?: string
-  class?: string
-}>(), {
-  variant: 'info',
-  message: '',
-  class: '',
-})
+const props = withDefaults(
+  defineProps<{
+    variant?: 'info' | 'success' | 'warning' | 'error'
+    message?: string
+    class?: string
+  }>(),
+  {
+    variant: 'info',
+    message: '',
+    class: '',
+  },
+)
 
 const classes = computed(() => {
   const variants = {
@@ -25,6 +28,10 @@ const classes = computed(() => {
     warning: 'border-amber-200 bg-[var(--ui-warning-soft)] text-[var(--ui-warning)]',
     error: 'border-red-200 bg-[var(--ui-danger-soft)] text-[var(--ui-danger)]',
   }
-  return cn('rounded-[var(--ui-radius-md)] border px-4 py-3 text-sm', variants[props.variant], props.class)
+  return cn(
+    'rounded-[var(--ui-radius-md)] border px-4 py-3 text-sm',
+    variants[props.variant],
+    props.class,
+  )
 })
 </script>

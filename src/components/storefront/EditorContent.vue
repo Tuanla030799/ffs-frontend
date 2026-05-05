@@ -16,21 +16,12 @@
           v-else-if="block.type === 'list' && block.data.style !== 'ordered'"
           class="list-disc pl-5"
         >
-          <li
-            v-for="(item, i) in block.data.items"
-            :key="i"
-          >
+          <li v-for="(item, i) in block.data.items" :key="i">
             {{ cleanText(item) }}
           </li>
         </ul>
-        <ol
-          v-else-if="block.type === 'list'"
-          class="list-decimal pl-5"
-        >
-          <li
-            v-for="(item, i) in block.data.items"
-            :key="i"
-          >
+        <ol v-else-if="block.type === 'list'" class="list-decimal pl-5">
+          <li v-for="(item, i) in block.data.items" :key="i">
             {{ cleanText(item) }}
           </li>
         </ol>
@@ -39,18 +30,17 @@
           class="border-l-4 border-slate-950 pl-5 text-xl font-semibold text-slate-950"
         >
           {{ cleanText(block.data.text) }}
-          <cite
-            v-if="block.data.caption"
-            class="mt-2 block text-sm font-normal text-slate-500"
-          >
+          <cite v-if="block.data.caption" class="mt-2 block text-sm font-normal text-slate-500">
             {{ cleanText(block.data.caption) }}
           </cite>
         </blockquote>
-        <hr
-          v-else-if="block.type === 'delimiter'"
-          class="my-8 border-slate-200"
-        >
-        <img v-else-if="block.type === 'image'" :src="block.data.file?.url || block.data.url" class="rounded-2xl border border-slate-200" alt="product content">
+        <hr v-else-if="block.type === 'delimiter'" class="my-8 border-slate-200" />
+        <img
+          v-else-if="block.type === 'image'"
+          :src="block.data.file?.url || block.data.url"
+          class="rounded-2xl border border-slate-200"
+          alt="product content"
+        />
       </div>
     </template>
     <p v-else class="text-slate-500">Chưa có mô tả chi tiết.</p>
@@ -67,14 +57,18 @@ interface EditorBlockData {
   file?: { url?: string }
   url?: string
 }
-interface EditorBlock { type: string; data: EditorBlockData }
+interface EditorBlock {
+  type: string
+  data: EditorBlockData
+}
 const props = defineProps<{ value?: unknown }>()
 const blocks = computed<EditorBlock[]>(() => {
   let raw: { blocks?: EditorBlock[] } | null | undefined
   try {
-    raw = typeof props.value === 'string'
-      ? JSON.parse(props.value || '{}') as { blocks?: EditorBlock[] }
-      : props.value as { blocks?: EditorBlock[] } | null | undefined
+    raw =
+      typeof props.value === 'string'
+        ? (JSON.parse(props.value || '{}') as { blocks?: EditorBlock[] })
+        : (props.value as { blocks?: EditorBlock[] } | null | undefined)
   } catch {
     raw = null
   }
@@ -83,7 +77,10 @@ const blocks = computed<EditorBlock[]>(() => {
 
 function cleanText(value?: string) {
   if (!value) return ''
-  return value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+  return value
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function headerTag(level?: number) {

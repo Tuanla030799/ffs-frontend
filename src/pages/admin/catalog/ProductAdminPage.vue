@@ -16,29 +16,52 @@
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
   >
-    <form class="grid gap-3 border-b border-slate-200 bg-white p-3 md:grid-cols-[180px_180px_auto]" @submit.prevent="load">
+    <form
+      class="grid gap-3 border-b border-slate-200 bg-white p-3 md:grid-cols-[180px_180px_auto]"
+      @submit.prevent="load"
+    >
       <UiSelect v-model="query.brandId" placeholder="Tất cả brand" label="Tất cả brand">
-        <option v-for="brand in masterData?.brands || []" :key="brand.id" :value="brand.id">{{ brand.name }}</option>
+        <option v-for="brand in masterData?.brands || []" :key="brand.id" :value="brand.id">
+          {{ brand.name }}
+        </option>
       </UiSelect>
       <UiSelect v-model="query.gender" placeholder="Tất cả gender" label="Tất cả gender">
-        <option v-for="gender in masterData?.productGenders || []" :key="gender.value" :value="gender.value">{{ gender.label }}</option>
+        <option
+          v-for="gender in masterData?.productGenders || []"
+          :key="gender.value"
+          :value="gender.value"
+        >
+          {{ gender.label }}
+        </option>
       </UiSelect>
       <UiButton native-type="submit" variant="secondary">Lọc thêm</UiButton>
     </form>
-    <UiTable :columns="columns" :rows="rows" :loading="loading" density="sm" sticky-header striped row-key="id" min-width="min-w-[920px]" empty-text="Không có product.">
+    <UiTable
+      :columns="columns"
+      :rows="rows"
+      :loading="loading"
+      density="sm"
+      sticky-header
+      striped
+      row-key="id"
+      min-width="min-w-[920px]"
+      empty-text="Không có product."
+    >
       <template #cell-name="{ row }">
         <span class="font-bold text-slate-950">{{ row.name }}</span>
       </template>
       <template #cell-brandName="{ row }">{{ row.brandName || '-' }}</template>
       <template #cell-gender="{ row }">{{ genderLabel(row.gender) }}</template>
-      <template #cell-status="{ row }"><span :class="badgeClass(row.status)">{{ row.status }}</span></template>
+      <template #cell-status="{ row }"
+        ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
+      >
       <template #cell-isFeatured="{ row }">{{ row.isFeatured ? 'Yes' : 'No' }}</template>
       <template #cell-stock="{ row }">{{ row.stock ?? '-' }}</template>
       <template #cell-price="{ row }">{{ money(row.salePrice || row.price) }}</template>
       <template #cell-actions="{ row }">
         <div class="space-x-3">
-            <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton>
-            <UiButton variant="danger" @click="deleting = row">Delete</UiButton>
+          <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton>
+          <UiButton variant="danger" @click="deleting = row">Delete</UiButton>
         </div>
       </template>
     </UiTable>
@@ -76,8 +99,10 @@ const columns = [
 ] as const
 
 function badgeClass(status: string) {
-  if (status === 'ACTIVE') return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
-  if (status === 'DRAFT') return 'rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700'
+  if (status === 'ACTIVE')
+    return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
+  if (status === 'DRAFT')
+    return 'rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700'
   return 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600'
 }
 
@@ -98,7 +123,15 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (await productApi.adminList({ keyword: query.keyword, status: query.status, brandId: query.brandId || undefined, gender: query.gender || undefined, limit: 50 })).items
+    rows.value = (
+      await productApi.adminList({
+        keyword: query.keyword,
+        status: query.status,
+        brandId: query.brandId || undefined,
+        gender: query.gender || undefined,
+        limit: 50,
+      })
+    ).items
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
@@ -113,5 +146,7 @@ async function confirmRemove() {
   await load()
 }
 
-onMounted(async () => { await Promise.allSettled([loadMasterData(), load()]) })
+onMounted(async () => {
+  await Promise.allSettled([loadMasterData(), load()])
+})
 </script>

@@ -1,38 +1,20 @@
 <template>
   <section :class="wrapperClasses">
-    <header
-      v-if="!hideHeader"
-      class="mb-3 flex flex-wrap items-start justify-between gap-3"
-    >
+    <header v-if="!hideHeader" class="mb-3 flex flex-wrap items-start justify-between gap-3">
       <div>
         <h3 class="text-sm font-black text-slate-900">{{ title }}</h3>
-        <p
-          v-if="description"
-          class="mt-1 text-xs leading-5 text-slate-500"
-        >
+        <p v-if="description" class="mt-1 text-xs leading-5 text-slate-500">
           {{ description }}
         </p>
       </div>
-      <UiButton
-        v-if="showSync"
-        native-type="button"
-        variant="secondary"
-        size="sm"
-        @click="syncNow"
-      >
+      <UiButton v-if="showSync" native-type="button" variant="secondary" size="sm" @click="syncNow">
         {{ syncText }}
       </UiButton>
     </header>
 
-    <div
-      ref="holderRef"
-      :class="holderClasses"
-    />
+    <div ref="holderRef" :class="holderClasses" />
 
-    <p
-      v-if="error"
-      class="mt-2 text-sm font-semibold text-red-600"
-    >
+    <p v-if="error" class="mt-2 text-sm font-semibold text-red-600">
       {{ error }}
     </p>
   </section>
@@ -48,35 +30,38 @@ import type { OutputData, ToolConstructable, ToolSettings } from '@editorjs/edit
 
 type EditorValue = OutputData | null | undefined
 
-const props = withDefaults(defineProps<{
-  modelValue?: unknown
-  title?: string
-  description?: string
-  placeholder?: string
-  minHeightClass?: string
-  wrapperClass?: string
-  holderClass?: string
-  hideHeader?: boolean
-  showSync?: boolean
-  syncText?: string
-  uploadScope?: FileUploadScope
-  enableImage?: boolean
-  readOnly?: boolean
-}>(), {
-  modelValue: undefined,
-  title: 'Editor.js content',
-  description: 'Header, paragraph, list và image upload qua file API.',
-  placeholder: 'Nhập nội dung...',
-  minHeightClass: 'min-h-72',
-  wrapperClass: '',
-  holderClass: '',
-  hideHeader: false,
-  showSync: true,
-  syncText: 'Sync',
-  uploadScope: 'admin',
-  enableImage: true,
-  readOnly: false,
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: unknown
+    title?: string
+    description?: string
+    placeholder?: string
+    minHeightClass?: string
+    wrapperClass?: string
+    holderClass?: string
+    hideHeader?: boolean
+    showSync?: boolean
+    syncText?: string
+    uploadScope?: FileUploadScope
+    enableImage?: boolean
+    readOnly?: boolean
+  }>(),
+  {
+    modelValue: undefined,
+    title: 'Editor.js content',
+    description: 'Header, paragraph, list và image upload qua file API.',
+    placeholder: 'Nhập nội dung...',
+    minHeightClass: 'min-h-72',
+    wrapperClass: '',
+    holderClass: '',
+    hideHeader: false,
+    showSync: true,
+    syncText: 'Sync',
+    uploadScope: 'admin',
+    enableImage: true,
+    readOnly: false,
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: OutputData]
@@ -92,16 +77,17 @@ let externalUpdate = false
 let renderedSnapshot = ''
 let emittedSnapshot = ''
 
-const wrapperClasses = computed(() => cn(
-  'rounded-2xl border border-slate-200 bg-white p-3',
-  props.wrapperClass,
-))
+const wrapperClasses = computed(() =>
+  cn('rounded-2xl border border-slate-200 bg-white p-3', props.wrapperClass),
+)
 
-const holderClasses = computed(() => cn(
-  'editorjs-holder rounded-xl border border-slate-200 bg-slate-50 px-4 py-2',
-  props.minHeightClass,
-  props.holderClass,
-))
+const holderClasses = computed(() =>
+  cn(
+    'editorjs-holder rounded-xl border border-slate-200 bg-slate-50 px-4 py-2',
+    props.minHeightClass,
+    props.holderClass,
+  ),
+)
 
 function emptyDocument(): OutputData {
   return { time: Date.now(), blocks: [] }
@@ -167,9 +153,7 @@ function normalizeData(value: unknown): OutputData {
     result = data?.blocks ? data : emptyDocument()
   }
 
-  const blocks = Array.isArray(result.blocks)
-    ? result.blocks.map(cleanBlock).filter(Boolean)
-    : []
+  const blocks = Array.isArray(result.blocks) ? result.blocks.map(cleanBlock).filter(Boolean) : []
 
   return { ...result, blocks } as OutputData
 }

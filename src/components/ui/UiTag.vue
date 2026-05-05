@@ -6,7 +6,9 @@
       type="button"
       class="ml-1 text-current/70 hover:text-current"
       @click="$emit('close')"
-    >✕</button>
+    >
+      ✕
+    </button>
   </span>
 </template>
 
@@ -37,6 +39,9 @@ const classes = computed(() => {
     soft: 'border-transparent bg-[var(--ui-surface-soft)] text-[var(--ui-text)]',
     primary: 'border-transparent bg-[var(--ui-primary-soft)] text-[var(--ui-primary)]',
   }
-  return cn('inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium', variants[props.variant])
+  return cn(
+    'inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium',
+    variants[props.variant],
+  )
 })
 </script>

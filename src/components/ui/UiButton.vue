@@ -1,10 +1,5 @@
 <template>
-  <button
-    :type="nativeType"
-    :disabled="disabled || loading"
-    :class="classes"
-    v-bind="$attrs"
-  >
+  <button :type="nativeType" :disabled="disabled || loading" :class="classes" v-bind="$attrs">
     <span
       v-if="loading"
       class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
@@ -43,17 +38,26 @@ const props = withDefaults(
 const classes = computed(() => {
   const variants = {
     primary: 'bg-[var(--ui-primary)] text-white hover:bg-[var(--ui-primary-hover)]',
-    secondary: 'border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)]',
-    outline: 'border border-[var(--ui-border-strong)] bg-transparent text-[var(--ui-text)] hover:bg-[var(--ui-surface-soft)]',
-    danger: 'border border-red-200 bg-[var(--ui-danger-soft)] text-[var(--ui-danger)] hover:brightness-95',
+    secondary:
+      'border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-muted)]',
+    outline:
+      'border border-[var(--ui-border-strong)] bg-transparent text-[var(--ui-text)] hover:bg-[var(--ui-surface-soft)]',
+    danger:
+      'border border-red-200 bg-[var(--ui-danger-soft)] text-[var(--ui-danger)] hover:brightness-95',
     ghost: 'bg-transparent text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-soft)]',
     dark: 'bg-[var(--ui-text)] text-white hover:opacity-90',
   }
 
   const sizes = {
-    sm: props.square ? 'h-9 w-9 rounded-[var(--ui-radius-sm)] p-1 text-sm' : 'min-h-9 rounded-[var(--ui-radius-sm)] px-3 py-2 text-sm',
-    md: props.square ? 'h-11 w-11 rounded-[var(--ui-radius-md)] p-1 text-sm' : 'min-h-11 rounded-[var(--ui-radius-md)] px-4 py-3 text-sm',
-    lg: props.square ? 'h-12 w-12 rounded-[var(--ui-radius-md)] p-1 text-base' : 'min-h-12 rounded-[var(--ui-radius-md)] px-5 py-3.5 text-base',
+    sm: props.square
+      ? 'h-9 w-9 rounded-[var(--ui-radius-sm)] p-1 text-sm'
+      : 'min-h-9 rounded-[var(--ui-radius-sm)] px-3 py-2 text-sm',
+    md: props.square
+      ? 'h-11 w-11 rounded-[var(--ui-radius-md)] p-1 text-sm'
+      : 'min-h-11 rounded-[var(--ui-radius-md)] px-4 py-3 text-sm',
+    lg: props.square
+      ? 'h-12 w-12 rounded-[var(--ui-radius-md)] p-1 text-base'
+      : 'min-h-12 rounded-[var(--ui-radius-md)] px-5 py-3.5 text-base',
   }
 
   return cn(

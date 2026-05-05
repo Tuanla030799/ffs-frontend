@@ -5,20 +5,12 @@
         <h2 class="text-2xl font-black text-slate-950">
           {{ title }}
         </h2>
-        <p
-          v-if="description"
-          class="mt-1 text-sm text-slate-500"
-        >
+        <p v-if="description" class="mt-1 text-sm text-slate-500">
           {{ description }}
         </p>
       </div>
       <div class="flex gap-2">
-        <UiButton
-          native-type="button"
-          variant="secondary"
-          size="sm"
-          @click="$emit('reload')"
-        >
+        <UiButton native-type="button" variant="secondary" size="sm" @click="$emit('reload')">
           Reload
         </UiButton>
         <UiButton
@@ -33,11 +25,7 @@
       </div>
     </div>
 
-    <UiCard
-      v-if="searchable || statusFilter"
-      title="Bộ lọc"
-      padding="sm"
-    >
+    <UiCard v-if="searchable || statusFilter" title="Bộ lọc" padding="sm">
       <form
         class="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_auto]"
         @submit.prevent="$emit('search')"
@@ -53,14 +41,8 @@
           :model-value="status"
           @update:model-value="$emit('update:status', String($event))"
         >
-          <option value="">
-            Tất cả trạng thái
-          </option>
-          <option
-            v-for="option in statusOptions"
-            :key="option"
-            :value="option"
-          >
+          <option value="">Tất cả trạng thái</option>
+          <option v-for="option in statusOptions" :key="option" :value="option">
             {{ option }}
           </option>
         </UiSelect>
@@ -68,10 +50,7 @@
       </form>
     </UiCard>
 
-    <UiAlert
-      v-if="error"
-      variant="error"
-    >
+    <UiAlert v-if="error" variant="error">
       {{ error }}
     </UiAlert>
 
@@ -87,26 +66,19 @@
             <h3 class="text-lg font-black text-slate-950">
               {{ modalTitle }}
             </h3>
-            <p
-              v-if="modalDescription"
-              class="mt-1 text-sm text-slate-500"
-            >
+            <p v-if="modalDescription" class="mt-1 text-sm text-slate-500">
               {{ modalDescription }}
             </p>
           </div>
-          <UiButton
-            native-type="button"
-            variant="secondary"
-            size="sm"
-            @click="$emit('close')"
-          >
+          <UiButton native-type="button" variant="secondary" size="sm" @click="$emit('close')">
             Đóng
           </UiButton>
         </div>
         <div class="p-5">
           <slot name="form" />
         </div>
-      </div>v>
+      </div>
+      v>
 
       <div
         v-if="confirmOpen"

@@ -5,10 +5,12 @@
         :src="coverUrl(blog) || '/assets/home.jpg'"
         :alt="blog.title"
         class="aspect-[16/9] w-full object-cover grayscale"
-      >
+      />
       <div class="p-5 md:p-12">
-        <p class="text-sm text-black/50">{{ formatDateTime(blog.publishedAt || blog.createdAt) }}</p>
-        <h1 class="mt-4 text-3xl font-black leading-tight md:text-5xl">{{ blog.title }}</h1>
+        <p class="text-sm text-black/50">
+          {{ formatDateTime(blog.publishedAt || blog.createdAt) }}
+        </p>
+        <h1 class="mt-4 text-3xl leading-tight font-black md:text-5xl">{{ blog.title }}</h1>
         <p class="mt-5 text-lg leading-8 text-black/65">{{ blog.excerpt }}</p>
         <div class="mt-10">
           <EditorContent :value="blog.contentJson" />

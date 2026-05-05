@@ -4,11 +4,7 @@
       <AdminSidebarNav />
     </div>
     <div class="min-w-0">
-      <AdminTopbar
-        :title="pageTitle"
-        :description="pageDescription"
-        @logout="handleLogout"
-      />
+      <AdminTopbar :title="pageTitle" :description="pageDescription" @logout="handleLogout" />
 
       <div class="border-b border-slate-200 bg-white p-3 lg:hidden">
         <div class="flex gap-2 overflow-x-auto">
@@ -19,11 +15,7 @@
             :to="item.to"
             custom
           >
-            <a
-              :href="href"
-              :class="quickLinkClass(isActive)"
-              @click="navigate"
-            >
+            <a :href="href" :class="quickLinkClass(isActive)" @click="navigate">
               {{ item.label }}
             </a>
           </RouterLink>
@@ -56,7 +48,7 @@ const quickLinks = [
   { label: 'Store', to: '/' },
 ]
 const pageTitle = computed(() => String(route.meta.title || 'Admin'))
-const pageDescription = computed(() => String(route.meta.description || 'Quản trị ecommerce bán giày.'))
+const pageDescription = computed(() => String(route.meta.description || 'Quản trị bán giày.'))
 function quickLinkClass(isActive: boolean) {
   return cn(
     'shrink-0 rounded-xl border px-3 py-2 text-sm font-semibold no-underline transition',

@@ -18,76 +18,79 @@
     @confirm-delete="confirmRemove"
   >
     <template #form>
-      <form
-        class="grid gap-3 md:grid-cols-2"
-        @submit.prevent="save"
-      >
+      <form class="grid gap-3 md:grid-cols-2" @submit.prevent="save">
         <UiInput
           v-model="form.name"
           class="rounded-xl border border-slate-200 p-3"
           placeholder="Name"
-          required  label="Name"/>
+          required
+          label="Name"
+        />
         <UiInput
           v-model="form.slug"
           class="rounded-xl border border-slate-200 p-3"
           placeholder="Slug"
-          required  label="Slug"/>
+          required
+          label="Slug"
+        />
         <UiInput
           v-model="form.parentId"
           class="rounded-xl border border-slate-200 p-3"
-          placeholder="Parent ID"  label="Parent ID"/>
+          placeholder="Parent ID"
+          label="Parent ID"
+        />
         <UiSelect
           v-model="form.status"
           class="rounded-xl border border-slate-200 p-3"
-         label="Trạng thái">
-          <option v-for="status in commonStatuses" :key="status.value" :value="status.value">{{ status.label }}</option>
+          label="Trạng thái"
+        >
+          <option v-for="status in commonStatuses" :key="status.value" :value="status.value">
+            {{ status.label }}
+          </option>
         </UiSelect>
         <UiInput
           v-model.number="form.sortOrder"
           class="rounded-xl border border-slate-200 p-3"
-          placeholder="Sort order"  label="Sort order"/>
+          placeholder="Sort order"
+          label="Sort order"
+        />
         <UiTextarea
           v-model="form.description"
           class="rounded-xl border border-slate-200 p-3 md:col-span-2"
-          placeholder="Description"  label="Description"/>
+          placeholder="Description"
+          label="Description"
+        />
         <div class="flex justify-end gap-2 md:col-span-2">
-          <UiButton
-            native-type="button"
-            variant="secondary"
-            @click="editing = null"
-          >
+          <UiButton native-type="button" variant="secondary" @click="editing = null">
             Cancel
           </UiButton>
-          <UiButton
-            native-type="submit"
-            variant="dark"
-          >
-            Save
-          </UiButton>
+          <UiButton native-type="submit" variant="dark"> Save </UiButton>
         </div>
       </form>
     </template>
 
-    <UiTable :columns="columns" :rows="rows" :loading="loading" density="sm" sticky-header striped row-key="id" min-width="min-w-[760px]" empty-text="Không có category.">
+    <UiTable
+      :columns="columns"
+      :rows="rows"
+      :loading="loading"
+      density="sm"
+      sticky-header
+      striped
+      row-key="id"
+      min-width="min-w-[760px]"
+      empty-text="Không có category."
+    >
       <template #cell-name="{ row }">
         <span class="font-bold text-slate-950">{{ row.name }}</span>
       </template>
       <template #cell-parentId="{ row }">{{ row.parentId || '-' }}</template>
-      <template #cell-status="{ row }"><span :class="badgeClass(row.status)">{{ row.status }}</span></template>
+      <template #cell-status="{ row }"
+        ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
+      >
       <template #cell-actions="{ row }">
         <div class="space-x-3">
-            <UiButton
-              variant="ghost"
-              @click="openEdit(row)"
-            >
-              Edit
-            </UiButton>
-            <UiButton
-              variant="danger"
-              @click="deleting = row"
-            >
-              Delete
-            </UiButton>
+          <UiButton variant="ghost" @click="openEdit(row)"> Edit </UiButton>
+          <UiButton variant="danger" @click="deleting = row"> Delete </UiButton>
         </div>
       </template>
     </UiTable>
@@ -109,9 +112,22 @@ const error = ref('')
 const editing = ref<Category | 'new' | null>(null)
 const deleting = ref<Category | null>(null)
 const query = reactive({ keyword: '', status: '' })
-const form = reactive<CategoryPayload>({ name: '', slug: '', parentId: null, description: '', status: 'ACTIVE', sortOrder: 0 })
+const form = reactive<CategoryPayload>({
+  name: '',
+  slug: '',
+  parentId: null,
+  description: '',
+  status: 'ACTIVE',
+  sortOrder: 0,
+})
 const { data: masterData, error: masterError, load: loadMasterData } = useMasterData('admin')
-const commonStatuses = computed(() => masterData.value?.commonStatuses || [{ value: 'ACTIVE', label: 'ACTIVE' }, { value: 'INACTIVE', label: 'INACTIVE' }])
+const commonStatuses = computed(
+  () =>
+    masterData.value?.commonStatuses || [
+      { value: 'ACTIVE', label: 'ACTIVE' },
+      { value: 'INACTIVE', label: 'INACTIVE' },
+    ],
+)
 const columns = [
   { key: 'name', label: 'Name' },
   { key: 'slug', label: 'Slug' },
@@ -150,7 +166,9 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (await categoryApi.adminList({ keyword: query.keyword, status: query.status, limit: 50 })).items
+    rows.value = (
+      await categoryApi.adminList({ keyword: query.keyword, status: query.status, limit: 50 })
+    ).items
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
@@ -176,5 +194,7 @@ async function confirmRemove() {
   await load()
 }
 
-onMounted(async () => { await Promise.allSettled([loadMasterData(), load()]) })
+onMounted(async () => {
+  await Promise.allSettled([loadMasterData(), load()])
+})
 </script>

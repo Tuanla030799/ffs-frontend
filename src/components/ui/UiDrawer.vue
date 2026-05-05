@@ -1,23 +1,17 @@
 <template>
   <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 bg-slate-950/45"
-      @click.self="emit('close')"
-    >
-      <div class="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-[var(--ui-surface)] shadow-2xl">
-        <div class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-4 sm:px-5">
+    <div v-if="open" class="fixed inset-0 z-50 bg-slate-950/45" @click.self="emit('close')">
+      <div
+        class="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-[var(--ui-surface)] shadow-2xl"
+      >
+        <div
+          class="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-4 sm:px-5"
+        >
           <div>
-            <h3
-              v-if="title"
-              class="text-base font-semibold text-[var(--ui-text)]"
-            >
+            <h3 v-if="title" class="text-base font-semibold text-[var(--ui-text)]">
               {{ title }}
             </h3>
-            <p
-              v-if="description"
-              class="mt-1 text-sm text-[var(--ui-text-soft)]"
-            >
+            <p v-if="description" class="mt-1 text-sm text-[var(--ui-text-soft)]">
               {{ description }}
             </p>
           </div>
@@ -38,14 +32,17 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{
-  open: boolean
-  title?: string
-  description?: string
-}>(), {
-  title: '',
-  description: '',
-})
+withDefaults(
+  defineProps<{
+    open: boolean
+    title?: string
+    description?: string
+  }>(),
+  {
+    title: '',
+    description: '',
+  },
+)
 
 const emit = defineEmits<{
   close: []

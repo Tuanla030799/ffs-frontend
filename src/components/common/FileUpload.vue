@@ -24,10 +24,7 @@
       </template>
     </UiUpload>
 
-    <UiAlert
-      v-if="localError"
-      variant="error"
-    >
+    <UiAlert v-if="localError" variant="error">
       {{ localError }}
     </UiAlert>
 
@@ -41,15 +38,10 @@
           :src="previewUrl"
           alt="uploaded file"
           class="h-20 w-20 shrink-0 rounded-[var(--ui-radius-sm)] border border-[var(--ui-border)] object-cover"
-        >
+        />
         <div class="min-w-0 flex-1 text-sm">
-          <div class="font-semibold text-[var(--ui-text)]">
-            File ID: {{ modelValue.fileId }}
-          </div>
-          <div
-            v-if="modelValue.path"
-            class="mt-1 truncate text-[var(--ui-text-soft)]"
-          >
+          <div class="font-semibold text-[var(--ui-text)]">File ID: {{ modelValue.fileId }}</div>
+          <div v-if="modelValue.path" class="mt-1 truncate text-[var(--ui-text-soft)]">
             {{ modelValue.path }}
           </div>
           <a
@@ -72,25 +64,28 @@ import { computed, ref } from 'vue'
 import { UiAlert, UiButton, UiUpload } from '@/components/ui'
 import { fileService, type FileUploadScope, type UploadedFile } from '@/services/file.service'
 
-const props = withDefaults(defineProps<{
-  modelValue?: UploadedFile | null
-  scope?: FileUploadScope
-  title?: string
-  description?: string
-  accept?: string
-  maxSizeMb?: number
-  disabled?: boolean
-  triggerText?: string
-}>(), {
-  modelValue: null,
-  scope: 'client',
-  title: 'Upload file',
-  description: '',
-  accept: '*/*',
-  maxSizeMb: 10,
-  disabled: false,
-  triggerText: 'Chọn file',
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: UploadedFile | null
+    scope?: FileUploadScope
+    title?: string
+    description?: string
+    accept?: string
+    maxSizeMb?: number
+    disabled?: boolean
+    triggerText?: string
+  }>(),
+  {
+    modelValue: null,
+    scope: 'client',
+    title: 'Upload file',
+    description: '',
+    accept: '*/*',
+    maxSizeMb: 10,
+    disabled: false,
+    triggerText: 'Chọn file',
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: UploadedFile | null]

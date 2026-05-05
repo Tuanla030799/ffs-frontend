@@ -1,9 +1,6 @@
 <template>
   <div :class="wrapperClass">
-    <div
-      v-if="avatar"
-      class="h-10 w-10 shrink-0 rounded-full bg-[var(--ui-surface-soft)]"
-    />
+    <div v-if="avatar" class="h-10 w-10 shrink-0 rounded-full bg-[var(--ui-surface-soft)]" />
     <div class="min-w-0 flex-1 space-y-2">
       <div
         v-for="index in rows"

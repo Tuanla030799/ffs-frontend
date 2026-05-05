@@ -16,42 +16,40 @@
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
   >
-    <p
-      v-if="notice"
-      class="m-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700"
-    >
+    <p v-if="notice" class="m-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
       {{ notice }}
     </p>
-    <UiTable :columns="columns" :rows="rows" :loading="loading" density="sm" sticky-header striped row-key="id" min-width="min-w-[920px]" empty-text="Không có blog.">
+    <UiTable
+      :columns="columns"
+      :rows="rows"
+      :loading="loading"
+      density="sm"
+      sticky-header
+      striped
+      row-key="id"
+      min-width="min-w-[920px]"
+      empty-text="Không có blog."
+    >
       <template #cell-title="{ row }">
         <span class="font-black text-slate-950">{{ row.title }}</span>
       </template>
       <template #cell-cover="{ row }">
-            <img
-              v-if="coverUrl(row)"
-              :src="coverUrl(row)"
-              class="h-12 w-20 rounded-lg object-cover"
-              :alt="row.title"
-            ><span v-else>-</span>
+        <img
+          v-if="coverUrl(row)"
+          :src="coverUrl(row)"
+          class="h-12 w-20 rounded-lg object-cover"
+          :alt="row.title"
+        /><span v-else>-</span>
       </template>
       <template #cell-status="{ row }">
-            <span :class="badgeClass(row.status)">{{ row.status }}</span>
+        <span :class="badgeClass(row.status)">{{ row.status }}</span>
       </template>
       <template #cell-publishedAt="{ row }">{{ formatDateTime(row.publishedAt) }}</template>
       <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }">
         <div class="space-x-3">
-            <UiButton
-              variant="ghost"
-              @click="openEdit(row.id)"
-            >
-              Edit
-            </UiButton><UiButton
-              variant="danger"
-              @click="deleting = row"
-            >
-              Delete
-            </UiButton>
+          <UiButton variant="ghost" @click="openEdit(row.id)"> Edit </UiButton
+          ><UiButton variant="danger" @click="deleting = row"> Delete </UiButton>
         </div>
       </template>
     </UiTable>
@@ -87,8 +85,10 @@ const columns = [
 ] as const
 
 function badgeClass(status: string) {
-  if (status === 'ACTIVE') return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
-  if (status === 'DRAFT') return 'rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700'
+  if (status === 'ACTIVE')
+    return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
+  if (status === 'DRAFT')
+    return 'rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700'
   return 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600'
 }
 function coverUrl(row: Blog) {

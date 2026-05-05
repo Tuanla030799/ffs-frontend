@@ -1,41 +1,28 @@
 <template>
   <main class="grid min-h-screen place-items-center bg-slate-950 p-4">
-    <form
-      class="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl"
-      @submit.prevent="submit"
-    >
-      <h1 class="text-3xl font-black">
-        Admin login
-      </h1>
-      <p class="mt-2 text-slate-500">
-        Đăng nhập bằng API admin auth.
-      </p>
+    <form class="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl" @submit.prevent="submit">
+      <h1 class="text-3xl font-black">Admin login</h1>
+      <p class="mt-2 text-slate-500">Đăng nhập bằng API admin auth.</p>
       <div class="mt-6 space-y-4">
         <UiInput
           v-model="email"
           class="w-full rounded-xl border p-3"
           placeholder="Email"
-         label="Email"/>
+          label="Email"
+        />
 
         <UiInput
           v-model="password"
           type="password"
           class="round e d-xl w-full border p-3"
           placeholder="Password"
-         label="Password"/>
+          label="Password"
+        />
 
-        <UiButton
-          native-type="submit"
-          variant="dark"
-          block
-          :disabled="loading"
-        >
+        <UiButton native-type="submit" variant="dark" block :disabled="loading">
           {{ loading ? 'Đang login...' : 'Login' }}
         </UiButton>
-        <p
-          v-if="error"
-          class="text-sm font-semibold text-red-600"
-        >
+        <p v-if="error" class="text-sm font-semibold text-red-600">
           {{ error }}
         </p>
       </div>
