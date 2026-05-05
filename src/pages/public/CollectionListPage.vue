@@ -5,10 +5,10 @@
         <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">Collections</p>
         <h1 class="mt-3 text-3xl font-black uppercase md:text-4xl">Bộ sưu tập</h1>
       </div>
-      <form class="flex gap-2" @submit.prevent="search">
+      <UiForm as="form" class="flex gap-2" @submit.prevent="search">
         <UiInput v-model="query.keyword" placeholder="Tìm bộ sưu tập" label="Tìm bộ sưu tập" />
         <UiButton native-type="submit">Tìm</UiButton>
-      </form>
+      </UiForm>
     </header>
 
     <div v-if="loading" class="grid gap-4 md:grid-cols-3 md:gap-6">
@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { UiButton, UiInput } from '@/components/ui'
+import { UiButton, UiForm, UiInput } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import type { Collection } from '@/modules/content/collection/types'

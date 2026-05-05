@@ -18,7 +18,7 @@
     @confirm-delete="confirmRemove"
   >
     <template #form>
-      <form class="grid gap-3 md:grid-cols-3" @submit.prevent="save">
+      <UiForm as="form" class="grid gap-3 md:grid-cols-3" @submit.prevent="save">
         <UiInput v-model="form.name" placeholder="Name" required label="Name" />
         <UiInput v-model="form.email" type="email" placeholder="Email" required label="Email" />
         <UiInput
@@ -40,7 +40,7 @@
             >Cancel</UiButton
           ><UiButton native-type="submit" variant="dark">Save</UiButton>
         </div>
-      </form>
+      </UiForm>
     </template>
     <UiTable
       :columns="columns"
@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { UiButton, UiInput, UiSelect, UiTable } from '@/components/ui'
+import { UiButton, UiForm, UiInput, UiSelect, UiTable } from '@/components/ui'
 import { onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import { adminUserApi } from '@/modules/customer/api'

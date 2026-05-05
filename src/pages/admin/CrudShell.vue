@@ -26,7 +26,8 @@
     </div>
 
     <UiCard v-if="searchable || statusFilter" title="Bộ lọc" padding="sm">
-      <form
+      <UiForm
+        as="form"
         class="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_auto]"
         @submit.prevent="$emit('search')"
       >
@@ -47,7 +48,7 @@
           </option>
         </UiSelect>
         <UiButton> Tìm kiếm </UiButton>
-      </form>
+      </UiForm>
     </UiCard>
 
     <UiAlert v-if="error" variant="error">
@@ -116,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { UiAlert, UiButton, UiCard, UiInput, UiSelect } from '@/components/ui'
+import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect } from '@/components/ui'
 withDefaults(
   defineProps<{
     title: string

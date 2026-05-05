@@ -15,7 +15,7 @@
 
     <UiAlert v-if="error" variant="error">{{ error }}</UiAlert>
 
-    <form class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]" @submit.prevent="save">
+    <UiForm as="form" class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]" @submit.prevent="save">
       <div class="space-y-5">
         <UiCard title="Thông tin bài viết" padding="md">
           <div class="grid gap-3 md:grid-cols-3">
@@ -77,7 +77,7 @@
           </div>
         </UiCard>
       </aside>
-    </form>
+    </UiForm>
   </section>
 </template>
 
@@ -86,7 +86,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FileUpload from '@/components/common/FileUpload.vue'
 import EditorJsField from '@/components/editor/EditorJsField.vue'
-import { UiAlert, UiButton, UiCard, UiInput, UiSelect, UiTextarea } from '@/components/ui'
+import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect, UiTextarea } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import type { Blog, BlogPayload } from '@/modules/content/blog/types'

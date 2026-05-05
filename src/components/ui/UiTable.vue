@@ -104,6 +104,7 @@ const props = withDefaults(
     caption?: string
   }>(),
   {
+    rowKey: undefined,
     emptyText: 'Không có dữ liệu.',
     loadingText: 'Đang tải...',
     minWidth: '',

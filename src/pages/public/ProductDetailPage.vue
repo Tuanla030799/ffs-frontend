@@ -81,7 +81,8 @@
           <p class="mt-3 text-sm text-black/50">Tồn kho: {{ selectedSku?.stock ?? '-' }}</p>
         </div>
 
-        <form
+        <UiForm
+          as="form"
           class="mt-8 space-y-3 border border-black/10 bg-white p-3 md:p-4"
           @submit.prevent="submitOrder"
         >
@@ -115,7 +116,7 @@
           >
             {{ notice }}
           </p>
-        </form>
+        </UiForm>
       </section>
 
       <section class="bg-[#f7f7f5] p-5 shadow-sm ring-1 ring-black/5 md:p-6 lg:col-span-2">
@@ -129,7 +130,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { UiButton, UiInput, UiTextarea } from '@/components/ui'
+import { UiButton, UiForm, UiInput, UiTextarea } from '@/components/ui'
 import EditorContent from '@/components/storefront/EditorContent.vue'
 import { productApi } from '@/modules/catalog/product/api'
 import { orderApi } from '@/modules/sales/order/api'

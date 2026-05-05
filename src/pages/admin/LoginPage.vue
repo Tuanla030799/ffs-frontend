@@ -1,6 +1,10 @@
 <template>
   <main class="grid min-h-screen place-items-center bg-slate-950 p-4">
-    <form class="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl" @submit.prevent="submit">
+    <UiForm
+      as="form"
+      class="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl"
+      @submit.prevent="submit"
+    >
       <h1 class="text-3xl font-black">Admin login</h1>
       <p class="mt-2 text-slate-500">Đăng nhập bằng API admin auth.</p>
       <div class="mt-6 space-y-4">
@@ -26,11 +30,11 @@
           {{ error }}
         </p>
       </div>
-    </form>
+    </UiForm>
   </main>
 </template>
 <script setup lang="ts">
-import { UiButton, UiInput } from '@/components/ui'
+import { UiButton, UiForm, UiInput } from '@/components/ui'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { adminAuthService } from '@/services/admin/auth.service'

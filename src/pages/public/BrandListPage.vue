@@ -5,10 +5,10 @@
         <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">Brands</p>
         <h1 class="mt-3 text-3xl font-black uppercase md:text-4xl">Thương hiệu</h1>
       </div>
-      <form class="flex gap-2" @submit.prevent="search">
+      <UiForm as="form" class="flex gap-2" @submit.prevent="search">
         <UiInput v-model="keyword" placeholder="Tìm brand" label="Tìm brand" />
         <UiButton native-type="submit">Tìm</UiButton>
-      </form>
+      </UiForm>
     </header>
 
     <div v-if="loading" class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { UiButton, UiInput } from '@/components/ui'
+import { UiButton, UiForm, UiInput } from '@/components/ui'
 import { brandApi } from '@/modules/content/brand/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import type { Brand } from '@/modules/content/brand/types'

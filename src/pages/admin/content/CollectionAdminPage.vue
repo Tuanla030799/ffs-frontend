@@ -18,7 +18,7 @@
     @confirm-delete="confirmRemove"
   >
     <template #form>
-      <form class="space-y-5" @submit.prevent="save">
+      <UiForm as="form" class="space-y-5" @submit.prevent="save">
         <p v-if="notice" class="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
           {{ notice }}
         </p>
@@ -89,7 +89,7 @@
           >
           <UiButton native-type="submit">Save</UiButton>
         </div>
-      </form>
+      </UiForm>
     </template>
 
     <UiTable
@@ -135,7 +135,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
-import { UiButton, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
+import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'

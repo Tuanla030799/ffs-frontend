@@ -6,7 +6,8 @@
       <p class="mt-3 max-w-xl text-black/65">Filter theo category, size, color, giá và keyword.</p>
     </header>
 
-    <form
+    <UiForm
+      as="form"
       class="mb-7 grid gap-3 border border-black/10 bg-[#f7f7f5] p-3 md:mb-8 md:grid-cols-6 md:p-4"
       @submit.prevent="search"
     >
@@ -43,7 +44,7 @@
       <UiButton native-type="submit">Lọc</UiButton>
       <UiInput v-model.number="query.minPrice" placeholder="Giá từ" label="Giá từ" />
       <UiInput v-model.number="query.maxPrice" placeholder="Giá đến" label="Giá đến" />
-    </form>
+    </UiForm>
 
     <div v-if="error" class="mb-4 border border-red-200 bg-red-50 p-4 text-red-700">
       {{ error }}
@@ -74,7 +75,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { UiButton, UiInput, UiSelect } from '@/components/ui'
+import { UiButton, UiForm, UiInput, UiSelect } from '@/components/ui'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'

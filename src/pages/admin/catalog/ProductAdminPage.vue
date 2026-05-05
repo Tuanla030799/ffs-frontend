@@ -16,7 +16,8 @@
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
   >
-    <form
+    <UiForm
+      as="form"
       class="grid gap-3 border-b border-slate-200 bg-white p-3 md:grid-cols-[180px_180px_auto]"
       @submit.prevent="load"
     >
@@ -35,7 +36,7 @@
         </option>
       </UiSelect>
       <UiButton native-type="submit" variant="secondary">Lọc thêm</UiButton>
-    </form>
+    </UiForm>
     <UiTable
       :columns="columns"
       :rows="rows"
@@ -72,7 +73,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import CrudShell from '@/pages/admin/CrudShell.vue'
-import { UiButton, UiSelect, UiTable } from '@/components/ui'
+import { UiButton, UiForm, UiSelect, UiTable } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { money } from '@/modules/shared/types'
