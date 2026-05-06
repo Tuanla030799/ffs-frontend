@@ -1,179 +1,206 @@
 <template>
-  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+  <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
     <BreadcrumbNav
       class="mb-5"
       :items="[{ label: 'Cửa hàng', to: '/products' }, { label: product?.name || 'Chi tiết' }]"
     />
-    <div v-if="error" class="border border-red-200 bg-red-50 p-4 text-red-700">{{ error }}</div>
+
+    <div v-if="error" class="border border-red-200 bg-red-50 p-4 text-red-700">
+      {{ error }}
+    </div>
     <div v-else-if="loading" class="h-96 animate-pulse bg-black/10" />
-    <div v-else-if="product" class="grid gap-6 md:gap-10 lg:grid-cols-[1fr_0.9fr]">
-      <section class="space-y-4">
-        <div class="aspect-square bg-[#f7f7f5] p-5 shadow-sm ring-1 ring-black/5 md:p-8">
-          <img
-            v-if="selectedImage"
-            :src="selectedImage"
-            class="h-full w-full object-contain"
-            :alt="product.name"
-          />
-          <div v-else class="grid h-full place-items-center text-black/40">No image</div>
-        </div>
-        <div class="grid grid-cols-5 gap-2 md:gap-3">
-          <UiButton
-            v-for="image in images"
-            :key="image.url || image.fileId"
-            variant="secondary"
-            square
-            @click="selectedImage = image.url || ''"
+    <div v-else-if="product" class="space-y-12">
+      <section class="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
+        <div class="grid gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
+          <div
+            class="order-2 flex gap-2 overflow-x-auto md:order-1 md:flex-col md:overflow-visible"
           >
-            <img :src="image.url" class="h-full w-full object-cover" :alt="image.altText" />
-          </UiButton>
-        </div>
-      </section>
-
-      <section class="bg-[#f7f7f5] p-5 shadow-sm ring-1 ring-black/5 md:p-8">
-        <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">
-          {{ product.brandName || product.categoryName }}
-        </p>
-        <h1 class="mt-3 text-3xl leading-tight font-black uppercase md:text-4xl">
-          {{ product.name }}
-        </h1>
-        <p class="mt-4 leading-7 text-black/65">{{ product.shortDescription }}</p>
-        <div class="mt-6 flex items-end gap-3">
-          <strong class="text-3xl text-black">{{
-            money(
-              selectedSku?.salePrice || selectedSku?.price || product.salePrice || product.price,
-            )
-          }}</strong>
-          <span
-            v-if="selectedSku?.salePrice || product.salePrice"
-            class="text-black/35 line-through"
-            >{{ money(selectedSku?.price || product.price) }}</span
-          >
-        </div>
-
-        <div class="mt-7">
-          <p class="mb-3 font-black uppercase">Màu sắc</p>
-          <div class="flex flex-wrap gap-2">
-            <UiButton
-              v-for="variant in variants"
-              :key="variant.id || variant.clientId"
-              :variant="selectedVariantKey === variantKey(variant) ? 'dark' : 'outline'"
-              @click="selectVariant(variant)"
+            <button
+              v-for="image in galleryImages"
+              :key="image.url || image.fileId"
+              type="button"
+              class="h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-[#f3f3f1] transition hover:border-black"
+              :class="selectedImage === image.url ? 'border-black' : 'border-transparent'"
+              @click="selectedImage = image.url || ''"
             >
-              <span
-                v-if="variant.colorCode"
-                class="inline-block h-3 w-3 rounded-full border border-black/20"
-                :style="{ backgroundColor: variant.colorCode }"
+              <img
+                v-if="image.url"
+                :src="image.url"
+                class="h-full w-full object-contain"
+                :alt="image.altText || product.name"
               />
-              {{ variant.colorName || variant.name }}
-            </UiButton>
+            </button>
+          </div>
+
+          <div class="order-1 md:order-2">
+            <div class="relative aspect-square overflow-hidden rounded-lg bg-[#f3f3f1]">
+              <img
+                v-if="selectedImage"
+                :src="selectedImage"
+                class="h-full w-full object-contain p-8 md:p-12"
+                :alt="product.name"
+              />
+              <div v-else class="grid h-full place-items-center text-black/40">No image</div>
+              <div class="absolute right-6 bottom-6 hidden gap-3 md:flex">
+                <button
+                  class="grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
+                  type="button"
+                  @click="goImage(-1)"
+                >
+                  ‹
+                </button>
+                <button
+                  class="grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
+                  type="button"
+                  @click="goImage(1)"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="mt-7">
-          <p class="mb-3 font-black uppercase">Size</p>
-          <div class="flex flex-wrap gap-2">
-            <UiButton
-              v-for="sku in availableSkus"
-              :key="sku.id || sku.skuCode"
-              :variant="selectedSku?.id === sku.id ? 'dark' : 'outline'"
-              :disabled="sku.stock <= 0"
-              @click="selectedSku = sku"
-              >{{ sku.size }}</UiButton
-            >
-          </div>
-          <p class="mt-3 text-sm text-black/50">Tồn kho: {{ selectedSku?.stock ?? '-' }}</p>
-        </div>
+        <aside class="lg:sticky lg:top-[92px] lg:self-start">
+          <section class="space-y-7 bg-white">
+            <div>
+              <h1 class="text-2xl leading-tight font-bold text-black md:text-3xl">
+                {{ product.name }}
+              </h1>
+              <p class="mt-1 text-base text-black/60">
+                {{ product.brandName || product.categoryName }}
+              </p>
+              <div class="mt-4 flex items-end gap-3">
+                <strong class="text-lg font-bold text-black">{{ money(currentPrice) }}</strong>
+                <span v-if="currentOriginalPrice" class="text-sm text-black/35 line-through">
+                  {{ money(currentOriginalPrice) }}
+                </span>
+              </div>
+            </div>
 
-        <UiForm
-          as="form"
-          class="mt-8 space-y-3 border border-black/10 bg-white p-3 md:p-4"
-          @submit.prevent="submitOrder"
-        >
-          <h2 class="text-xl font-black uppercase">Đặt hàng nhanh</h2>
-          <UiInput v-model="form.customerName" placeholder="Họ tên *" label="Họ tên" />
-          <UiInput
-            v-model="form.customerPhone"
-            placeholder="Số điện thoại *"
-            label="Số điện thoại"
-          />
-          <UiInput v-model="form.customerEmail" placeholder="Email" label="Email" />
-          <UiTextarea
-            v-model="form.shippingAddress"
-            placeholder="Địa chỉ giao hàng *"
-            label="Địa chỉ giao hàng"
-          />
-          <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
-            <UiInput v-model="form.couponCode" placeholder="Coupon" label="Coupon" />
-            <UiButton native-type="button" variant="outline" @click="validateCoupon"
-              >Validate</UiButton
-            >
-          </div>
-          <UiTextarea v-model="form.note" placeholder="Ghi chú" label="Ghi chú" />
-          <UiButton native-type="submit" block :disabled="submitting">{{
-            submitting ? 'Đang đặt...' : 'Đặt hàng'
-          }}</UiButton>
-          <p
-            v-if="notice"
-            class="text-sm font-bold"
-            :class="noticeType === 'error' ? 'text-red-600' : 'text-emerald-600'"
-          >
-            {{ notice }}
-          </p>
-        </UiForm>
+            <div v-if="variants.length">
+              <p class="mb-3 text-sm font-bold">Variants</p>
+              <div class="flex flex-wrap gap-3">
+                <button
+                  v-for="variant in variants"
+                  :key="variant.id || variant.clientId"
+                  type="button"
+                  class="grid h-[70px] w-[70px] place-items-center overflow-hidden rounded-md border bg-[#f6f6f4] transition hover:border-black"
+                  :class="
+                    selectedVariantKey === variantKey(variant)
+                      ? 'border-black'
+                      : 'border-transparent'
+                  "
+                  :title="variant.colorName || variant.name"
+                  @click="selectVariant(variant)"
+                >
+                  <img
+                    v-if="variant.imageUrl"
+                    :src="resolveFileUrl(variant.imageUrl)"
+                    class="h-full w-full object-contain"
+                    :alt="variant.name"
+                  />
+                  <span
+                    v-else-if="variant.colorCode"
+                    class="h-8 w-8 rounded-full border border-black/15"
+                    :style="{ backgroundColor: variant.colorCode }"
+                  />
+                  <span v-else class="px-2 text-center text-xs font-bold">{{ variant.name }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <p class="text-sm font-bold">Select Size</p>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="sku in skus"
+                  :key="sku.id || sku.skuCode"
+                  type="button"
+                  class="min-h-12 rounded-md border px-2 text-sm font-semibold transition hover:border-black"
+                  :class="[
+                    selectedSku?.id === sku.id ? 'border-black' : 'border-black/20',
+                    sku.stock <= 0 &&
+                      'cursor-not-allowed bg-black/[0.04] text-black/30 line-through',
+                  ]"
+                  :disabled="sku.stock <= 0"
+                  @click="selectedSku = sku"
+                >
+                  {{ sku.size }}
+                </button>
+              </div>
+              <p class="mt-3 text-sm text-black/50">Tồn kho: {{ selectedSku?.stock ?? '-' }}</p>
+            </div>
+
+            <div class="space-y-3">
+              <UiButton native-type="button" variant="dark" block size="lg" @click="quickBuy">
+                Add to card
+              </UiButton>
+            </div>
+          </section>
+        </aside>
       </section>
 
-      <section class="bg-[#f7f7f5] p-5 shadow-sm ring-1 ring-black/5 md:p-6 lg:col-span-2">
-        <h2 class="mb-5 text-2xl font-black uppercase">Mô tả sản phẩm</h2>
+      <section class="border-t border-black/10 pt-8 md:pt-10">
+        <h2 class="mb-5 text-2xl font-black">Mô tả sản phẩm</h2>
         <EditorContent :value="product.descriptionJson" />
       </section>
     </div>
-  </main>
+    <div
+      v-else
+      class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
+    >
+      Không tìm thấy sản phẩm.
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
-import { UiButton, UiForm, UiInput, UiTextarea } from '@/components/ui'
+import { UiButton } from '@/components/ui'
 import EditorContent from '@/components/storefront/EditorContent.vue'
+import ProductCheckoutForm from '@/components/storefront/ProductCheckoutForm.vue'
+import { resolveFileUrl } from '@/lib/fileUrl'
 import { productApi } from '@/modules/catalog/product/api'
-import { orderApi } from '@/modules/sales/order/api'
-import { couponApi } from '@/modules/promotion/coupon/api'
-import { getErrorMessage, isPhone, required } from '@/modules/shared/hooks'
+import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
 import type { Product, ProductSku, ProductVariant } from '@/modules/catalog/product/types'
 
 const route = useRoute()
 const loading = ref(true)
-const submitting = ref(false)
 const error = ref('')
-const notice = ref('')
-const noticeType = ref<'ok' | 'error'>('ok')
 const product = ref<Product | null>(null)
 const selectedImage = ref('')
 const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
-const form = reactive({
-  customerName: '',
-  customerPhone: '',
-  customerEmail: '',
-  shippingAddress: '',
-  note: '',
-  couponCode: '',
-  quantity: 1,
-})
+const checkoutFormRef = ref<InstanceType<typeof ProductCheckoutForm> | null>(null)
 const images = computed(() => asArray(product.value?.images))
+const galleryImages = computed(() =>
+  images.value
+    .map((image) => ({
+      ...image,
+      url: resolveFileUrl(image.url || image.imageUrl || ''),
+    }))
+    .filter((image) => image.url),
+)
+
 const variants = computed(() => asArray(product.value?.variants))
 const skus = computed(() => asArray(product.value?.skus))
-const availableSkus = computed(() =>
-  selectedVariantKey.value
-    ? skus.value.filter(
-        (s) =>
-          s.variantId === selectedVariantKey.value ||
-          s.variantClientId === selectedVariantKey.value,
-      )
-    : skus.value,
+const currentPrice = computed(
+  () =>
+    selectedSku.value?.salePrice ||
+    selectedSku.value?.price ||
+    product.value?.salePrice ||
+    product.value?.price,
+)
+const currentOriginalPrice = computed(() =>
+  selectedSku.value?.salePrice || product.value?.salePrice
+    ? selectedSku.value?.price || product.value?.price
+    : undefined,
 )
 
 function variantKey(variant: ProductVariant) {
@@ -181,71 +208,26 @@ function variantKey(variant: ProductVariant) {
 }
 function selectVariant(variant: ProductVariant) {
   selectedVariantKey.value = variantKey(variant)
-  selectedSku.value = availableSkus.value[0] || null
-  selectedImage.value = variant.imageUrl || selectedImage.value
 }
-function validateForm() {
-  return (
-    required(selectedSku.value?.id, 'SKU') ||
-    required(form.customerName, 'Họ tên') ||
-    required(form.customerPhone, 'Số điện thoại') ||
-    isPhone(form.customerPhone) ||
-    required(form.shippingAddress, 'Địa chỉ')
-  )
+function goImage(direction: number) {
+  if (!galleryImages.value.length) return
+  const currentIndex = galleryImages.value.findIndex((image) => image.url === selectedImage.value)
+  const nextIndex =
+    currentIndex < 0
+      ? 0
+      : (currentIndex + direction + galleryImages.value.length) % galleryImages.value.length
+  selectedImage.value = galleryImages.value[nextIndex]?.url || selectedImage.value
 }
-async function validateCoupon() {
-  if (!form.couponCode || !selectedSku.value) return
-  try {
-    const data = await couponApi.validate({
-      code: form.couponCode,
-      subtotalAmount: (selectedSku.value.salePrice || selectedSku.value.price) * form.quantity,
-    })
-    noticeType.value = data.valid ? 'ok' : 'error'
-    notice.value =
-      data.message ||
-      (data.valid ? `Coupon hợp lệ, giảm ${money(data.discountAmount)}` : 'Coupon không hợp lệ')
-  } catch (err) {
-    noticeType.value = 'error'
-    notice.value = getErrorMessage(err)
-  }
-}
-async function submitOrder() {
-  const msg = validateForm()
-  if (msg) {
-    noticeType.value = 'error'
-    notice.value = msg
-    return
-  }
-  submitting.value = true
-  try {
-    await orderApi.create({
-      customerName: form.customerName,
-      customerPhone: form.customerPhone,
-      customerEmail: form.customerEmail || undefined,
-      shippingAddress: form.shippingAddress,
-      note: form.note || undefined,
-      couponCode: form.couponCode || undefined,
-      paymentMethod: 'COD',
-      shippingMethod: 'STANDARD',
-      shippingFee: 0,
-      items: [{ skuId: selectedSku.value?.id || '', quantity: form.quantity }],
-    })
-    noticeType.value = 'ok'
-    notice.value = 'Đặt hàng thành công. Shop sẽ liên hệ xác nhận.'
-  } catch (err) {
-    noticeType.value = 'error'
-    notice.value = getErrorMessage(err)
-  } finally {
-    submitting.value = false
-  }
+function quickBuy() {
+  void checkoutFormRef.value?.submitOrder()
 }
 
 onMounted(async () => {
   try {
     product.value = await productApi.detail(String(route.params.slug))
-    selectedImage.value = images.value[0]?.url || ''
+    selectedImage.value = galleryImages.value[0]?.url || ''
     if (variants.value[0]) selectVariant(variants.value[0])
-    else selectedSku.value = skus.value[0] || null
+    selectedSku.value = skus.value.find((sku) => sku.stock > 0) || skus.value[0] || null
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {

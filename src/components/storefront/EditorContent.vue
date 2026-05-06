@@ -3,25 +3,25 @@
     <template v-if="blocks.length">
       <div v-for="(block, index) in blocks" :key="index">
         <component
-          :is="headerTag(block.data.level)"
+          :is="headerTag(block.data?.level)"
           v-if="block.type === 'header'"
-          :class="headerClass(block.data.level)"
+          :class="headerClass(block.data?.level)"
         >
-          {{ cleanText(block.data.text) }}
+          {{ cleanText(block.data?.text) }}
         </component>
         <p v-else-if="block.type === 'paragraph'">
-          {{ cleanText(block.data.text) }}
+          {{ cleanText(block.data?.text) }}
         </p>
         <ul
-          v-else-if="block.type === 'list' && block.data.style !== 'ordered'"
+          v-else-if="block.type === 'list' && block.data?.style !== 'ordered'"
           class="list-disc pl-5"
         >
-          <li v-for="(item, i) in block.data.items" :key="i">
+          <li v-for="(item, i) in listItems(block)" :key="i">
             {{ cleanText(item) }}
           </li>
         </ul>
         <ol v-else-if="block.type === 'list'" class="list-decimal pl-5">
-          <li v-for="(item, i) in block.data.items" :key="i">
+          <li v-for="(item, i) in listItems(block)" :key="i">
             {{ cleanText(item) }}
           </li>
         </ol>
@@ -29,15 +29,15 @@
           v-else-if="block.type === 'quote'"
           class="border-l-4 border-slate-950 pl-5 text-xl font-semibold text-slate-950"
         >
-          {{ cleanText(block.data.text) }}
-          <cite v-if="block.data.caption" class="mt-2 block text-sm font-normal text-slate-500">
-            {{ cleanText(block.data.caption) }}
+          {{ cleanText(block.data?.text) }}
+          <cite v-if="block.data?.caption" class="mt-2 block text-sm font-normal text-slate-500">
+            {{ cleanText(block.data?.caption) }}
           </cite>
         </blockquote>
         <hr v-else-if="block.type === 'delimiter'" class="my-8 border-slate-200" />
         <img
           v-else-if="block.type === 'image'"
-          :src="block.data.file?.url || block.data.url"
+          :src="block.data?.file?.url || block.data?.url"
           class="rounded-2xl border border-slate-200"
           alt="product content"
         />
@@ -59,7 +59,7 @@ interface EditorBlockData {
 }
 interface EditorBlock {
   type: string
-  data: EditorBlockData
+  data?: EditorBlockData
 }
 const props = defineProps<{ value?: unknown }>()
 const blocks = computed<EditorBlock[]>(() => {
@@ -75,12 +75,21 @@ const blocks = computed<EditorBlock[]>(() => {
   return Array.isArray(raw?.blocks) ? raw.blocks : []
 })
 
-function cleanText(value?: string) {
+function cleanText(value?: unknown) {
   if (!value) return ''
-  return value
+  if (typeof value === 'object' && 'content' in value)
+    return cleanText((value as { content?: unknown }).content)
+  if (typeof value === 'object' && 'text' in value)
+    return cleanText((value as { text?: unknown }).text)
+  return String(value)
     .replace(/<[^>]*>/g, '')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function listItems(block: EditorBlock) {
+  const items = block.data?.items
+  return Array.isArray(items) ? items : []
 }
 
 function headerTag(level?: number) {
