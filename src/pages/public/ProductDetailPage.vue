@@ -1,5 +1,9 @@
 <template>
   <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+    <BreadcrumbNav
+      class="mb-5"
+      :items="[{ label: 'Cửa hàng', to: '/products' }, { label: product?.name || 'Chi tiết' }]"
+    />
     <div v-if="error" class="border border-red-200 bg-red-50 p-4 text-red-700">{{ error }}</div>
     <div v-else-if="loading" class="h-96 animate-pulse bg-black/10" />
     <div v-else-if="product" class="grid gap-6 md:gap-10 lg:grid-cols-[1fr_0.9fr]">
@@ -130,6 +134,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import { UiButton, UiForm, UiInput, UiTextarea } from '@/components/ui'
 import EditorContent from '@/components/storefront/EditorContent.vue'
 import { productApi } from '@/modules/catalog/product/api'

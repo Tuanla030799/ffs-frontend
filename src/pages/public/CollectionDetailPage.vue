@@ -1,5 +1,12 @@
 <template>
   <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+    <BreadcrumbNav
+      class="mb-5"
+      :items="[
+        { label: 'Bộ sưu tập', to: '/collections' },
+        { label: collection?.name || 'Chi tiết' },
+      ]"
+    />
     <div v-if="loading" class="h-96 animate-pulse bg-black/10" />
     <div v-else-if="collection" class="space-y-12">
       <section
@@ -37,6 +44,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'

@@ -1,7 +1,5 @@
 <template>
-  <aside
-    class="sticky top-0 flex h-screen flex-col border-r border-slate-200 bg-slate-950 p-4 text-white"
-  >
+  <aside class="flex h-full flex-col border-r border-slate-200 bg-slate-950 p-4 text-white">
     <RouterLink to="/admin/dashboard" class="mb-6 flex items-center gap-3 text-white no-underline"
       ><span class="grid h-10 w-10 place-items-center rounded-xl bg-white font-black text-slate-950"
         >FS</span

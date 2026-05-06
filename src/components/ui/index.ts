@@ -1,4 +1,5 @@
 export { default as UiAlert } from './UiAlert.vue'
+export { default as UiAccordion } from './UiAccordion.vue'
 export { default as UiButton } from './UiButton.vue'
 export { default as UiCard } from './UiCard.vue'
 export { default as UiDrawer } from './UiDrawer.vue'

@@ -1,5 +1,9 @@
 <template>
   <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+    <BreadcrumbNav
+      class="mb-5"
+      :items="[{ label: 'Blog', to: '/blogs' }, { label: blog?.title || 'Chi tiết' }]"
+    />
     <article v-if="blog" class="bg-[#f7f7f5] shadow-sm ring-1 ring-black/5">
       <img
         :src="coverUrl(blog) || '/assets/home.jpg'"
@@ -23,6 +27,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import EditorContent from '@/components/storefront/EditorContent.vue'
 import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'

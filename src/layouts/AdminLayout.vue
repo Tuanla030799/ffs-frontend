@@ -1,9 +1,11 @@
 <template>
-  <div class="min-h-screen bg-[var(--ui-bg)] lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
-    <div class="hidden lg:block">
+  <div
+    class="h-screen overflow-hidden bg-[var(--ui-bg)] lg:grid lg:grid-cols-[280px_minmax(0,1fr)]"
+  >
+    <div class="hidden min-h-0 lg:block">
       <AdminSidebarNav />
     </div>
-    <div class="min-w-0">
+    <div class="flex min-h-0 min-w-0 flex-col">
       <AdminTopbar :title="pageTitle" :description="pageDescription" @logout="handleLogout" />
 
       <div class="border-b border-slate-200 bg-white p-3 lg:hidden">
@@ -21,7 +23,7 @@
           </RouterLink>
         </div>
       </div>
-      <main class="p-4 sm:p-6">
+      <main class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
         <RouterView />
       </main>
     </div>
