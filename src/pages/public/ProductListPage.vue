@@ -22,12 +22,12 @@
             Filters
           </UiButton>
 
-          <UiSelect
-            v-model="sortBy"
-            class="min-w-0 flex-1 sm:w-52 sm:flex-none"
-            label="Sort By"
-            :options="sortOptions"
-          />
+          <DropdownSelect v-model="sortBy" :options="sortOptions">
+            <div class="flex items-center gap-2">
+              <span class="block">Sort By: </span>
+              <span class="block truncate">{{ selectedSortLabel }}</span>
+            </div>
+          </DropdownSelect>
         </div>
       </template>
     </PublicPageHeader>
@@ -76,7 +76,7 @@
 
       <div
         v-if="initialLoading"
-        class="grid grid-cols-2 gap-x-3 gap-y-9 lg:grid-cols-3 xl:grid-cols-4"
+        class="grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
       >
         <div v-for="i in 12" :key="i" class="aspect-[3/4] animate-pulse bg-black/10" />
       </div>
@@ -85,7 +85,7 @@
         v-else-if="products.length"
         tag="div"
         name="product-card"
-        class="grid grid-cols-2 gap-x-3 gap-y-9 lg:grid-cols-3 xl:grid-cols-4"
+        class="grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
       >
         <ProductCard v-for="product in sortedProducts" :key="product.id" :product="product" />
       </TransitionGroup>
@@ -101,7 +101,7 @@
 
       <div
         v-if="loading && products.length"
-        class="mt-10 grid grid-cols-2 gap-x-3 gap-y-9 lg:grid-cols-3 xl:grid-cols-4"
+        class="mt-10 grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
       >
         <div v-for="i in 4" :key="i" class="aspect-[3/4] animate-pulse bg-black/10" />
       </div>
@@ -112,11 +112,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import DropdownSelect from '@/components/common/DropdownSelect.vue'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import ProductFilterSidebar from '@/components/storefront/ProductFilterSidebar.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
-import { UiButton, UiDrawer, UiSelect } from '@/components/ui'
+import { UiButton, UiDrawer } from '@/components/ui'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { productApi } from '@/modules/catalog/product/api'
 import type { Product, ProductListQuery } from '@/modules/catalog/product/types'
@@ -190,6 +191,9 @@ const sortOptions = [
   { label: 'Price: High-Low', value: 'price-desc' },
   { label: 'Name', value: 'name-asc' },
 ]
+const selectedSortLabel = computed(
+  () => sortOptions.find((option) => option.value === sortBy.value)?.label || 'Featured',
+)
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 let loadToken = 0
