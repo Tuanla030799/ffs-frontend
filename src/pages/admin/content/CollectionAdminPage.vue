@@ -44,6 +44,14 @@
             label="Description"
           />
           <div class="md:col-span-3">
+            <RichTextEditorField
+              v-model="form.descriptionJson"
+              title="Nội dung collection"
+              description="Nội dung HTML cho trang chi tiết collection nếu storefront cần hiển thị."
+              placeholder="Viết mô tả collection..."
+            />
+          </div>
+          <div class="md:col-span-3">
             <FileUpload
               v-model="uploaded"
               scope="admin"
@@ -131,12 +139,14 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
+import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { normalizeRichTextInput } from '@/lib/richText'
 import { formatDateTime } from '@/modules/shared/types'
 import type { Collection, CollectionPayload } from '@/modules/content/collection/types'
 import type { Product } from '@/modules/catalog/product/types'
@@ -156,7 +166,7 @@ const form = reactive<CollectionPayload>({
   name: '',
   slug: '',
   description: '',
-  descriptionJson: '{}',
+  descriptionJson: '',
   fileId: '',
   status: 'ACTIVE',
   sortOrder: 0,
@@ -213,10 +223,7 @@ function fill(row?: Collection) {
     name: row?.name || '',
     slug: row?.slug || '',
     description: row?.description || '',
-    descriptionJson:
-      typeof row?.descriptionJson === 'string'
-        ? row.descriptionJson
-        : JSON.stringify(row?.descriptionJson || {}),
+    descriptionJson: normalizeRichTextInput(row?.descriptionJson),
     fileId: row?.fileId || '',
     status: row?.status || 'ACTIVE',
     sortOrder: row?.sortOrder || 0,

@@ -68,7 +68,7 @@
           </div>
         </UiCard>
 
-        <EditorJsField
+        <RichTextEditorField
           v-model="form.descriptionJson"
           title="Mô tả sản phẩm"
           description="Nội dung chi tiết hiển thị ở trang product detail."
@@ -225,13 +225,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import EditorJsField from '@/components/editor/EditorJsField.vue'
+import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
 import ImageUpload from '@/components/common/ImageUpload.vue'
 import ImagePreview from '@/components/common/ImagePreview.vue'
 import SizeColorPicker from '@/components/common/SizeColorPicker.vue'
 import { UiAlert, UiButton, UiCard, UiCheckbox, UiForm, UiInput, UiSelect } from '@/components/ui'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { normalizeRichTextInput } from '@/lib/richText'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
@@ -258,7 +259,7 @@ const form = reactive<ProductForm>({
   name: '',
   slug: '',
   shortDescription: '',
-  descriptionJson: { time: Date.now(), blocks: [] },
+  descriptionJson: '',
   status: 'ACTIVE',
   isFeatured: false,
   featuredOrder: 0,
@@ -284,7 +285,7 @@ function reset(row?: Product) {
   form.name = row?.name || ''
   form.slug = row?.slug || ''
   form.shortDescription = row?.shortDescription || ''
-  form.descriptionJson = row?.descriptionJson || { time: Date.now(), blocks: [] }
+  form.descriptionJson = normalizeRichTextInput(row?.descriptionJson)
   form.status = row?.status || 'ACTIVE'
   form.isFeatured = !!row?.isFeatured
   form.featuredOrder = row?.featuredOrder || 0

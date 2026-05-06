@@ -47,12 +47,12 @@
           </div>
         </UiCard>
 
-        <EditorJsField
-          v-model="editorData"
+        <RichTextEditorField
+          v-model="form.contentJson"
           title="Nội dung blog"
-          description="Output sẽ được stringify vào field contentJson."
+          description="Nội dung HTML sẽ được lưu vào field contentJson."
           placeholder="Viết bài blog..."
-          min-height-class="min-h-[520px]"
+          :min-height="520"
         />
       </div>
 
@@ -85,21 +85,20 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FileUpload from '@/components/common/FileUpload.vue'
-import EditorJsField from '@/components/editor/EditorJsField.vue'
+import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect, UiTextarea } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
+import { normalizeRichTextInput } from '@/lib/richText'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import type { Blog, BlogPayload } from '@/modules/content/blog/types'
 import type { UploadedFile } from '@/services/file.service'
 
-const emptyDoc = () => ({ time: Date.now(), blocks: [] })
 const route = useRoute()
 const router = useRouter()
 const isEdit = computed(() => Boolean(route.params.id))
 const saving = ref(false)
 const error = ref('')
 const uploaded = ref<UploadedFile | null>(null)
-const editorData = ref<unknown>(emptyDoc())
 const form = reactive<BlogPayload>({
   title: '',
   slug: '',
@@ -121,25 +120,16 @@ function slugify(value: string) {
 function syncSlug() {
   if (!form.slug) form.slug = slugify(form.title)
 }
-function parseEditor(value: unknown) {
-  try {
-    const data = typeof value === 'string' ? JSON.parse(value || '{}') : (value as any)
-    return Array.isArray(data?.blocks) ? data : emptyDoc()
-  } catch {
-    return emptyDoc()
-  }
-}
 function fill(row?: Blog) {
   Object.assign(form, {
     title: row?.title || '',
     slug: row?.slug || '',
     excerpt: row?.excerpt || '',
-    contentJson: '',
+    contentJson: normalizeRichTextInput(row?.contentJson),
     coverFileId: row?.coverFileId || '',
     status: row?.status || 'DRAFT',
     publishedAt: row?.publishedAt?.slice(0, 16) || '',
   })
-  editorData.value = parseEditor(row?.contentJson)
   uploaded.value = null
 }
 function goBack() {
@@ -158,7 +148,7 @@ async function save() {
     const payload = {
       ...form,
       slug: form.slug || slugify(form.title),
-      contentJson: JSON.stringify(editorData.value || emptyDoc()),
+      contentJson: form.contentJson || '',
       publishedAt: form.publishedAt || undefined,
     }
     if (isEdit.value) await blogApi.update(String(route.params.id), payload)

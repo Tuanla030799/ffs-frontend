@@ -271,16 +271,6 @@
     "@babel/helper-string-parser" "^7.27.1"
     "@babel/helper-validator-identifier" "^7.28.5"
 
-"@codexteam/icons@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.npmjs.org/@codexteam/icons/-/icons-0.0.5.tgz"
-  integrity sha512-s6H2KXhLz2rgbMZSkRm8dsMJvyUNZsEjxobBEg9ztdrb1B2H3pEzY6iTwI4XUPJWJ3c3qRKwV4TrO3J5jUdoQA==
-
-"@codexteam/icons@^0.3.0", "@codexteam/icons@^0.3.2":
-  version "0.3.3"
-  resolved "https://registry.npmjs.org/@codexteam/icons/-/icons-0.3.3.tgz"
-  integrity sha512-cp7mkZPgmBuSxigTm3Vb+DtVHYeX7qXfQd7o05vcLD8Ag5WvRlol2QSn5P10k0CDAJwmkH9nQGQLBycErS9lsQ==
-
 "@csstools/color-helpers@^5.1.0":
   version "5.1.0"
   resolved "https://registry.npmjs.org/@csstools/color-helpers/-/color-helpers-5.1.0.tgz"
@@ -308,58 +298,6 @@
   version "3.0.4"
   resolved "https://registry.npmjs.org/@csstools/css-tokenizer/-/css-tokenizer-3.0.4.tgz"
   integrity sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==
-
-"@editorjs/caret@^1.0.1":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@editorjs/caret/-/caret-1.1.0.tgz"
-  integrity sha512-dzUjrPV7mtqM0HR/7IwT1/1PfyMxUfe5MRXo9joFmBRDIcrQ5ikbqVxSL9+Hy5tQ+BUWBwqLUgX1UKTJylWW9Q==
-  dependencies:
-    "@editorjs/dom" "^1.1.0"
-
-"@editorjs/dom@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@editorjs/dom/-/dom-1.1.0.tgz"
-  integrity sha512-aH8OeS3DXCDG2WP6yt/uS6Z9PstrA3Re930boIilxtMdF7Ht+pKJrq3OJnd7OCMPVO/y7UOAmtHNesVx6v4K2g==
-  dependencies:
-    "@editorjs/helpers" "^1.2.0"
-
-"@editorjs/editorjs@^2.29.1", "@editorjs/editorjs@^2.31.6":
-  version "2.31.6"
-  resolved "https://registry.npmjs.org/@editorjs/editorjs/-/editorjs-2.31.6.tgz"
-  integrity sha512-j2nxuFCD3DnoJDUD0hPO5tirpuQ6sWmmuHATl3EI7fG1it3Ml7jk0WJtu3E+TRLBd7zfNeJhDThbP3LnBEn2GA==
-  dependencies:
-    "@editorjs/caret" "^1.0.1"
-    codex-notifier "^1.1.2"
-    codex-tooltip "^1.0.5"
-
-"@editorjs/header@^2.8.8":
-  version "2.8.8"
-  resolved "https://registry.npmjs.org/@editorjs/header/-/header-2.8.8.tgz"
-  integrity sha512-bsMSs34u2hoi0UBuRoc5EGWXIFzJiwYgkFUYQGVm63y5FU+s8zPBmVx5Ip2sw1xgs0fqfDROqmteMvvmbCy62w==
-  dependencies:
-    "@codexteam/icons" "^0.0.5"
-    "@editorjs/editorjs" "^2.29.1"
-
-"@editorjs/helpers@^1.2.0":
-  version "1.2.1"
-  resolved "https://registry.npmjs.org/@editorjs/helpers/-/helpers-1.2.1.tgz"
-  integrity sha512-y0BgHG/RT4a7hNPWxNpTIXgo1GlUrwzyngWMTVqe4DITUzMCqQ5gBfMvOwbKpNWwgQiL+ekDT1VNFVchAhtpKg==
-  dependencies:
-    codex-tooltip "^1.0.5"
-
-"@editorjs/image@^2.10.3":
-  version "2.10.3"
-  resolved "https://registry.npmjs.org/@editorjs/image/-/image-2.10.3.tgz"
-  integrity sha512-ekCsGICZOIdghF/U2T34H7CItqaWAoJDXbkRD+x8l/LIo/7Ozf7KovYm21qz+CluArgV4RurVFHqwlz+O0vfJA==
-  dependencies:
-    "@codexteam/icons" "^0.3.0"
-
-"@editorjs/list@^2.0.9":
-  version "2.0.9"
-  resolved "https://registry.npmjs.org/@editorjs/list/-/list-2.0.9.tgz"
-  integrity sha512-rUTgDSt5wygD3Dp24bNyp6vvye/Xf4UWju0ZuvWeP13Z4cu2z1Jb5JFSTEhCou72XUGuf4xVhtsd8cm/bwUS1g==
-  dependencies:
-    "@codexteam/icons" "^0.3.2"
 
 "@emnapi/core@^1.8.1":
   version "1.10.0"
@@ -887,12 +825,24 @@
     "@tailwindcss/oxide" "4.2.1"
     tailwindcss "4.2.1"
 
+"@tinymce/tinymce-vue@6":
+  version "6.3.0"
+  resolved "https://registry.yarnpkg.com/@tinymce/tinymce-vue/-/tinymce-vue-6.3.0.tgz#1ea4d57eea71e48aa71da9d8de98472f8505b2d4"
+  integrity sha512-DSP8Jhd3XqCCliTnusfbmz3D8GqQ4iRzkc4aadYHDcJPVjkaqopJ61McOdH82CSy599vGLkPjGzqJYWJkRMiUA==
+
 "@tybys/wasm-util@^0.10.1":
-  version "0.10.1"
-  resolved "https://registry.yarnpkg.com/@tybys/wasm-util/-/wasm-util-0.10.1.tgz#ecddd3205cf1e2d5274649ff0eedd2991ed7f414"
-  integrity sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==
+  version "0.10.2"
+  resolved "https://registry.yarnpkg.com/@tybys/wasm-util/-/wasm-util-0.10.2.tgz#12b3a1b33db1f9cad4ddff1f604ab7dd00bf464e"
+  integrity sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==
   dependencies:
     tslib "^2.4.0"
+
+"@types/dompurify@^3.0.5":
+  version "3.0.5"
+  resolved "https://registry.npmjs.org/@types/dompurify/-/dompurify-3.0.5.tgz"
+  integrity sha512-1Wg0g3BtQF7sSb27fJQAKck1HECM6zV1EB66j8JH9i3LCjYabJa0FSdiSgsD5K/RbrsR0SiraKacLB+T8ZVYAg==
+  dependencies:
+    "@types/trusted-types" "*"
 
 "@types/esrecurse@^4.3.1":
   version "4.3.1"
@@ -915,6 +865,11 @@
   integrity sha512-BkmoP5/FhRYek5izySdkOneRyXYN35I860MFAGupTdebyE66uZaR+bXLHq8k4DirE5DwQi3NuhvRU1jqTVwUrQ==
   dependencies:
     undici-types "~7.16.0"
+
+"@types/trusted-types@*", "@types/trusted-types@^2.0.7":
+  version "2.0.7"
+  resolved "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz"
+  integrity sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==
 
 "@typescript-eslint/eslint-plugin@8.56.1":
   version "8.56.1"
@@ -1451,16 +1406,6 @@ chownr@^1.1.1:
   resolved "https://registry.npmjs.org/chownr/-/chownr-1.1.4.tgz"
   integrity sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==
 
-codex-notifier@^1.1.2:
-  version "1.1.2"
-  resolved "https://registry.npmjs.org/codex-notifier/-/codex-notifier-1.1.2.tgz"
-  integrity sha512-DCp6xe/LGueJ1N5sXEwcBc3r3PyVkEEDNWCVigfvywAkeXcZMk9K41a31tkEFBW0Ptlwji6/JlAb49E3Yrxbtg==
-
-codex-tooltip@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/codex-tooltip/-/codex-tooltip-1.0.5.tgz"
-  integrity sha512-IuA8LeyLU5p1B+HyhOsqR6oxyFQ11k3i9e9aXw40CrHFTRO2Y1npNBVU3W1SvhKAbUU7R/YikUBdcYFP0RcJag==
-
 color-convert@^2.0.1:
   version "2.0.1"
   resolved "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz"
@@ -1588,6 +1533,13 @@ detect-libc@^2.0.0, detect-libc@^2.0.3:
   version "2.1.2"
   resolved "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz"
   integrity sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==
+
+dompurify@^3.4.2:
+  version "3.4.2"
+  resolved "https://registry.npmjs.org/dompurify/-/dompurify-3.4.2.tgz"
+  integrity sha512-lHeS9SA/IKeIFFyYciHBr2n0v1VMPlSj843HdLOwjb2OxNwdq9Xykxqhk+FE42MzAdHvInbAolSE4mhahPpjXA==
+  optionalDependencies:
+    "@types/trusted-types" "^2.0.7"
 
 dunder-proto@^1.0.1:
   version "1.0.1"
@@ -2624,12 +2576,12 @@ prelude-ls@^1.2.1:
 
 prettier-plugin-tailwindcss@^0.8.0:
   version "0.8.0"
-  resolved "https://registry.yarnpkg.com/prettier-plugin-tailwindcss/-/prettier-plugin-tailwindcss-0.8.0.tgz#766469c006717d6342cdf48eda262e8bfeabfa95"
+  resolved "https://registry.npmjs.org/prettier-plugin-tailwindcss/-/prettier-plugin-tailwindcss-0.8.0.tgz"
   integrity sha512-V8ITGH87yuBDF6JpEZTOVlUz/saAwqb8f3HRgUj8Lh+tGCcrmorhsLpYqzygwFwK0PE2Ib6Mv3M7T/uE2tZV1g==
 
 prettier@^3.8.3:
   version "3.8.3"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.8.3.tgz#560f2de55bf01b4c0503bc629d5df99b9a1d09b0"
+  resolved "https://registry.npmjs.org/prettier/-/prettier-3.8.3.tgz"
   integrity sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==
 
 proxy-from-env@^1.1.0:
@@ -2869,6 +2821,11 @@ tinyglobby@^0.2.15:
   dependencies:
     fdir "^6.5.0"
     picomatch "^4.0.3"
+
+tinymce@7:
+  version "7.9.2"
+  resolved "https://registry.yarnpkg.com/tinymce/-/tinymce-7.9.2.tgz#d47db80fade57da2d54c4a086675d3570c65ce0a"
+  integrity sha512-zS2gn2CPQmZhUqLzkhwYH+WGsx/DIRY/mS18RVzsIcuQg2lN2uzaqoHSJU6DdMUpvXBtBFnLNpumC3QrDwLBzA==
 
 tldts-core@^6.1.86:
   version "6.1.86"

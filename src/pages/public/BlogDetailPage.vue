@@ -17,7 +17,7 @@
         <h1 class="mt-4 text-3xl leading-tight font-black md:text-5xl">{{ blog.title }}</h1>
         <p class="mt-5 text-lg leading-8 text-black/65">{{ blog.excerpt }}</p>
         <div class="mt-10">
-          <EditorContent :value="blog.contentJson" />
+          <SafeHtmlContent :html="normalizeRichTextInput(blog.contentJson)" />
         </div>
       </div>
     </article>
@@ -28,9 +28,10 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
-import EditorContent from '@/components/storefront/EditorContent.vue'
+import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { normalizeRichTextInput } from '@/lib/richText'
 import { formatDateTime } from '@/modules/shared/types'
 import type { Blog } from '@/modules/content/blog/types'
 

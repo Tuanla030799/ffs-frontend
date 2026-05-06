@@ -157,7 +157,7 @@
 
       <section class="border-t border-black/10 pt-8 md:pt-10">
         <h2 class="mb-5 text-2xl font-black">Mô tả sản phẩm</h2>
-        <EditorContent :value="product.descriptionJson" />
+        <SafeHtmlContent :html="normalizeRichTextInput(product.descriptionJson)" />
       </section>
     </div>
     <div
@@ -174,10 +174,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
+import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import { UiButton, UiTag } from '@/components/ui'
-import EditorContent from '@/components/storefront/EditorContent.vue'
 import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { normalizeRichTextInput } from '@/lib/richText'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
