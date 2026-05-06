@@ -108,8 +108,8 @@
             <path d="M9 8a3 3 0 0 1 6 0" />
           </svg>
           <span
-            class="absolute top-1 right-1 grid h-4 w-4 place-items-center rounded-full bg-black text-[10px] font-bold text-white"
-            >0</span
+            class="absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-black px-1 text-[10px] font-bold text-white"
+            >{{ totalQuantity }}</span
           >
         </RouterLink>
       </div>
@@ -152,8 +152,10 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { UiButton, UiDrawer, UiForm, UiInput } from '@/components/ui'
+import { useCartCount } from '@/composables/useCart'
 
 const router = useRouter()
+const { totalQuantity } = useCartCount()
 const mobileMenuOpen = ref(false)
 const mobileSearchOpen = ref(false)
 const searchKeyword = ref('')

@@ -53,24 +53,19 @@
           <span class="text-xl font-bold text-[#18181B]">{{ money(displayPrice) }}</span>
         </div>
 
-        <button
-          type="button"
-          class="relative flex items-center gap-1.5 overflow-hidden rounded-[10px] bg-gradient-to-br from-[#18181B] to-[#27272A] px-[15px] py-2 text-[13px] font-semibold text-white shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition duration-300 before:absolute before:inset-y-0 before:-left-full before:w-full before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:transition-all before:duration-500 hover:-translate-y-0.5 hover:from-[#27272A] hover:to-[#3F3F46] hover:shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:before:left-full max-[400px]:w-full max-[400px]:justify-center"
-          @click.prevent
+        <UiButton
+          native-type="button"
+          variant="dark"
+          size="sm"
+          :disabled="!inStock"
+          class="max-[400px]:w-full"
+          @click.prevent.stop="handleAddToCart"
         >
+          <template #icon>
+            <img :src="addCartIcon" alt="" class="h-5 w-5" aria-hidden="true" />
+          </template>
           <span>Add to Cart</span>
-          <svg
-            class="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-10deg] hover:rotate-[-10deg]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <path d="M16 10a4 4 0 0 1-8 0" />
-          </svg>
-        </button>
+        </UiButton>
       </div>
 
       <div class="flex items-center justify-between border-t border-[#F4F4F5] pt-3">
@@ -103,8 +98,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import addCartIcon from '@/assets/icons/add-cart.svg'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
-import { UiTag } from '@/components/ui'
+import { UiButton, UiTag } from '@/components/ui'
+import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import type { Product, ProductFeatured } from '@/modules/catalog/product/types'
 import { money } from '@/modules/shared/types'
@@ -116,6 +113,10 @@ const displayPrice = computed(() => productPrice(props.product))
 const originalPrice = computed(() => productOriginalPrice(props.product))
 const inStock = computed(() => productStock(props.product) > 0)
 const reviewCount = computed(() => seededReviewCount(props.product.id || props.product.slug))
+
+function handleAddToCart() {
+  addToCart(props.product)
+}
 
 function primaryImageUrl(product: Product | ProductFeatured) {
   if ('primaryImageUrl' in product) return product.primaryImageUrl

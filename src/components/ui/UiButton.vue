@@ -4,7 +4,15 @@
       v-if="loading"
       class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
     />
-    <slot />
+    <span
+      v-if="$slots.icon && !loading"
+      class="relative z-10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-10deg]"
+    >
+      <slot name="icon" />
+    </span>
+    <span class="relative z-10">
+      <slot />
+    </span>
   </button>
 </template>
 
@@ -45,7 +53,7 @@ const classes = computed(() => {
     danger:
       'border border-red-200 bg-[var(--ui-danger-soft)] text-[var(--ui-danger)] hover:brightness-95',
     ghost: 'bg-transparent text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-soft)]',
-    dark: 'bg-[var(--ui-text)] text-white hover:opacity-90',
+    dark: 'bg-gradient-to-br from-[#18181B] to-[#27272A] text-white hover:from-[#27272A] hover:to-[#3F3F46]',
   }
 
   const sizes = {
@@ -61,9 +69,10 @@ const classes = computed(() => {
   }
 
   return cn(
-    'inline-flex items-center justify-center gap-2 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ui-primary-ring)] disabled:cursor-not-allowed disabled:opacity-50',
+    'group inline-flex items-center justify-center gap-2 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ui-primary-ring)] disabled:cursor-not-allowed disabled:opacity-50',
     variants[props.variant],
     sizes[props.size],
+    'relative overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.1)] before:absolute before:inset-y-0 before:-left-full before:w-full before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:transition-all before:duration-500 hover:-translate-y-0.5 hover:shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:before:left-full',
     props.block && 'w-full',
   )
 })

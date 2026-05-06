@@ -116,27 +116,39 @@
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <button
-                  v-for="sku in skus"
+                  v-for="sku in inStockSkus"
                   :key="sku.id || sku.skuCode"
                   type="button"
                   class="min-h-12 rounded-md border px-2 text-sm font-semibold transition hover:border-black"
-                  :class="[
-                    selectedSku?.id === sku.id ? 'border-black' : 'border-black/20',
-                    sku.stock <= 0 &&
-                      'cursor-not-allowed bg-black/[0.04] text-black/30 line-through',
-                  ]"
-                  :disabled="sku.stock <= 0"
+                  :class="selectedSku?.id === sku.id ? 'border-black' : 'border-black/20'"
                   @click="selectedSku = sku"
                 >
                   {{ sku.size }}
                 </button>
               </div>
+              <p v-if="!inStockSkus.length" class="text-sm font-semibold text-black/50">
+                Tạm thời hết hàng
+              </p>
               <p class="mt-3 text-sm text-black/50">Tồn kho: {{ selectedSku?.stock ?? '-' }}</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <UiTag v-if="product.categoryName" variant="soft">{{ product.categoryName }}</UiTag>
+                <UiTag v-if="product.gender" variant="soft">{{ product.gender }}</UiTag>
+              </div>
             </div>
 
             <div class="space-y-3">
-              <UiButton native-type="button" variant="dark" block size="lg" @click="quickBuy">
-                Add to card
+              <UiButton
+                native-type="button"
+                variant="dark"
+                block
+                size="lg"
+                :disabled="!selectedSku"
+                @click="handleAddToCart"
+              >
+                <template #icon>
+                  <img :src="addCartIcon" alt="" class="h-5 w-5" aria-hidden="true" />
+                </template>
+                Add to Cart
               </UiButton>
             </div>
           </section>
@@ -160,10 +172,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
-import { UiButton } from '@/components/ui'
+import { UiButton, UiTag } from '@/components/ui'
 import EditorContent from '@/components/storefront/EditorContent.vue'
-import ProductCheckoutForm from '@/components/storefront/ProductCheckoutForm.vue'
+import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
@@ -177,7 +190,6 @@ const product = ref<Product | null>(null)
 const selectedImage = ref('')
 const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
-const checkoutFormRef = ref<InstanceType<typeof ProductCheckoutForm> | null>(null)
 const images = computed(() => asArray(product.value?.images))
 const galleryImages = computed(() =>
   images.value
@@ -190,6 +202,11 @@ const galleryImages = computed(() =>
 
 const variants = computed(() => asArray(product.value?.variants))
 const skus = computed(() => asArray(product.value?.skus))
+const variantSkus = computed(() => {
+  if (!selectedVariantKey.value) return skus.value
+  return skus.value.filter((sku) => skuVariantKey(sku) === selectedVariantKey.value)
+})
+const inStockSkus = computed(() => variantSkus.value.filter((sku) => sku.stock > 0))
 const currentPrice = computed(
   () =>
     selectedSku.value?.salePrice ||
@@ -206,8 +223,13 @@ const currentOriginalPrice = computed(() =>
 function variantKey(variant: ProductVariant) {
   return variant.id || variant.clientId || variant.name
 }
+function skuVariantKey(sku: ProductSku) {
+  return sku.variantId || sku.variantClientId || ''
+}
 function selectVariant(variant: ProductVariant) {
   selectedVariantKey.value = variantKey(variant)
+  selectedImage.value = resolveFileUrl(variant.imageUrl || '') || selectedImage.value
+  selectedSku.value = variantSkus.value.find((sku) => sku.stock > 0) || variantSkus.value[0] || null
 }
 function goImage(direction: number) {
   if (!galleryImages.value.length) return
@@ -218,8 +240,9 @@ function goImage(direction: number) {
       : (currentIndex + direction + galleryImages.value.length) % galleryImages.value.length
   selectedImage.value = galleryImages.value[nextIndex]?.url || selectedImage.value
 }
-function quickBuy() {
-  void checkoutFormRef.value?.submitOrder()
+function handleAddToCart() {
+  if (!product.value || !selectedSku.value) return
+  addToCart(product.value, selectedSku.value)
 }
 
 onMounted(async () => {
@@ -227,7 +250,7 @@ onMounted(async () => {
     product.value = await productApi.detail(String(route.params.slug))
     selectedImage.value = galleryImages.value[0]?.url || ''
     if (variants.value[0]) selectVariant(variants.value[0])
-    selectedSku.value = skus.value.find((sku) => sku.stock > 0) || skus.value[0] || null
+    selectedSku.value = inStockSkus.value[0] || null
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
