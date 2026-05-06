@@ -48,6 +48,7 @@ import 'tinymce/skins/content/default/content.css'
 import { UiCard } from '@/components/ui'
 import { fileService } from '@/services/file.service'
 import { normalizeRichTextInput } from '@/lib/richText'
+import { resolveFileUrl } from '@/lib/fileUrl'
 
 type BlobInfo = {
   blob: () => Blob
@@ -93,45 +94,99 @@ const heading = computed(() => props.title || props.label)
 const isDisabled = computed(() => props.disabled || props.readonly)
 
 const editorInit = computed(() => ({
-  selector: 'textarea', // change this value according to your HTML
   license_key: 'gpl',
   promotion: false,
   branding: false,
   menubar: false,
+
   readonly: isDisabled.value,
-  height: props.minHeight,
+
   min_height: props.minHeight,
+  max_height: 900,
   autoresize_bottom_margin: 24,
   placeholder: props.placeholder,
+
   plugins: 'advlist autolink autoresize code fullscreen image link lists preview table wordcount',
+
   toolbar:
-    'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | link image table blockquote | code preview fullscreen',
+    'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | ' +
+    'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | ' +
+    'link image table blockquote | code preview fullscreen',
+
   block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4',
+
   paste_data_images: false,
   automatic_uploads: true,
   images_upload_credentials: true,
   file_picker_types: 'image',
-  skin: false,
-  content_css: false,
+
+  image_title: true,
+  image_caption: true,
+  image_advtab: true,
+
   content_style: `
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.75; color: #111827; }
-    img { max-width: 100%; height: auto; border-radius: 14px; }
-    figure { margin: 1rem 0; }
-    figcaption { color: #64748b; font-size: 13px; text-align: center; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #e2e8f0; padding: 10px; }
-    blockquote { border-left: 4px solid #111827; margin-left: 0; padding-left: 16px; font-weight: 700; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.75;
+      color: #111827;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 14px;
+    }
+
+    figure {
+      margin: 1rem 0;
+    }
+
+    figcaption {
+      color: #64748b;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+    }
+
+    blockquote {
+      border-left: 4px solid #111827;
+      margin-left: 0;
+      padding-left: 16px;
+      font-weight: 700;
+    }
   `,
+
   images_upload_handler: async (blobInfo: BlobInfo) => {
     localError.value = ''
+
     try {
-      const file = new File([blobInfo.blob()], blobInfo.filename(), {
-        type: blobInfo.blob().type || 'image/*',
+      const blob = blobInfo.blob()
+
+      const file = new File([blob], blobInfo.filename(), {
+        type: blob.type || 'image/*',
       })
-      const uploaded = await fileService.upload(file, { scope: 'admin', fieldName: 'file' })
-      if (!uploaded.url) throw new Error('Upload image failed')
-      // TODO: backend should mark uploaded rich text image files as ACTIVE by parsing img src/path when content is saved.
-      return uploaded.url
+
+      const uploaded = await fileService.upload(file, {
+        scope: 'admin',
+        fieldName: 'file',
+      })
+
+      if (!uploaded.url) {
+        throw new Error('Upload image failed')
+      }
+
+      return resolveFileUrl(uploaded.url)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Upload image failed'
       localError.value = message
