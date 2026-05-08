@@ -7,6 +7,7 @@ export type FileUploadScope = 'admin' | 'client'
 export interface UploadedFile {
   fileId: string | number
   url: string
+  rawUrl?: string
   path: string
   name?: string
   mimeType?: string
@@ -25,6 +26,7 @@ function normalizeUploadedFile(row: Record<string, any>): UploadedFile {
   return {
     fileId: row.fileId || row.file_id || row.id,
     url: resolveFileUrl(url),
+    rawUrl: url,
     path,
     name: row.name || row.originalName || row.original_name,
     mimeType: row.mimeType || row.mime_type || row.mimetype,

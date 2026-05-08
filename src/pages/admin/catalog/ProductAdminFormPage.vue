@@ -69,7 +69,7 @@
         </UiCard>
 
         <RichTextEditorField
-          v-model="form.descriptionJson"
+          v-model="form.descriptionHtml"
           title="Mô tả sản phẩm"
           description="Nội dung chi tiết hiển thị ở trang product detail."
           placeholder="Nhập mô tả sản phẩm..."
@@ -233,6 +233,7 @@ import SizeColorPicker from '@/components/common/SizeColorPicker.vue'
 import { UiAlert, UiButton, UiCard, UiCheckbox, UiForm, UiInput, UiSelect } from '@/components/ui'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
+import { sanitizeHtml } from '@/lib/sanitizeHtml'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
@@ -259,7 +260,7 @@ const form = reactive<ProductForm>({
   name: '',
   slug: '',
   shortDescription: '',
-  descriptionJson: '',
+  descriptionHtml: '',
   status: 'ACTIVE',
   isFeatured: false,
   featuredOrder: 0,
@@ -285,7 +286,7 @@ function reset(row?: Product) {
   form.name = row?.name || ''
   form.slug = row?.slug || ''
   form.shortDescription = row?.shortDescription || ''
-  form.descriptionJson = normalizeRichTextInput(row?.descriptionJson)
+  form.descriptionHtml = normalizeRichTextInput(row?.descriptionHtml)
   form.status = row?.status || 'ACTIVE'
   form.isFeatured = !!row?.isFeatured
   form.featuredOrder = row?.featuredOrder || 0
@@ -513,6 +514,7 @@ function buildPayload(): ProductPayload {
     name: trimText(form.name),
     slug: trimText(form.slug),
     shortDescription: trimText(form.shortDescription),
+    descriptionHtml: sanitizeHtml(form.descriptionHtml || ''),
     brandId: form.brandId || null,
     gender: form.gender || 'UNISEX',
     featuredOrder: numberOrZero(form.featuredOrder),

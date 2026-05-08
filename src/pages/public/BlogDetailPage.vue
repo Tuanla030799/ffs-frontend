@@ -17,7 +17,7 @@
         <h1 class="mt-4 text-3xl leading-tight font-black md:text-5xl">{{ blog.title }}</h1>
         <p class="mt-5 text-lg leading-8 text-black/65">{{ blog.excerpt }}</p>
         <div class="mt-10">
-          <SafeHtmlContent :html="normalizeRichTextInput(blog.contentJson)" />
+          <SafeHtmlContent :html="blogContentHtml" />
         </div>
       </div>
     </article>
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
@@ -37,6 +37,9 @@ import type { Blog } from '@/modules/content/blog/types'
 
 const route = useRoute()
 const blog = ref<Blog | null>(null)
+const blogContentHtml = computed(() =>
+  normalizeRichTextInput(blog.value?.contentHtml || blog.value?.contentJson),
+)
 
 function coverUrl(row: Blog) {
   return resolveFileUrl(row.coverUrl || row.imageUrl || '')

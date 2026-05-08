@@ -12,6 +12,7 @@ export interface Collection {
   name: string
   slug: string
   description?: string
+  descriptionHtml?: string | null
   descriptionJson?: unknown
   fileId?: string
   coverUrl?: string
@@ -34,7 +35,8 @@ export interface CollectionPayload {
   name: string
   slug?: string
   description?: string
-  descriptionJson?: string
+  descriptionHtml?: string
+  descriptionJson?: unknown
   fileId?: string
   status: 'ACTIVE' | 'INACTIVE' | string
   sortOrder?: number

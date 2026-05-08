@@ -73,7 +73,7 @@ export interface Product {
   name: string
   slug: string
   shortDescription?: string
-  descriptionJson?: unknown
+  descriptionHtml?: string | null
   status: Status
   isFeatured?: boolean
   featuredOrder?: number

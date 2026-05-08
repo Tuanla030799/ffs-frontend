@@ -157,7 +157,7 @@
 
       <section class="border-t border-black/10 pt-8 md:pt-10">
         <h2 class="mb-5 text-2xl font-black">Mô tả sản phẩm</h2>
-        <SafeHtmlContent :html="normalizeRichTextInput(product.descriptionJson)" />
+        <SafeHtmlContent :html="productDescriptionHtml" />
       </section>
     </div>
     <div
@@ -219,6 +219,9 @@ const currentOriginalPrice = computed(() =>
   selectedSku.value?.salePrice || product.value?.salePrice
     ? selectedSku.value?.price || product.value?.price
     : undefined,
+)
+const productDescriptionHtml = computed(() =>
+  normalizeRichTextInput(product.value?.descriptionHtml),
 )
 
 function variantKey(variant: ProductVariant) {

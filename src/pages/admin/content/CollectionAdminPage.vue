@@ -45,11 +45,15 @@
           />
           <div class="md:col-span-3">
             <RichTextEditorField
-              v-model="form.descriptionJson"
+              v-model="form.descriptionHtml"
               title="Nội dung collection"
               description="Nội dung HTML cho trang chi tiết collection nếu storefront cần hiển thị."
               placeholder="Viết mô tả collection..."
             />
+            <p v-if="hasLegacyDescription" class="mt-2 text-sm font-semibold text-amber-700">
+              Collection này còn dữ liệu Editor.js cũ. TinyMCE chỉ nạp descriptionHtml; cần convert
+              legacy JSON sang HTML trước khi chỉnh tiếp nội dung cũ.
+            </p>
           </div>
           <div class="md:col-span-3">
             <FileUpload
@@ -146,7 +150,8 @@ import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
-import { normalizeRichTextInput } from '@/lib/richText'
+import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
+import { sanitizeHtml } from '@/lib/sanitizeHtml'
 import { formatDateTime } from '@/modules/shared/types'
 import type { Collection, CollectionPayload } from '@/modules/content/collection/types'
 import type { Product } from '@/modules/catalog/product/types'
@@ -161,12 +166,14 @@ const notice = ref('')
 const editing = ref<Collection | 'new' | null>(null)
 const deleting = ref<Collection | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
+const hasLegacyDescription = ref(false)
 const query = reactive({ keyword: '', status: '', page: 1, limit: 50 })
 const form = reactive<CollectionPayload>({
   name: '',
   slug: '',
   description: '',
-  descriptionJson: '',
+  descriptionHtml: '',
+  descriptionJson: null,
   fileId: '',
   status: 'ACTIVE',
   sortOrder: 0,
@@ -223,7 +230,8 @@ function fill(row?: Collection) {
     name: row?.name || '',
     slug: row?.slug || '',
     description: row?.description || '',
-    descriptionJson: normalizeRichTextInput(row?.descriptionJson),
+    descriptionHtml: normalizeRichTextInput(row?.descriptionHtml),
+    descriptionJson: null,
     fileId: row?.fileId || '',
     status: row?.status || 'ACTIVE',
     sortOrder: row?.sortOrder || 0,
@@ -232,6 +240,7 @@ function fill(row?: Collection) {
       sortOrder: item.sortOrder || 0,
     })),
   })
+  hasLegacyDescription.value = !form.descriptionHtml && isEditorJsContent(row?.descriptionJson)
   uploaded.value = null
 }
 async function openCreate() {
@@ -266,6 +275,8 @@ async function save() {
     const payload = {
       ...form,
       slug: form.slug || slugify(form.name),
+      descriptionHtml: sanitizeHtml(form.descriptionHtml || ''),
+      descriptionJson: null,
       products: form.products.filter((item) => item.productId),
     }
     if (editing.value === 'new') await collectionApi.create(payload)

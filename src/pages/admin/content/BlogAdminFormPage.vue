@@ -48,12 +48,16 @@
         </UiCard>
 
         <RichTextEditorField
-          v-model="form.contentJson"
+          v-model="form.contentHtml"
           title="Nội dung blog"
-          description="Nội dung HTML sẽ được lưu vào field contentJson."
+          description="Nội dung HTML sẽ được lưu vào field contentHtml."
           placeholder="Viết bài blog..."
           :min-height="520"
         />
+        <p v-if="hasLegacyContent" class="text-sm font-semibold text-amber-700">
+          Blog này còn dữ liệu Editor.js cũ. TinyMCE chỉ nạp contentHtml; cần convert legacy JSON
+          sang HTML trước khi chỉnh tiếp nội dung cũ.
+        </p>
       </div>
 
       <aside class="space-y-5">
@@ -88,7 +92,8 @@ import FileUpload from '@/components/common/FileUpload.vue'
 import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect, UiTextarea } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
-import { normalizeRichTextInput } from '@/lib/richText'
+import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
+import { sanitizeHtml } from '@/lib/sanitizeHtml'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import type { Blog, BlogPayload } from '@/modules/content/blog/types'
 import type { UploadedFile } from '@/services/file.service'
@@ -99,11 +104,13 @@ const isEdit = computed(() => Boolean(route.params.id))
 const saving = ref(false)
 const error = ref('')
 const uploaded = ref<UploadedFile | null>(null)
+const hasLegacyContent = ref(false)
 const form = reactive<BlogPayload>({
   title: '',
   slug: '',
   excerpt: '',
-  contentJson: '',
+  contentHtml: '',
+  contentJson: null,
   coverFileId: '',
   status: 'DRAFT',
   publishedAt: '',
@@ -125,11 +132,13 @@ function fill(row?: Blog) {
     title: row?.title || '',
     slug: row?.slug || '',
     excerpt: row?.excerpt || '',
-    contentJson: normalizeRichTextInput(row?.contentJson),
+    contentHtml: normalizeRichTextInput(row?.contentHtml),
+    contentJson: null,
     coverFileId: row?.coverFileId || '',
     status: row?.status || 'DRAFT',
     publishedAt: row?.publishedAt?.slice(0, 16) || '',
   })
+  hasLegacyContent.value = !form.contentHtml && isEditorJsContent(row?.contentJson)
   uploaded.value = null
 }
 function goBack() {
@@ -148,7 +157,8 @@ async function save() {
     const payload = {
       ...form,
       slug: form.slug || slugify(form.title),
-      contentJson: form.contentJson || '',
+      contentHtml: sanitizeHtml(form.contentHtml || ''),
+      contentJson: null,
       publishedAt: form.publishedAt || undefined,
     }
     if (isEdit.value) await blogApi.update(String(route.params.id), payload)

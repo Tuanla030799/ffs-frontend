@@ -22,7 +22,12 @@
           <h1 class="mt-4 text-3xl leading-none font-black uppercase md:text-5xl">
             {{ collection.name }}
           </h1>
-          <p class="mt-6 leading-7 text-black/65">{{ collection.description }}</p>
+          <SafeHtmlContent
+            v-if="collectionDescriptionHtml"
+            class="mt-6"
+            :html="collectionDescriptionHtml"
+          />
+          <p v-else class="mt-6 leading-7 text-black/65">{{ collection.description }}</p>
         </div>
       </section>
       <section>
@@ -45,9 +50,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
+import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { normalizeRichTextInput } from '@/lib/richText'
 import type { Product } from '@/modules/catalog/product/types'
 import type { Collection } from '@/modules/content/collection/types'
 
@@ -57,6 +64,9 @@ const collection = ref<Collection | null>(null)
 const products = computed<Product[]>(
   () =>
     (collection.value?.products?.map((item) => item.product).filter(Boolean) as Product[]) || [],
+)
+const collectionDescriptionHtml = computed(() =>
+  normalizeRichTextInput(collection.value?.descriptionHtml || collection.value?.descriptionJson),
 )
 
 function coverUrl(row: Collection) {
