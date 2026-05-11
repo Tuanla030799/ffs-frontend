@@ -47,11 +47,13 @@ function readCoupon(): CartCoupon | null {
 }
 
 function writeCart(items: CartItem[]) {
+  if (typeof window === 'undefined') return
   window.localStorage.setItem(CART_KEY, JSON.stringify(items))
   window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT))
 }
 
 function writeCoupon(coupon: CartCoupon | null) {
+  if (typeof window === 'undefined') return
   if (coupon?.code) {
     window.localStorage.setItem(CART_COUPON_KEY, JSON.stringify(coupon))
   } else {
@@ -124,6 +126,7 @@ export function useCart() {
   })
 
   onBeforeUnmount(() => {
+    if (typeof window === 'undefined') return
     window.removeEventListener(CART_UPDATED_EVENT, refresh)
     window.removeEventListener('storage', refresh)
   })
@@ -145,6 +148,7 @@ export function useCartCount() {
   })
 
   onBeforeUnmount(() => {
+    if (typeof window === 'undefined') return
     window.removeEventListener(CART_UPDATED_EVENT, refresh)
     window.removeEventListener('storage', refresh)
   })

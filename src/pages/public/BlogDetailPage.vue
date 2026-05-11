@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
@@ -36,7 +36,9 @@ import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Blog } from '@/modules/content/blog/types'
 
 const route = useRoute()
-const blog = ref<Blog | null>(null)
+const { data: blog } = await useAsyncData(`blog-detail-${String(route.params.slug)}`, () =>
+  blogApi.detail(String(route.params.slug)),
+)
 const blogContentHtml = computed(() =>
   normalizeRichTextInput(blog.value?.contentHtml || blog.value?.contentJson),
 )
@@ -45,7 +47,11 @@ function coverUrl(row: Blog) {
   return resolveFileUrl(row.coverImageUrl || '')
 }
 
-onMounted(async () => {
-  blog.value = await blogApi.detail(String(route.params.slug))
+useSeoMeta({
+  title: () => (blog.value ? `${blog.value.title} - Thepocketshoes Blog` : 'Blog Thepocketshoes'),
+  description: () => blog.value?.excerpt || 'Bai viet tu Thepocketshoes.',
+  ogTitle: () => blog.value?.title || 'Thepocketshoes Blog',
+  ogDescription: () => blog.value?.excerpt || 'Bai viet tu Thepocketshoes.',
+  ogImage: () => (blog.value ? coverUrl(blog.value) || undefined : undefined),
 })
 </script>

@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { cn } from '@/utils/cn'
 
 const props = withDefaults(
@@ -65,6 +65,10 @@ function toggle() {
 function onDocClick(event: MouseEvent) {
   if (!rootRef.value?.contains(event.target as Node)) open.value = false
 }
-document.addEventListener('click', onDocClick)
+
+onMounted(() => {
+  document.addEventListener('click', onDocClick)
+})
+
 onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 </script>

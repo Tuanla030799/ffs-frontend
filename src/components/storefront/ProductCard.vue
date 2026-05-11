@@ -25,7 +25,7 @@
 
     <div class="p-5">
       <div class="mb-[5px] text-[11px] font-semibold tracking-[1px] text-[#71717A] uppercase">
-        {{ product.brandName || 'Fresh Shoes' }}
+        {{ product.brandName || 'Thepocketshoes' }}
       </div>
 
       <h2
@@ -98,10 +98,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import addCartIcon from '@/assets/icons/add-cart.svg'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
-import { UiButton, UiTag } from '@/components/ui'
-import { addToCart } from '@/composables/useCart'
+import { UiTag } from '@/components/ui'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import type { Product, ProductFeatured } from '@/modules/catalog/product/types'
 import { money } from '@/modules/shared/types'
@@ -113,10 +111,6 @@ const displayPrice = computed(() => productPrice(props.product))
 const originalPrice = computed(() => productOriginalPrice(props.product))
 const inStock = computed(() => productStock(props.product) > 0)
 const reviewCount = computed(() => seededReviewCount(props.product.id || props.product.slug))
-
-function handleAddToCart() {
-  addToCart(props.product)
-}
 
 function primaryImageUrl(product: Product | ProductFeatured) {
   if ('primaryImageUrl' in product) return product.primaryImageUrl

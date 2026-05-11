@@ -6,7 +6,7 @@ import globals from 'globals'
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**'],
+    ignores: ['dist/**', 'node_modules/**', '.nuxt/**', '.output/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -24,6 +24,12 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+        definePageMeta: 'readonly',
+        navigateTo: 'readonly',
+        useAsyncData: 'readonly',
+        useRoute: 'readonly',
+        useRouter: 'readonly',
+        useSeoMeta: 'readonly',
       },
     },
     rules: {
@@ -49,6 +55,14 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+        defineEventHandler: 'readonly',
+        defineNuxtConfig: 'readonly',
+        defineNuxtPlugin: 'readonly',
+        defineNuxtRouteMiddleware: 'readonly',
+        getRequestURL: 'readonly',
+        navigateTo: 'readonly',
+        setHeader: 'readonly',
+        useRuntimeConfig: 'readonly',
       },
     },
     rules: {

@@ -6,11 +6,10 @@ import axios, {
 } from 'axios'
 import { buildSearchParams } from '@/lib/http/queryParams'
 import { env } from '@/config/env'
-import { pinia } from '@/stores'
 import { useAppStore } from '@/stores/app'
-import router from '@/router'
 import { ApiError } from '@/types/http'
 import { adminAuthService } from '@/services/admin/auth.service'
+import { navigateTo } from '#imports'
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
@@ -40,7 +39,7 @@ function normalizeAxiosError(error: unknown) {
 let refreshPromise: Promise<string> | null = null
 
 async function refreshAccessToken() {
-  const appStore = useAppStore(pinia)
+  const appStore = useAppStore()
   if (!appStore.refreshToken) {
     appStore.clearAuthSession()
     throw new ApiError({
@@ -81,22 +80,22 @@ function shouldSkipRefresh(config?: RetryableConfig) {
 }
 
 function redirectToAdminLogin() {
-  const currentRoute = router.currentRoute.value
-  if (currentRoute.name === 'admin-login') return
+  if (!import.meta.client) return
+  if (window.location.pathname === '/admin/login') return
 
   const redirect =
-    currentRoute.fullPath.startsWith('/admin') && currentRoute.fullPath !== '/admin/login'
-      ? currentRoute.fullPath
+    window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login'
+      ? `${window.location.pathname}${window.location.search}`
       : undefined
 
-  void router.replace({
+  void navigateTo({
     name: 'admin-login',
     query: redirect ? { redirect } : undefined,
   })
 }
 
 function handleUnauthorized() {
-  const appStore = useAppStore(pinia)
+  const appStore = useAppStore()
   appStore.clearAuthSession()
   redirectToAdminLogin()
 }
@@ -119,7 +118,7 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
           buildSearchParams(params as any).toString()
       }
 
-      const appStore = useAppStore(pinia)
+      const appStore = useAppStore()
       appStore.startRequest()
 
       const authHeaders = appStore.accessToken
@@ -136,7 +135,7 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
       }
     },
     (error: AxiosError) => {
-      const appStore = useAppStore(pinia)
+      const appStore = useAppStore()
       appStore.finishRequest()
       return Promise.reject(normalizeAxiosError(error))
     },
@@ -144,12 +143,12 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
 
   client.interceptors.response.use(
     (response) => {
-      const appStore = useAppStore(pinia)
+      const appStore = useAppStore()
       appStore.finishRequest()
       return response
     },
     async (error: AxiosError) => {
-      const appStore = useAppStore(pinia)
+      const appStore = useAppStore()
       appStore.finishRequest()
 
       const originalRequest = error.config as RetryableConfig | undefined

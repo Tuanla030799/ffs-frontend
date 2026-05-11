@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
@@ -59,8 +59,10 @@ import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { CollectionDetail } from '@/modules/content/collection/types'
 
 const route = useRoute()
-const loading = ref(false)
-const collection = ref<CollectionDetail | null>(null)
+const { data: collection, pending: loading } = await useAsyncData(
+  `collection-detail-${String(route.params.slug)}`,
+  () => collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 }),
+)
 const products = computed<ProductFeatured[]>(() => collection.value?.products || [])
 const collectionDescriptionHtml = computed(() =>
   normalizeRichTextInput(collection.value?.descriptionHtml || collection.value?.descriptionJson),
@@ -70,12 +72,13 @@ function coverUrl(row: CollectionDetail) {
   return resolveFileUrl(row.coverUrl || row.imageUrl || '')
 }
 
-onMounted(async () => {
-  loading.value = true
-  try {
-    collection.value = await collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 })
-  } finally {
-    loading.value = false
-  }
+useSeoMeta({
+  title: () => (collection.value ? `${collection.value.name} - Thepocketshoes` : 'Bo suu tap'),
+  description: () =>
+    collection.value?.excerpt || 'Kham pha bo suu tap giay duoc chon loc tai Thepocketshoes.',
+  ogTitle: () => collection.value?.name || 'Bo suu tap Thepocketshoes',
+  ogDescription: () =>
+    collection.value?.excerpt || 'Kham pha bo suu tap giay duoc chon loc tai Thepocketshoes.',
+  ogImage: () => (collection.value ? coverUrl(collection.value) || undefined : undefined),
 })
 </script>

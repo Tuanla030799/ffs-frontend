@@ -23,7 +23,10 @@
               : 'h-full w-full object-cover grayscale transition duration-300 group-hover:scale-105 group-hover:grayscale-0'
           "
         />
-        <div v-else class="grid h-full min-h-56 place-items-center bg-[#e8e8e5] text-sm text-black/40">
+        <div
+          v-else
+          class="grid h-full min-h-56 place-items-center bg-[#e8e8e5] text-sm text-black/40"
+        >
           No image
         </div>
       </div>

@@ -5,7 +5,7 @@
     </span>
     <button
       type="button"
-      class="flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-4 py-3 text-left text-sm text-[var(--ui-text)] outline-none transition hover:bg-[var(--ui-surface-soft)] focus:border-[var(--ui-primary)] focus:ring-4 focus:ring-[var(--ui-primary-ring)]"
+      class="flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-4 py-3 text-left text-sm text-[var(--ui-text)] transition outline-none hover:bg-[var(--ui-surface-soft)] focus:border-[var(--ui-primary)] focus:ring-4 focus:ring-[var(--ui-primary-ring)]"
       @click="toggle"
     >
       <span class="truncate">{{ selectedLabel || placeholder }}</span>
@@ -21,7 +21,7 @@
           v-model="keyword"
           type="text"
           :placeholder="searchPlaceholder"
-          class="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-[var(--ui-primary)] focus:ring-4 focus:ring-[var(--ui-primary-ring)]"
+          class="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-sm transition outline-none focus:border-[var(--ui-primary)] focus:ring-4 focus:ring-[var(--ui-primary-ring)]"
           @keydown.stop
         />
       </div>
@@ -38,9 +38,7 @@
             Đã chọn
           </span>
         </button>
-        <div v-if="loading" class="px-3 py-2 text-sm font-semibold text-slate-500">
-          Đang tải...
-        </div>
+        <div v-if="loading" class="px-3 py-2 text-sm font-semibold text-slate-500">Đang tải...</div>
         <div
           v-else-if="!mergedOptions.length"
           class="px-3 py-2 text-sm font-semibold text-slate-500"
@@ -53,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 export interface AsyncSelectOption {
   value: string
@@ -156,13 +154,16 @@ function close(event: MouseEvent) {
 
 watch(keyword, () => {
   if (!open.value) return
-  if (searchTimer) window.clearTimeout(searchTimer)
+  if (searchTimer) clearTimeout(searchTimer)
   searchTimer = window.setTimeout(() => void load(1), 250)
 })
 
-document.addEventListener('click', close)
+onMounted(() => {
+  document.addEventListener('click', close)
+})
+
 onBeforeUnmount(() => {
   document.removeEventListener('click', close)
-  if (searchTimer) window.clearTimeout(searchTimer)
+  if (searchTimer) clearTimeout(searchTimer)
 })
 </script>

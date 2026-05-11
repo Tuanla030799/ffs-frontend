@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { cn } from '@/utils/cn'
 
 type DropdownItem = { key: string; label: string; meta?: string }
@@ -116,20 +116,24 @@ function onDocClick(event: MouseEvent) {
 }
 function onMouseEnter() {
   if (!props.openOnHover) return
-  if (closeTimer) window.clearTimeout(closeTimer)
+  if (closeTimer) clearTimeout(closeTimer)
   setOpen(true)
 }
 function onMouseLeave() {
   if (!props.openOnHover) return
   closeTimer = window.setTimeout(() => setOpen(false), 120)
 }
-document.addEventListener('click', onDocClick)
-window.addEventListener('resize', updateMenuPosition)
-window.addEventListener('scroll', updateMenuPosition, true)
+
+onMounted(() => {
+  document.addEventListener('click', onDocClick)
+  window.addEventListener('resize', updateMenuPosition)
+  window.addEventListener('scroll', updateMenuPosition, true)
+})
+
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick)
   window.removeEventListener('resize', updateMenuPosition)
   window.removeEventListener('scroll', updateMenuPosition, true)
-  if (closeTimer) window.clearTimeout(closeTimer)
+  if (closeTimer) clearTimeout(closeTimer)
 })
 </script>

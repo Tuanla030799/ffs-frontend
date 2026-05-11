@@ -170,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
@@ -182,15 +182,20 @@ import { normalizeRichTextInput } from '@/lib/richText'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
-import type { Product, ProductSku, ProductVariant } from '@/modules/catalog/product/types'
+import type { ProductSku, ProductVariant } from '@/modules/catalog/product/types'
 
 const route = useRoute()
-const loading = ref(true)
-const error = ref('')
-const product = ref<Product | null>(null)
 const selectedImage = ref('')
 const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
+const {
+  data: product,
+  pending: loading,
+  error: productError,
+} = await useAsyncData(`product-detail-${String(route.params.slug)}`, () =>
+  productApi.detail(String(route.params.slug)),
+)
+const error = computed(() => (productError.value ? getErrorMessage(productError.value) : ''))
 const images = computed(() => asArray(product.value?.images))
 const galleryImages = computed(() =>
   images.value
@@ -249,16 +254,21 @@ function handleAddToCart() {
   addToCart(product.value, selectedSku.value)
 }
 
-onMounted(async () => {
-  try {
-    product.value = await productApi.detail(String(route.params.slug))
+watch(
+  product,
+  () => {
     selectedImage.value = galleryImages.value[0]?.url || ''
     if (variants.value[0]) selectVariant(variants.value[0])
     selectedSku.value = inStockSkus.value[0] || null
-  } catch (err) {
-    error.value = getErrorMessage(err)
-  } finally {
-    loading.value = false
-  }
+  },
+  { immediate: true },
+)
+
+useSeoMeta({
+  title: () => (product.value ? `${product.value.name} - Thepocketshoes` : 'Chi tiet san pham'),
+  description: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
+  ogTitle: () => product.value?.name || 'Thepocketshoes',
+  ogDescription: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
+  ogImage: () => selectedImage.value || undefined,
 })
 </script>

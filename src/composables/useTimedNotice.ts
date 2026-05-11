@@ -13,7 +13,7 @@ export function useTimedNotice<T extends string = 'info' | 'success' | 'warning'
 
   function clearNotice() {
     if (timer) {
-      window.clearTimeout(timer)
+      clearTimeout(timer)
       timer = 0
     }
     notice.value = null
@@ -21,7 +21,7 @@ export function useTimedNotice<T extends string = 'info' | 'success' | 'warning'
 
   function setNotice(type: T, text: string) {
     notice.value = { type, text }
-    if (timer) window.clearTimeout(timer)
+    if (timer) clearTimeout(timer)
     timer = window.setTimeout(() => {
       notice.value = null
       timer = 0
@@ -29,7 +29,7 @@ export function useTimedNotice<T extends string = 'info' | 'success' | 'warning'
   }
 
   onBeforeUnmount(() => {
-    if (timer) window.clearTimeout(timer)
+    if (timer) clearTimeout(timer)
   })
 
   return {
