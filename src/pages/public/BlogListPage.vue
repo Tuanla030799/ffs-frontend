@@ -15,7 +15,7 @@
 
     <StorefrontListingLayout :show-sidebar="false">
       <div v-if="loading" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        <div v-for="i in 6" :key="i" class="h-80 animate-pulse bg-black/10" />
+        <UiSkeleton v-for="i in 6" :key="i" variant="card" class="h-80" :rows="4" />
       </div>
 
       <div v-else-if="rows.length" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -37,6 +37,7 @@ import { onMounted, reactive, ref } from 'vue'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import BlogCard from '@/components/storefront/BlogCard.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
+import { UiSkeleton } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
 import type { Blog } from '@/modules/content/blog/types'
 

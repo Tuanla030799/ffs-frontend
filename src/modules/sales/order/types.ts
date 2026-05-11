@@ -17,34 +17,55 @@ export interface CreateOrderPayload {
 }
 export interface OrderItem {
   id?: string
+  orderId?: string
+  skuId?: string
   productName?: string
   skuCode?: string
+  variantName?: string
   size?: string
   color?: string
+  unitPrice?: number
   quantity: number
+  lineTotal?: number
   price?: number
   subtotal?: number
 }
 export interface Order {
   id: string
+  orderCode?: string
   code?: string
   customerName: string
   customerPhone?: string
   customerEmail?: string
   shippingAddress?: string
+  note?: string
   status: string
+  couponId?: string | null
+  customerId?: string | null
   paymentMethod?: string
   paymentStatus?: string
+  paidAt?: string | null
   shippingMethod?: string
   shippingStatus?: string
   trackingCode?: string
+  internalNote?: string
+  subtotalAmount?: number
+  discountAmount?: number
+  shippingFee?: number
   totalAmount?: number
   createdAt?: string
   items?: OrderItem[]
 }
+export interface OrderDetail {
+  order: Order
+  items: OrderItem[]
+}
 export interface OrderStatusHistory {
   id: string
-  status: string
+  orderId?: string
+  oldStatus?: string | null
+  newStatus?: string
+  status?: string
   note?: string
   createdAt?: string
   createdBy?: string

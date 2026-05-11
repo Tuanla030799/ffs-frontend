@@ -4,7 +4,14 @@
       v-if="loading"
       class="grid auto-cols-[82%] grid-flow-col gap-4 overflow-hidden sm:auto-cols-[48%] lg:auto-cols-[24%]"
     >
-      <div v-for="index in 4" :key="index" class="h-80 animate-pulse bg-black/10" />
+      <UiSkeleton
+        v-for="index in 4"
+        :key="index"
+        variant="card"
+        class="h-80"
+        media-class="aspect-square"
+        :rows="4"
+      />
     </div>
 
     <Swiper
@@ -45,7 +52,7 @@
     </button>
 
     <div
-      v-else
+      v-if="!products.length && !loading"
       class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
     >
       Chưa có sản phẩm nổi bật.
@@ -60,6 +67,7 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 import 'swiper/css/autoplay'
+import { UiSkeleton } from '@/components/ui'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 

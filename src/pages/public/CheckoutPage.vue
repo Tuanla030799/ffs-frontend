@@ -27,7 +27,14 @@
     <div v-else class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
       <section class="space-y-5">
         <div v-if="loading" class="grid gap-3">
-          <div v-for="i in 3" :key="i" class="h-32 animate-pulse bg-black/10" />
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="grid gap-4 border border-black/10 bg-white p-4 sm:grid-cols-[112px_minmax(0,1fr)] sm:p-5"
+          >
+            <UiSkeleton variant="block" class="aspect-square" />
+            <UiSkeleton :rows="4" />
+          </div>
         </div>
 
         <div v-else class="overflow-hidden border border-black/10 bg-white">
@@ -256,7 +263,15 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
-import { UiAlert, UiButton, UiEmpty, UiForm, UiInput, UiTextarea } from '@/components/ui'
+import {
+  UiAlert,
+  UiButton,
+  UiEmpty,
+  UiForm,
+  UiInput,
+  UiSkeleton,
+  UiTextarea,
+} from '@/components/ui'
 import { useCart, type CartItem } from '@/composables/useCart'
 import { useToast } from '@/composables/useToast'
 import { resolveFileUrl } from '@/lib/fileUrl'

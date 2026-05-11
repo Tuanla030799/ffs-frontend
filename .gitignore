@@ -10,8 +10,23 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Nuxt / Nitro generated output
 .nuxt
 .output
+.nitro
+.data
+
+# Build and test cache
+coverage
+*.tsbuildinfo
+.eslintcache
+.cache
+
+# Environment files
+.env
+.env.*
+!.env.example
 *.local
 
 # Editor directories and files
@@ -25,6 +40,5 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
 .codex
 .yarn

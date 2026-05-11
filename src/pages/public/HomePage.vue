@@ -54,9 +54,13 @@
       <FeaturedProductSwiper :products="featured" :loading="loading" />
     </section>
 
-    <section v-if="randomBlog" class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+    <section
+      v-if="loading || randomBlog"
+      class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8"
+    >
       <SectionHeader title="Một bài blog hay" to="/blogs" label="Xem tất cả blog" />
-      <BlogCard :blog="randomBlog" layout="featured" />
+      <UiSkeleton v-if="loading" variant="card" class="min-h-80" :rows="5" />
+      <BlogCard v-else-if="randomBlog" :blog="randomBlog" layout="featured" />
     </section>
   </main>
 </template>
@@ -67,6 +71,7 @@ import { RouterLink } from 'vue-router'
 import CollectionSwiper from '@/components/home/CollectionSwiper.vue'
 import FeaturedProductSwiper from '@/components/home/FeaturedProductSwiper.vue'
 import BlogCard from '@/components/storefront/BlogCard.vue'
+import { UiSkeleton } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import { collectionApi } from '@/modules/content/collection/api'
 import { blogApi } from '@/modules/content/blog/api'

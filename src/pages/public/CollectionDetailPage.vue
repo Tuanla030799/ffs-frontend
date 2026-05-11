@@ -7,7 +7,28 @@
         { label: collection?.name || 'Chi tiết' },
       ]"
     />
-    <div v-if="loading" class="h-96 animate-pulse bg-black/10" />
+    <div v-if="loading" class="space-y-12">
+      <section
+        class="grid overflow-hidden bg-[#f7f7f5] shadow-sm ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]"
+      >
+        <UiSkeleton variant="block" class="min-h-80 rounded-none" />
+        <div class="flex flex-col justify-center p-5 md:p-12">
+          <UiSkeleton :rows="4" />
+        </div>
+      </section>
+      <section>
+        <UiSkeleton variant="block" class="mb-6 h-8 w-72" />
+        <div class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-4">
+          <UiSkeleton
+            v-for="i in 4"
+            :key="i"
+            variant="card"
+            media-class="aspect-square"
+            :rows="4"
+          />
+        </div>
+      </section>
+    </div>
     <div v-else-if="collection" class="space-y-12">
       <section
         class="grid overflow-hidden bg-[#f7f7f5] shadow-sm ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]"
@@ -52,6 +73,7 @@ import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
+import { UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'

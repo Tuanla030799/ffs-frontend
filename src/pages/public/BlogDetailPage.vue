@@ -4,7 +4,15 @@
       class="mb-5"
       :items="[{ label: 'Blog', to: '/blogs' }, { label: blog?.title || 'Chi tiết' }]"
     />
-    <article v-if="blog" class="bg-[#f7f7f5] shadow-sm ring-1 ring-black/5">
+    <article v-if="loading" class="bg-[#f7f7f5] shadow-sm ring-1 ring-black/5">
+      <UiSkeleton variant="block" class="aspect-[16/9] rounded-none" />
+      <div class="space-y-6 p-5 md:p-12">
+        <UiSkeleton :rows="5" />
+        <UiSkeleton class="pt-4" :rows="6" />
+      </div>
+    </article>
+
+    <article v-else-if="blog" class="bg-[#f7f7f5] shadow-sm ring-1 ring-black/5">
       <img
         :src="coverUrl(blog)"
         :alt="blog.title"
@@ -29,6 +37,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
+import { UiSkeleton } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
@@ -36,8 +45,9 @@ import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Blog } from '@/modules/content/blog/types'
 
 const route = useRoute()
-const { data: blog } = await useAsyncData(`blog-detail-${String(route.params.slug)}`, () =>
-  blogApi.detail(String(route.params.slug)),
+const { data: blog, pending: loading } = await useAsyncData(
+  `blog-detail-${String(route.params.slug)}`,
+  () => blogApi.detail(String(route.params.slug)),
 )
 const blogContentHtml = computed(() =>
   normalizeRichTextInput(blog.value?.contentHtml || blog.value?.contentJson),
