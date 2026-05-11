@@ -19,32 +19,7 @@
       </div>
 
       <div v-else-if="rows.length" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        <RouterLink
-          v-for="row in rows"
-          :key="row.id"
-          :to="`/blogs/${row.slug}`"
-          class="group overflow-hidden bg-[#f7f7f5] text-black no-underline ring-1 ring-black/5 transition hover:ring-black/15"
-        >
-          <img
-            :src="coverUrl(row)"
-            :alt="row.title"
-            class="aspect-[4/3] w-full object-cover grayscale transition duration-300 group-hover:scale-105 group-hover:grayscale-0"
-          />
-
-          <div class="p-5 md:p-6">
-            <p class="text-sm font-semibold text-black/50">
-              {{ formatLocalDateTime(row.publishedAt || row.createdAt) }}
-            </p>
-
-            <h2 class="mt-3 line-clamp-2 text-xl leading-tight font-black md:text-2xl">
-              {{ row.title }}
-            </h2>
-
-            <p class="mt-3 line-clamp-3 text-sm leading-6 text-black/65">
-              {{ row.excerpt }}
-            </p>
-          </div>
-        </RouterLink>
+        <BlogCard v-for="row in rows" :key="row.id" :blog="row" />
       </div>
 
       <div
@@ -59,12 +34,10 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
+import BlogCard from '@/components/storefront/BlogCard.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
 import { blogApi } from '@/modules/content/blog/api'
-import { resolveFileUrl } from '@/lib/fileUrl'
-import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Blog } from '@/modules/content/blog/types'
 
 // const router = useRouter()
@@ -77,10 +50,6 @@ const query = reactive({
   page: 1,
   limit: 20,
 })
-
-function coverUrl(row: Blog) {
-  return resolveFileUrl(row.coverImageUrl || '')
-}
 
 async function load() {
   loading.value = true

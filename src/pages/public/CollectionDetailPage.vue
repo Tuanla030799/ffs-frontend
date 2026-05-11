@@ -27,7 +27,7 @@
             class="mt-6"
             :html="collectionDescriptionHtml"
           />
-          <p v-else class="mt-6 leading-7 text-black/65">{{ collection.description }}</p>
+          <p v-else class="mt-6 leading-7 text-black/65">{{ collection.excerpt }}</p>
         </div>
       </section>
       <section>
@@ -55,21 +55,18 @@ import ProductCard from '@/components/storefront/ProductCard.vue'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
-import type { Product } from '@/modules/catalog/product/types'
-import type { Collection } from '@/modules/content/collection/types'
+import type { ProductFeatured } from '@/modules/catalog/product/types'
+import type { CollectionDetail } from '@/modules/content/collection/types'
 
 const route = useRoute()
 const loading = ref(false)
-const collection = ref<Collection | null>(null)
-const products = computed<Product[]>(
-  () =>
-    (collection.value?.products?.map((item) => item.product).filter(Boolean) as Product[]) || [],
-)
+const collection = ref<CollectionDetail | null>(null)
+const products = computed<ProductFeatured[]>(() => collection.value?.products || [])
 const collectionDescriptionHtml = computed(() =>
   normalizeRichTextInput(collection.value?.descriptionHtml || collection.value?.descriptionJson),
 )
 
-function coverUrl(row: Collection) {
+function coverUrl(row: CollectionDetail) {
   return resolveFileUrl(row.coverUrl || row.imageUrl || '')
 }
 

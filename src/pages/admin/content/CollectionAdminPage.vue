@@ -38,10 +38,10 @@
           </UiSelect>
           <UiInput v-model.number="form.sortOrder" placeholder="Sort order" label="Sort order" />
           <UiTextarea
-            v-model="form.description"
+            v-model="form.excerpt"
             class="md:col-span-2"
-            placeholder="Description"
-            label="Description"
+            placeholder="Excerpt"
+            label="Excerpt"
           />
           <div class="md:col-span-3">
             <RichTextEditorField
@@ -199,7 +199,7 @@ const query = reactive({ keyword: '', status: '', page: 1, limit: 50 })
 const form = reactive<CollectionPayload>({
   name: '',
   slug: '',
-  description: '',
+  excerpt: '',
   descriptionHtml: '',
   descriptionJson: null,
   fileId: '',
@@ -269,21 +269,21 @@ function rememberSelectedProduct(option: AsyncSelectOption) {
 function fill(row?: Collection) {
   selectedProducts.value = {}
   const collectionProducts = row?.products || []
-  collectionProducts.forEach((item) => {
-    if (item.product?.id) selectedProducts.value[item.product.id] = item.product
+  collectionProducts.forEach((product) => {
+    if (product.id) selectedProducts.value[product.id] = product
   })
   Object.assign(form, {
     name: row?.name || '',
     slug: row?.slug || '',
-    description: row?.description || '',
+    excerpt: row?.excerpt || '',
     descriptionHtml: normalizeRichTextInput(row?.descriptionHtml),
     descriptionJson: null,
     fileId: row?.fileId || '',
     status: row?.status || 'ACTIVE',
     sortOrder: row?.sortOrder || 0,
-    products: (row?.products || []).map((item) => ({
-      productId: item.productId || item.product?.id || '',
-      sortOrder: item.sortOrder || 0,
+    products: (row?.products || []).map((product, index) => ({
+      productId: product.id || '',
+      sortOrder: index,
     })),
   })
   coverPreviewUrl.value = row ? coverUrl(row) : ''

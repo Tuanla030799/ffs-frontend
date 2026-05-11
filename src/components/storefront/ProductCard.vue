@@ -53,7 +53,7 @@
           <span class="text-xl font-bold text-[#18181B]">{{ money(displayPrice) }}</span>
         </div>
 
-        <UiButton
+        <!-- <UiButton
           native-type="button"
           variant="dark"
           size="sm"
@@ -65,7 +65,7 @@
             <img :src="addCartIcon" alt="" class="h-5 w-5" aria-hidden="true" />
           </template>
           <span>Add to Cart</span>
-        </UiButton>
+        </UiButton> -->
       </div>
 
       <div class="flex items-center justify-between border-t border-[#F4F4F5] pt-3">

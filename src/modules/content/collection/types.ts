@@ -1,17 +1,11 @@
-import type { Product } from '@/modules/catalog/product/types'
+import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { Status } from '@/modules/shared/types'
-
-export interface CollectionProduct {
-  productId: string
-  sortOrder: number
-  product?: Product
-}
 
 export interface Collection {
   id: string
   name: string
   slug: string
-  description?: string
+  excerpt?: string
   descriptionHtml?: string | null
   descriptionJson?: unknown
   fileId?: string
@@ -20,9 +14,11 @@ export interface Collection {
   status: Status
   sortOrder?: number
   productCount?: number
-  products?: CollectionProduct[]
+  products?: ProductFeatured[]
   createdAt?: string
 }
+
+export type CollectionDetail = Collection
 
 export interface CollectionListQuery {
   keyword?: string
@@ -34,7 +30,7 @@ export interface CollectionListQuery {
 export interface CollectionPayload {
   name: string
   slug?: string
-  description?: string
+  excerpt?: string
   descriptionHtml?: string
   descriptionJson?: unknown
   fileId?: string

@@ -19,6 +19,7 @@
     "dompurify": "^3.4.2",
     "fabric": "^7.1.0",
     "pinia": "^3.0.3",
+    "swiper": "^12.1.4",
     "tinymce": "7",
     "vue": "^3.5.25",
     "vue-router": "^4.5.1"
