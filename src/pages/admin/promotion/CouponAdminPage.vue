@@ -85,6 +85,7 @@ import CrudShell from '@/pages/admin/CrudShell.vue'
 import { couponApi } from '@/modules/promotion/coupon/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { money } from '@/modules/shared/types'
+import { toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
 import type { Coupon, CouponPayload } from '@/modules/promotion/coupon/types'
 
 const rows = ref<Coupon[]>([])
@@ -129,8 +130,8 @@ function fill(r?: Coupon) {
     maxDiscount: r?.maxDiscount || 0,
     minOrderAmount: r?.minOrderAmount || 0,
     usageLimit: r?.usageLimit || 0,
-    startsAt: r?.startsAt || '',
-    endsAt: r?.endsAt || '',
+    startsAt: toDateTimeLocalInput(r?.startsAt),
+    endsAt: toDateTimeLocalInput(r?.endsAt),
     status: r?.status || 'ACTIVE',
   })
 }
@@ -157,8 +158,13 @@ async function load() {
 }
 async function save() {
   try {
-    if (editing.value === 'new') await couponApi.create(form)
-    else if (editing.value) await couponApi.update(editing.value.id, form)
+    const payload = {
+      ...form,
+      startsAt: toBackendDateTime(form.startsAt || null) || undefined,
+      endsAt: toBackendDateTime(form.endsAt || null) || undefined,
+    }
+    if (editing.value === 'new') await couponApi.create(payload)
+    else if (editing.value) await couponApi.update(editing.value.id, payload)
     editing.value = null
     await load()
   } catch (e) {

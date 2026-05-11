@@ -1,7 +1,7 @@
 import { httpClient } from '@/lib/http/httpClient'
 import { unwrapList, type Paginated } from '@/modules/shared/types'
 import type { ApiEnvelope } from '@/types/http'
-import type { Collection, CollectionListQuery, CollectionPayload } from './types'
+import type { Collection, CollectionDetail, CollectionListQuery, CollectionPayload } from './types'
 
 export const collectionApi = {
   async list(params?: CollectionListQuery) {
@@ -13,7 +13,7 @@ export const collectionApi = {
     ) as Paginated<Collection>
   },
   async detail(slug: string, params?: CollectionListQuery) {
-    const res = await httpClient.get<ApiEnvelope<Collection>>(`/api/collections/${slug}`, {
+    const res = await httpClient.get<ApiEnvelope<CollectionDetail>>(`/api/collections/${slug}`, {
       params,
     })
     return res.data.data

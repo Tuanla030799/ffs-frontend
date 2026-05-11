@@ -1,4 +1,4 @@
-# Fresh Shoes Frontend
+# Thepocketshoes Frontend
 
 Vue 3 + Vite + TypeScript frontend cho website ecommerce bán giày, dùng backend API có sẵn.
 

@@ -95,6 +95,7 @@ import { bannerApi } from '@/modules/content/banner/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
 import type { LandingBanner, LandingBannerPayload } from '@/modules/content/banner/types'
 import type { UploadedFile } from '@/services/file.service'
 import ImagePreview from '@/components/common/ImagePreview.vue'
@@ -145,8 +146,8 @@ function fill(r?: LandingBanner) {
     fileId: r?.fileId || '',
     status: r?.status || 'ACTIVE',
     sortOrder: r?.sortOrder || 0,
-    startsAt: r?.startsAt || '',
-    endsAt: r?.endsAt || '',
+    startsAt: toDateTimeLocalInput(r?.startsAt),
+    endsAt: toDateTimeLocalInput(r?.endsAt),
   })
 }
 function openCreate() {
@@ -172,8 +173,13 @@ async function load() {
 }
 async function save() {
   try {
-    if (editing.value === 'new') await bannerApi.create(form)
-    else if (editing.value) await bannerApi.update(editing.value.id, form)
+    const payload = {
+      ...form,
+      startsAt: toBackendDateTime(form.startsAt || null) || undefined,
+      endsAt: toBackendDateTime(form.endsAt || null) || undefined,
+    }
+    if (editing.value === 'new') await bannerApi.create(payload)
+    else if (editing.value) await bannerApi.update(editing.value.id, payload)
     editing.value = null
     await load()
   } catch (e) {

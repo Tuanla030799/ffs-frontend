@@ -7,94 +7,238 @@
     :loading="loading"
     :error="error"
     :create-label="''"
-    :status-options="['PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELLED']"
+    :status-options="[...ORDER_STATUSES]"
     :show-modal="Boolean(detail)"
-    :modal-title="detail ? `Order ${detail.code || detail.id}` : ''"
-    modal-description="Chi tiết order, status history và thao tác fulfillment."
+    :modal-title="detail ? `Order ${orderCode(detail.order)}` : ''"
+    modal-description="Chi tiết order, sản phẩm, thanh toán, vận chuyển và lịch sử trạng thái."
     @reload="load"
     @search="load"
-    @close="detail = null"
+    @close="closeDetail"
   >
     <template #form>
       <div v-if="detail" class="space-y-5">
-        <div class="grid gap-4 rounded-2xl border border-slate-200 p-4 md:grid-cols-3">
-          <div>
-            <p class="text-xs font-bold text-slate-400 uppercase">Customer</p>
-            <p class="font-black">{{ detail.customerName }}</p>
-            <p class="text-sm text-slate-500">{{ detail.customerPhone }}</p>
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-400 uppercase">Address</p>
-            <p class="text-sm text-slate-700">{{ detail.shippingAddress }}</p>
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-400 uppercase">Total</p>
-            <p class="font-black text-rose-600">{{ money(detail.totalAmount) }}</p>
-          </div>
-        </div>
-        <div class="grid gap-3 md:grid-cols-3">
-          <UiSelect v-model="statusForm.status" label="Trạng thái"
-            ><option>PENDING</option>
-            <option>CONFIRMED</option>
-            <option>SHIPPING</option>
-            <option>COMPLETED</option>
-            <option>CANCELLED</option></UiSelect
-          >
-          <UiInput v-model="statusForm.note" placeholder="Status note" label="Status note" />
-          <UiButton variant="dark" @click="saveStatus(detail.id)">Update status</UiButton>
-          <UiInput
-            v-model="payment.paymentMethod"
-            placeholder="paymentMethod"
-            label="Phương thức thanh toán"
-          />
-          <UiInput
-            v-model="payment.paymentStatus"
-            placeholder="paymentStatus"
-            label="Trạng thái thanh toán"
-          />
-          <UiButton variant="dark" @click="savePayment(detail.id)">Update payment</UiButton>
-          <UiInput
-            v-model="shipping.shippingMethod"
-            placeholder="shippingMethod"
-            label="Phương thức vận chuyển"
-          />
-          <UiInput
-            v-model="shipping.shippingStatus"
-            placeholder="shippingStatus"
-            label="Trạng thái vận chuyển"
-          />
-          <UiInput v-model="shipping.trackingCode" placeholder="trackingCode" label="Mã vận đơn" />
-          <div class="md:col-span-3">
-            <UiButton block variant="dark" @click="saveShipping(detail.id)"
-              >Update shipping</UiButton
-            >
-          </div>
-        </div>
-        <div class="rounded-2xl border border-slate-200">
-          <h4 class="border-b border-slate-200 p-3 font-black">Items</h4>
-          <div
-            v-for="item in detail.items || []"
-            :key="item.id || item.skuCode"
-            class="grid grid-cols-[1fr_auto] gap-3 border-b border-slate-100 p-3 text-sm last:border-b-0"
-          >
-            <div>
-              <b>{{ item.productName || item.skuCode }}</b>
-              <p class="text-slate-500">Size {{ item.size || '-' }} / {{ item.color || '-' }}</p>
+        <section
+          class="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+        >
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="truncate text-xl font-black text-slate-950">
+                {{ orderCode(detail.order) }}
+              </h3>
+              <span :class="badgeClass(detail.order.status)">
+                {{ detail.order.status }}
+              </span>
             </div>
-            <div class="text-right">{{ item.quantity }} x {{ money(item.price) }}</div>
+            <p class="mt-1 text-sm text-slate-500">
+              Tạo lúc {{ formatLocalDateTime(detail.order.createdAt) }}
+            </p>
           </div>
+          <UiButton native-type="button" variant="secondary" size="sm" @click="closeDetail">
+            Quay lại danh sách
+          </UiButton>
+        </section>
+
+        <div class="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <OrderSectionCard title="Thông tin khách hàng">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <OrderInfoRow label="Tên khách" :value="detail.order.customerName" />
+              <OrderInfoRow label="Số điện thoại" :value="detail.order.customerPhone" />
+              <OrderInfoRow label="Email" :value="detail.order.customerEmail" />
+              <OrderInfoRow label="Customer ID" :value="detail.order.customerId || ''" />
+            </div>
+          </OrderSectionCard>
+
+          <OrderSectionCard title="Địa chỉ giao hàng">
+            <p class="text-sm leading-6 whitespace-pre-line text-slate-700">
+              {{ detail.order.shippingAddress || '-' }}
+            </p>
+          </OrderSectionCard>
         </div>
-        <div class="rounded-2xl border border-slate-200">
-          <h4 class="border-b border-slate-200 p-3 font-black">Status history</h4>
-          <div v-if="!history.length" class="p-4 text-sm text-slate-500">Chưa có history.</div>
-          <div
-            v-for="h in history"
-            :key="h.id"
-            class="border-b border-slate-100 p-3 text-sm last:border-b-0"
-          >
-            {{ formatDateTime(h.createdAt) }} - <b>{{ h.status }}</b> {{ h.note }}
+
+        <div class="grid gap-4 lg:grid-cols-2">
+          <OrderSectionCard title="Ghi chú khách">
+            <p class="min-h-12 text-sm leading-6 whitespace-pre-line text-slate-700">
+              {{ detail.order.note || '-' }}
+            </p>
+          </OrderSectionCard>
+
+          <OrderSectionCard title="Ghi chú nội bộ">
+            <p class="min-h-12 text-sm leading-6 whitespace-pre-line text-slate-700">
+              {{ detail.order.internalNote || '-' }}
+            </p>
+          </OrderSectionCard>
+        </div>
+
+        <OrderSectionCard title="Danh sách sản phẩm">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[860px] text-left text-sm">
+              <thead class="bg-slate-50 text-xs font-black text-slate-500 uppercase">
+                <tr>
+                  <th class="px-4 py-3">Sản phẩm</th>
+                  <th class="px-4 py-3">SKU</th>
+                  <th class="px-4 py-3">Phiên bản</th>
+                  <th class="px-4 py-3">Size</th>
+                  <th class="px-4 py-3 text-right">Đơn giá</th>
+                  <th class="px-4 py-3 text-right">SL</th>
+                  <th class="px-4 py-3 text-right">Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-if="!detail.items.length">
+                  <td colspan="7" class="px-4 py-5 text-center text-slate-500">
+                    Không có sản phẩm trong đơn.
+                  </td>
+                </tr>
+                <tr v-for="item in detail.items" :key="item.id || item.skuId || item.skuCode">
+                  <td class="px-4 py-3 font-semibold text-slate-950">
+                    {{ item.productName || '-' }}
+                  </td>
+                  <td class="px-4 py-3 text-slate-600">
+                    {{ item.skuCode || '-' }}
+                  </td>
+                  <td class="px-4 py-3 text-slate-600">
+                    {{ item.variantName || '-' }}
+                  </td>
+                  <td class="px-4 py-3 text-slate-600">
+                    {{ item.size || '-' }}
+                  </td>
+                  <td class="px-4 py-3 text-right text-slate-700">
+                    {{ money(item.unitPrice ?? item.price) }}
+                  </td>
+                  <td class="px-4 py-3 text-right font-semibold text-slate-950">
+                    {{ item.quantity }}
+                  </td>
+                  <td class="px-4 py-3 text-right font-black text-slate-950">
+                    {{ money(item.lineTotal ?? item.subtotal) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+        </OrderSectionCard>
+
+        <div class="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <OrderSectionCard title="Tổng tiền">
+            <div class="space-y-3 text-sm">
+              <OrderMoneyRow label="Tạm tính" :value="detail.order.subtotalAmount" />
+              <OrderMoneyRow label="Giảm giá" :value="detail.order.discountAmount" muted />
+              <OrderMoneyRow label="Phí vận chuyển" :value="detail.order.shippingFee" />
+              <div class="border-t border-slate-200 pt-3">
+                <OrderMoneyRow label="Tổng cộng" :value="detail.order.totalAmount" strong />
+              </div>
+            </div>
+          </OrderSectionCard>
+
+          <OrderSectionCard title="Cập nhật trạng thái đơn">
+            <div class="grid gap-3">
+              <UiSelect v-model="statusForm.status" label="Trạng thái" :options="orderOptions" />
+              <UiTextarea
+                v-model="statusForm.note"
+                label="Ghi chú"
+                rows="3"
+                placeholder="Ví dụ: Đã xác nhận đơn"
+              />
+              <UiButton
+                class="justify-self-start"
+                variant="dark"
+                :loading="savingStatus"
+                @click="saveStatus(detail.order.id)"
+              >
+                Update Status
+              </UiButton>
+            </div>
+          </OrderSectionCard>
         </div>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+          <OrderSectionCard title="Thanh toán">
+            <div class="grid gap-3">
+              <UiInput
+                v-model="paymentForm.paymentMethod"
+                label="Phương thức thanh toán"
+                placeholder="COD, BANK_TRANSFER..."
+              />
+              <UiSelect
+                v-model="paymentForm.paymentStatus"
+                label="Trạng thái thanh toán"
+                :options="paymentOptions"
+              />
+              <UiInput v-model="paymentForm.paidAt" type="datetime-local" label="Paid at" />
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs text-slate-500">
+                  {{
+                    detail.order.paidAt
+                      ? formatLocalDateTime(detail.order.paidAt)
+                      : 'Chưa thanh toán'
+                  }}
+                </span>
+                <UiButton
+                  variant="dark"
+                  :loading="savingPayment"
+                  @click="savePayment(detail.order.id)"
+                >
+                  Save Payment
+                </UiButton>
+              </div>
+            </div>
+          </OrderSectionCard>
+
+          <OrderSectionCard title="Vận chuyển">
+            <div class="grid gap-3">
+              <UiInput
+                v-model="shippingForm.shippingMethod"
+                label="Phương thức vận chuyển"
+                placeholder="GHN, GHTK..."
+              />
+              <UiSelect
+                v-model="shippingForm.shippingStatus"
+                label="Trạng thái vận chuyển"
+                :options="shippingOptions"
+              />
+              <UiInput
+                v-model="shippingForm.trackingCode"
+                label="Mã vận đơn"
+                placeholder="GHN123456"
+              />
+              <UiButton
+                class="justify-self-end"
+                variant="dark"
+                :loading="savingShipping"
+                @click="saveShipping(detail.order.id)"
+              >
+                Save Shipping
+              </UiButton>
+            </div>
+          </OrderSectionCard>
+        </div>
+
+        <OrderSectionCard title="Lịch sử trạng thái">
+          <div v-if="!history.length" class="py-4 text-sm text-slate-500">
+            Chưa có lịch sử trạng thái.
+          </div>
+          <div v-else class="divide-y divide-slate-100">
+            <div
+              v-for="item in history"
+              :key="item.id"
+              class="grid gap-1 py-3 text-sm sm:grid-cols-[170px_1fr]"
+            >
+              <div class="text-slate-500">
+                {{ formatLocalDateTime(item.createdAt) }}
+              </div>
+              <div>
+                <div class="font-semibold text-slate-950">
+                  {{ item.oldStatus || '-' }} → {{ item.newStatus || item.status || '-' }}
+                </div>
+                <p v-if="item.note" class="mt-1 text-slate-600">
+                  {{ item.note }}
+                </p>
+                <p v-if="item.createdBy" class="mt-1 text-xs text-slate-400">
+                  By {{ item.createdBy }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </OrderSectionCard>
       </div>
     </template>
 
@@ -109,52 +253,81 @@
       min-width="min-w-[960px]"
       empty-text="Không có order."
     >
-      <template #cell-code="{ row }"
-        ><span class="font-black text-slate-950">{{ row.code || row.id }}</span></template
-      >
-      <template #cell-customer="{ row }"
-        >{{ row.customerName }}<br /><span class="text-slate-400">{{
-          row.customerPhone
-        }}</span></template
-      >
-      <template #cell-status="{ row }"
-        ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
-      >
-      <template #cell-payment="{ row }">{{ row.paymentMethod }} / {{ row.paymentStatus }}</template>
-      <template #cell-shipping="{ row }"
-        >{{ row.shippingMethod }} / {{ row.shippingStatus }}</template
-      >
+      <template #cell-code="{ row }">
+        <span class="font-black text-slate-950">{{ orderCode(row) }}</span>
+      </template>
+      <template #cell-customer="{ row }">
+        {{ row.customerName }}<br />
+        <span class="text-slate-400">{{ row.customerPhone || '-' }}</span>
+      </template>
+      <template #cell-status="{ row }">
+        <span :class="badgeClass(row.status)">{{ row.status }}</span>
+      </template>
+      <template #cell-payment="{ row }">
+        {{ row.paymentMethod || '-' }} / {{ row.paymentStatus || '-' }}
+      </template>
+      <template #cell-shipping="{ row }">
+        {{ row.shippingMethod || '-' }} / {{ row.shippingStatus || '-' }}
+      </template>
       <template #cell-totalAmount="{ row }">{{ money(row.totalAmount) }}</template>
-      <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
-      <template #cell-actions="{ row }"
-        ><UiButton variant="ghost" @click="open(row.id)">Detail</UiButton></template
-      >
+      <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
+      <template #cell-actions="{ row }">
+        <UiButton variant="ghost" :loading="openingId === row.id" @click="open(row.id)">
+          Detail
+        </UiButton>
+      </template>
     </UiTable>
   </CrudShell>
 </template>
 
 <script setup lang="ts">
-import { UiButton, UiInput, UiSelect, UiTable } from '@/components/ui'
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import OrderInfoRow from '@/components/admin/order/OrderInfoRow.vue'
+import OrderMoneyRow from '@/components/admin/order/OrderMoneyRow.vue'
+import OrderSectionCard from '@/components/admin/order/OrderSectionCard.vue'
+import { UiButton, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
 import CrudShell from '@/pages/admin/CrudShell.vue'
+import { useToast } from '@/composables/useToast'
 import { orderApi } from '@/modules/sales/order/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
-import { money, formatDateTime } from '@/modules/shared/types'
-import type { Order, OrderStatusHistory } from '@/modules/sales/order/types'
+import { money } from '@/modules/shared/types'
+import { formatLocalDateTime, toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
+import type { Order, OrderDetail, OrderStatusHistory } from '@/modules/sales/order/types'
 
+const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELLED'] as const
+const PAYMENT_STATUSES = ['UNPAID', 'PAID', 'REFUNDED', 'FAILED'] as const
+const SHIPPING_STATUSES = [
+  'PENDING',
+  'PACKING',
+  'SHIPPING',
+  'DELIVERED',
+  'RETURNED',
+  'CANCELLED',
+] as const
+
+const toast = useToast()
 const rows = ref<Order[]>([])
-const detail = ref<Order | null>(null)
+const detail = ref<OrderDetail | null>(null)
 const history = ref<OrderStatusHistory[]>([])
 const loading = ref(false)
+const openingId = ref('')
+const savingStatus = ref(false)
+const savingPayment = ref(false)
+const savingShipping = ref(false)
 const error = ref('')
 const query = reactive({ keyword: '', status: '' })
-const statusForm = reactive({ status: 'CONFIRMED', note: 'Updated by admin' })
-const payment = reactive({
-  paymentMethod: 'COD',
-  paymentStatus: 'PAID',
-  paidAt: new Date().toISOString(),
+const statusForm = reactive({ status: 'PENDING', note: '' })
+const paymentForm = reactive({
+  paymentMethod: '',
+  paymentStatus: 'UNPAID',
+  paidAt: '',
 })
-const shipping = reactive({ shippingMethod: 'GHN', shippingStatus: 'SHIPPING', trackingCode: '' })
+const shippingForm = reactive({ shippingMethod: '', shippingStatus: 'PENDING', trackingCode: '' })
+
+const orderOptions = computed(() => toSelectOptions(ORDER_STATUSES))
+const paymentOptions = computed(() => toSelectOptions(PAYMENT_STATUSES))
+const shippingOptions = computed(() => toSelectOptions(SHIPPING_STATUSES))
+
 const columns = [
   { key: 'code', label: 'Code' },
   { key: 'customer', label: 'Customer' },
@@ -166,12 +339,38 @@ const columns = [
   { key: 'actions', label: 'Actions', align: 'right' },
 ] as const
 
+function toSelectOptions(values: readonly string[]) {
+  return values.map((value) => ({ label: value, value }))
+}
+
+function orderCode(order: Order) {
+  return order.orderCode || order.code || order.id
+}
+
 function badgeClass(status: string) {
-  if (['CONFIRMED', 'COMPLETED'].includes(status))
+  if (['CONFIRMED', 'COMPLETED', 'DELIVERED', 'PAID'].includes(status))
     return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
-  if (status === 'CANCELLED')
+  if (['CANCELLED', 'FAILED', 'RETURNED'].includes(status))
     return 'rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700'
+  if (['SHIPPING', 'PACKING'].includes(status))
+    return 'rounded-full bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700'
   return 'rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700'
+}
+
+function populateForms(order: Order) {
+  statusForm.status = order.status || 'PENDING'
+  statusForm.note = ''
+  paymentForm.paymentMethod = order.paymentMethod || ''
+  paymentForm.paymentStatus = order.paymentStatus || 'UNPAID'
+  paymentForm.paidAt = toDateTimeLocalInput(order.paidAt || null)
+  shippingForm.shippingMethod = order.shippingMethod || ''
+  shippingForm.shippingStatus = order.shippingStatus || 'PENDING'
+  shippingForm.trackingCode = order.trackingCode || ''
+}
+
+function closeDetail() {
+  detail.value = null
+  history.value = []
 }
 
 async function load() {
@@ -187,30 +386,106 @@ async function load() {
     loading.value = false
   }
 }
+
+async function refreshDetail(id: string, includeHistory = false) {
+  const [orderDetail, statusHistory] = await Promise.all([
+    orderApi.detail(id),
+    includeHistory || !detail.value
+      ? orderApi.history(id).catch(() => [])
+      : Promise.resolve(history.value),
+  ])
+  detail.value = orderDetail
+  history.value = statusHistory
+  populateForms(orderDetail.order)
+}
+
 async function open(id: string) {
-  detail.value = await orderApi.detail(id)
-  statusForm.status = detail.value.status
-  payment.paymentMethod = detail.value.paymentMethod || 'COD'
-  payment.paymentStatus = detail.value.paymentStatus || 'PAID'
-  shipping.shippingMethod = detail.value.shippingMethod || 'GHN'
-  shipping.shippingStatus = detail.value.shippingStatus || 'SHIPPING'
-  shipping.trackingCode = detail.value.trackingCode || ''
-  history.value = await orderApi.history(id).catch(() => [])
+  openingId.value = id
+  error.value = ''
+  try {
+    await refreshDetail(id, true)
+  } catch (err) {
+    error.value = getErrorMessage(err)
+  } finally {
+    openingId.value = ''
+  }
 }
+
 async function saveStatus(id: string) {
-  await orderApi.updateStatus(id, statusForm)
-  await open(id)
-  await load()
+  if (!ORDER_STATUSES.includes(statusForm.status as (typeof ORDER_STATUSES)[number])) {
+    toast.push('Trạng thái đơn không hợp lệ.', 'error', 'Không thể cập nhật')
+    return
+  }
+
+  savingStatus.value = true
+  try {
+    const res = await orderApi.updateStatus(id, {
+      status: statusForm.status,
+      note: statusForm.note || undefined,
+    })
+    await refreshDetail(id, true)
+    await load()
+    toast.push(res.message || 'Đã cập nhật trạng thái đơn.', 'success', 'Thành công')
+  } catch (err) {
+    toast.push(getErrorMessage(err), 'error', 'Cập nhật thất bại')
+  } finally {
+    savingStatus.value = false
+  }
 }
+
 async function savePayment(id: string) {
-  await orderApi.updatePayment(id, payment)
-  await open(id)
-  await load()
+  if (!PAYMENT_STATUSES.includes(paymentForm.paymentStatus as (typeof PAYMENT_STATUSES)[number])) {
+    toast.push('Trạng thái thanh toán không hợp lệ.', 'error', 'Không thể cập nhật')
+    return
+  }
+
+  const paidAt = paymentForm.paidAt ? toBackendDateTime(paymentForm.paidAt) : null
+  if (paymentForm.paidAt && !paidAt) {
+    toast.push('Paid at không hợp lệ.', 'error', 'Không thể cập nhật')
+    return
+  }
+
+  savingPayment.value = true
+  try {
+    const res = await orderApi.updatePayment(id, {
+      paymentMethod: paymentForm.paymentMethod,
+      paymentStatus: paymentForm.paymentStatus,
+      paidAt,
+    })
+    await refreshDetail(id)
+    await load()
+    toast.push(res.message || 'Đã cập nhật thanh toán.', 'success', 'Thành công')
+  } catch (err) {
+    toast.push(getErrorMessage(err), 'error', 'Cập nhật thất bại')
+  } finally {
+    savingPayment.value = false
+  }
 }
+
 async function saveShipping(id: string) {
-  await orderApi.updateShipping(id, shipping)
-  await open(id)
-  await load()
+  if (
+    !SHIPPING_STATUSES.includes(shippingForm.shippingStatus as (typeof SHIPPING_STATUSES)[number])
+  ) {
+    toast.push('Trạng thái vận chuyển không hợp lệ.', 'error', 'Không thể cập nhật')
+    return
+  }
+
+  savingShipping.value = true
+  try {
+    const res = await orderApi.updateShipping(id, {
+      shippingMethod: shippingForm.shippingMethod,
+      shippingStatus: shippingForm.shippingStatus,
+      trackingCode: shippingForm.trackingCode || undefined,
+    })
+    await refreshDetail(id)
+    await load()
+    toast.push(res.message || 'Đã cập nhật vận chuyển.', 'success', 'Thành công')
+  } catch (err) {
+    toast.push(getErrorMessage(err), 'error', 'Cập nhật thất bại')
+  } finally {
+    savingShipping.value = false
+  }
 }
+
 onMounted(load)
 </script>

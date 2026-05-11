@@ -5,10 +5,11 @@ export interface Blog {
   title: string
   slug: string
   excerpt?: string
+  contentHtml?: string | null
   contentJson?: unknown
   coverFileId?: string
   coverUrl?: string
-  imageUrl?: string
+  coverImageUrl?: string
   status: Status
   publishedAt?: string
   createdAt?: string
@@ -25,7 +26,8 @@ export interface BlogPayload {
   title: string
   slug?: string
   excerpt?: string
-  contentJson?: string
+  contentHtml?: string
+  contentJson?: unknown
   coverFileId?: string
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | string
   publishedAt?: string

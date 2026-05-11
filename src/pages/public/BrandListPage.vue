@@ -13,7 +13,7 @@
 
     <StorefrontListingLayout :show-sidebar="false">
       <div v-if="loading" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div v-for="i in 8" :key="i" class="h-48 animate-pulse bg-black/10" />
+        <UiSkeleton v-for="i in 8" :key="i" variant="card" class="h-48" :rows="2" />
       </div>
 
       <div v-else-if="rows.length" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -61,6 +61,7 @@ import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
+import { UiSkeleton } from '@/components/ui'
 import { brandApi } from '@/modules/content/brand/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import type { Brand } from '@/modules/content/brand/types'

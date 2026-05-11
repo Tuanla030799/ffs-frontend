@@ -78,7 +78,7 @@
         v-if="initialLoading"
         class="grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
       >
-        <div v-for="i in 12" :key="i" class="aspect-[3/4] animate-pulse bg-black/10" />
+        <UiSkeleton v-for="i in 12" :key="i" variant="card" media-class="aspect-square" :rows="4" />
       </div>
 
       <TransitionGroup
@@ -103,7 +103,7 @@
         v-if="loading && products.length"
         class="mt-10 grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
       >
-        <div v-for="i in 4" :key="i" class="aspect-[3/4] animate-pulse bg-black/10" />
+        <UiSkeleton v-for="i in 4" :key="i" variant="card" media-class="aspect-square" :rows="4" />
       </div>
     </StorefrontListingLayout>
   </section>
@@ -117,7 +117,7 @@ import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import ProductFilterSidebar from '@/components/storefront/ProductFilterSidebar.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
-import { UiButton, UiDrawer } from '@/components/ui'
+import { UiButton, UiDrawer, UiSkeleton } from '@/components/ui'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { productApi } from '@/modules/catalog/product/api'
 import type { Product, ProductListQuery } from '@/modules/catalog/product/types'

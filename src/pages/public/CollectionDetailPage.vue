@@ -7,7 +7,28 @@
         { label: collection?.name || 'Chi tiết' },
       ]"
     />
-    <div v-if="loading" class="h-96 animate-pulse bg-black/10" />
+    <div v-if="loading" class="space-y-12">
+      <section
+        class="grid overflow-hidden bg-[#f7f7f5] shadow-sm ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]"
+      >
+        <UiSkeleton variant="block" class="min-h-80 rounded-none" />
+        <div class="flex flex-col justify-center p-5 md:p-12">
+          <UiSkeleton :rows="4" />
+        </div>
+      </section>
+      <section>
+        <UiSkeleton variant="block" class="mb-6 h-8 w-72" />
+        <div class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-4">
+          <UiSkeleton
+            v-for="i in 4"
+            :key="i"
+            variant="card"
+            media-class="aspect-square"
+            :rows="4"
+          />
+        </div>
+      </section>
+    </div>
     <div v-else-if="collection" class="space-y-12">
       <section
         class="grid overflow-hidden bg-[#f7f7f5] shadow-sm ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]"
@@ -22,7 +43,12 @@
           <h1 class="mt-4 text-3xl leading-none font-black uppercase md:text-5xl">
             {{ collection.name }}
           </h1>
-          <p class="mt-6 leading-7 text-black/65">{{ collection.description }}</p>
+          <SafeHtmlContent
+            v-if="collectionDescriptionHtml"
+            class="mt-6"
+            :html="collectionDescriptionHtml"
+          />
+          <p v-else class="mt-6 leading-7 text-black/65">{{ collection.excerpt }}</p>
         </div>
       </section>
       <section>
@@ -42,33 +68,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
+import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
+import { UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
-import type { Product } from '@/modules/catalog/product/types'
-import type { Collection } from '@/modules/content/collection/types'
+import { normalizeRichTextInput } from '@/lib/richText'
+import type { ProductFeatured } from '@/modules/catalog/product/types'
+import type { CollectionDetail } from '@/modules/content/collection/types'
 
 const route = useRoute()
-const loading = ref(false)
-const collection = ref<Collection | null>(null)
-const products = computed<Product[]>(
-  () =>
-    (collection.value?.products?.map((item) => item.product).filter(Boolean) as Product[]) || [],
+const { data: collection, pending: loading } = await useAsyncData(
+  `collection-detail-${String(route.params.slug)}`,
+  () => collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 }),
+)
+const products = computed<ProductFeatured[]>(() => collection.value?.products || [])
+const collectionDescriptionHtml = computed(() =>
+  normalizeRichTextInput(collection.value?.descriptionHtml || collection.value?.descriptionJson),
 )
 
-function coverUrl(row: Collection) {
+function coverUrl(row: CollectionDetail) {
   return resolveFileUrl(row.coverUrl || row.imageUrl || '')
 }
 
-onMounted(async () => {
-  loading.value = true
-  try {
-    collection.value = await collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 })
-  } finally {
-    loading.value = false
-  }
+useSeoMeta({
+  title: () => (collection.value ? `${collection.value.name} - Thepocketshoes` : 'Bo suu tap'),
+  description: () =>
+    collection.value?.excerpt || 'Kham pha bo suu tap giay duoc chon loc tai Thepocketshoes.',
+  ogTitle: () => collection.value?.name || 'Bo suu tap Thepocketshoes',
+  ogDescription: () =>
+    collection.value?.excerpt || 'Kham pha bo suu tap giay duoc chon loc tai Thepocketshoes.',
+  ogImage: () => (collection.value ? coverUrl(collection.value) || undefined : undefined),
 })
 </script>

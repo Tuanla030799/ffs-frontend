@@ -44,8 +44,8 @@
       <template #cell-status="{ row }">
         <span :class="badgeClass(row.status)">{{ row.status }}</span>
       </template>
-      <template #cell-publishedAt="{ row }">{{ formatDateTime(row.publishedAt) }}</template>
-      <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      <template #cell-publishedAt="{ row }">{{ formatLocalDateTime(row.publishedAt) }}</template>
+      <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }">
         <div class="space-x-3">
           <UiButton variant="ghost" @click="openEdit(row.id)"> Edit </UiButton
@@ -64,7 +64,7 @@ import { UiButton, UiTable } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
-import { formatDateTime } from '@/modules/shared/types'
+import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Blog } from '@/modules/content/blog/types'
 
 const router = useRouter()
@@ -92,7 +92,7 @@ function badgeClass(status: string) {
   return 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600'
 }
 function coverUrl(row: Blog) {
-  return resolveFileUrl(row.coverUrl || row.imageUrl || '')
+  return resolveFileUrl(row.coverImageUrl || '')
 }
 function openCreate() {
   void router.push({ name: 'admin-blog-create' })

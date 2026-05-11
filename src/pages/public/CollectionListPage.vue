@@ -15,39 +15,11 @@
 
     <StorefrontListingLayout :show-sidebar="false">
       <div v-if="loading" class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        <div v-for="i in 6" :key="i" class="h-80 animate-pulse bg-black/10" />
+        <UiSkeleton v-for="i in 6" :key="i" variant="card" class="h-80" :rows="3" />
       </div>
 
       <div v-else-if="rows.length" class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        <RouterLink
-          v-for="row in rows"
-          :key="row.id"
-          :to="`/collections/${row.slug}`"
-          class="group overflow-hidden bg-[#f7f7f5] text-black no-underline ring-1 ring-black/5 transition hover:ring-black/15"
-        >
-          <div class="aspect-[4/3] overflow-hidden bg-[#ededeb]">
-            <img
-              v-if="coverUrl(row)"
-              :src="coverUrl(row)"
-              :alt="row.name"
-              class="h-full w-full object-cover grayscale transition duration-300 group-hover:scale-105 group-hover:grayscale-0"
-            />
-          </div>
-
-          <div class="p-5 md:p-6">
-            <p class="text-xs font-bold tracking-[0.16em] text-black/50 uppercase">
-              {{ row.productCount || 0 }} sản phẩm
-            </p>
-
-            <h2 class="mt-2 line-clamp-2 text-xl leading-tight font-black md:text-2xl">
-              {{ row.name }}
-            </h2>
-
-            <p class="mt-3 line-clamp-2 text-sm leading-6 text-black/65">
-              {{ row.description }}
-            </p>
-          </div>
-        </RouterLink>
+        <CollectionCard v-for="row in rows" :key="row.id" :collection="row" />
       </div>
 
       <div
@@ -62,11 +34,11 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
+import CollectionCard from '@/components/storefront/CollectionCard.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
+import { UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
-import { resolveFileUrl } from '@/lib/fileUrl'
 import type { Collection } from '@/modules/content/collection/types'
 
 // const router = useRouter()
@@ -79,10 +51,6 @@ const query = reactive({
   page: 1,
   limit: 20,
 })
-
-function coverUrl(row: Collection) {
-  return resolveFileUrl(row.coverUrl || row.imageUrl || '')
-}
 
 async function load() {
   loading.value = true

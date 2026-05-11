@@ -1,4 +1,5 @@
 import type { PageResult } from '@/types/http'
+import { formatLocalDateTime } from '@/lib/dateTime'
 export type Status = 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'DELETED' | string
 export type Paginated<T> = PageResult<T>
 export interface ListQuery {
@@ -31,9 +32,5 @@ export function asArray<T>(value: T[] | null | undefined): T[] {
   return Array.isArray(value) ? value : []
 }
 export function formatDateTime(value?: string | Date | null) {
-  if (!value) return '-'
-  const date = value instanceof Date ? value : new Date(value)
-  if (Number.isNaN(date.getTime())) return '-'
-  const pad = (num: number) => String(num).padStart(2, '0')
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  return formatLocalDateTime(value)
 }

@@ -88,7 +88,7 @@
       <template #cell-status="{ row }"
         ><span :class="badgeClass(row.status)">{{ statusLabel(row.status) }}</span></template
       >
-      <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }"
         ><div class="space-x-3">
           <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton
@@ -108,7 +108,7 @@ import { brandApi } from '@/modules/content/brand/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
-import { formatDateTime } from '@/modules/shared/types'
+import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Brand, BrandPayload } from '@/modules/content/brand/types'
 import type { UploadedFile } from '@/services/file.service'
 

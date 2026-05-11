@@ -48,9 +48,9 @@
         </UiCard>
 
         <RichTextEditorField
-          v-model="form.contentJson"
+          v-model="form.contentHtml"
           title="Nội dung blog"
-          description="Nội dung HTML sẽ được lưu vào field contentJson."
+          description="Nội dung HTML sẽ được lưu vào field contentHtml."
           placeholder="Viết bài blog..."
           :min-height="520"
         />
@@ -59,21 +59,32 @@
       <aside class="space-y-5">
         <UiCard title="Cover image" padding="md">
           <FileUpload
+            v-if="!form.coverFileId && !coverPreviewUrl"
             v-model="uploaded"
             scope="admin"
             accept="image/*"
-            title="Upload cover"
-            @uploaded="(file) => (form.coverFileId = String(file.fileId))"
+            title="Thêm ảnh cover"
+            description="Ảnh này hiển thị ở danh sách blog, trang chi tiết và các block nổi bật."
+            trigger-text="Thêm ảnh"
+            @uploaded="assignCoverImage"
           />
-        </UiCard>
-
-        <UiCard title="Publish" padding="md">
-          <p class="mt-1 text-sm text-slate-500">
-            Nếu status ACTIVE mà publishedAt trống, backend sẽ tự set ngày publish.
-          </p>
-          <div class="mt-4 grid gap-2">
-            <UiButton native-type="submit" :loading="saving">Lưu blog</UiButton>
-            <UiButton native-type="button" variant="secondary" @click="goBack">Hủy</UiButton>
+          <div
+            v-if="form.coverFileId || coverPreviewUrl"
+            class="mt-3 grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[104px_minmax(0,1fr)]"
+          >
+            <ImagePreview
+              :src="coverPreviewUrl"
+              :alt="form.title || 'Blog cover'"
+              :title="form.title || 'Blog cover'"
+            />
+            <div class="space-y-2">
+              <UiInput :model-value="form.coverFileId" label="File ID" readonly />
+              <div class="flex justify-end">
+                <UiButton native-type="button" variant="danger" size="sm" @click="clearCoverImage">
+                  Xóa ảnh
+                </UiButton>
+              </div>
+            </div>
           </div>
         </UiCard>
       </aside>
@@ -85,10 +96,13 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FileUpload from '@/components/common/FileUpload.vue'
+import ImagePreview from '@/components/common/ImagePreview.vue'
 import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect, UiTextarea } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
-import { normalizeRichTextInput } from '@/lib/richText'
+import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
+import { sanitizeHtml } from '@/lib/sanitizeHtml'
+import { toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import type { Blog, BlogPayload } from '@/modules/content/blog/types'
 import type { UploadedFile } from '@/services/file.service'
@@ -99,11 +113,14 @@ const isEdit = computed(() => Boolean(route.params.id))
 const saving = ref(false)
 const error = ref('')
 const uploaded = ref<UploadedFile | null>(null)
+const coverPreviewUrl = ref('')
+const hasLegacyContent = ref(false)
 const form = reactive<BlogPayload>({
   title: '',
   slug: '',
   excerpt: '',
-  contentJson: '',
+  contentHtml: '',
+  contentJson: null,
   coverFileId: '',
   status: 'DRAFT',
   publishedAt: '',
@@ -125,11 +142,24 @@ function fill(row?: Blog) {
     title: row?.title || '',
     slug: row?.slug || '',
     excerpt: row?.excerpt || '',
-    contentJson: normalizeRichTextInput(row?.contentJson),
+    contentHtml: normalizeRichTextInput(row?.contentHtml),
+    contentJson: null,
     coverFileId: row?.coverFileId || '',
     status: row?.status || 'DRAFT',
-    publishedAt: row?.publishedAt?.slice(0, 16) || '',
+    publishedAt: toDateTimeLocalInput(row?.publishedAt),
   })
+  coverPreviewUrl.value = row?.coverUrl || row?.coverImageUrl || ''
+  hasLegacyContent.value = !form.contentHtml && isEditorJsContent(row?.contentJson)
+  uploaded.value = null
+}
+function assignCoverImage(file: UploadedFile) {
+  form.coverFileId = String(file.fileId)
+  coverPreviewUrl.value = file.url || file.path || ''
+  uploaded.value = null
+}
+function clearCoverImage() {
+  form.coverFileId = ''
+  coverPreviewUrl.value = ''
   uploaded.value = null
 }
 function goBack() {
@@ -148,8 +178,9 @@ async function save() {
     const payload = {
       ...form,
       slug: form.slug || slugify(form.title),
-      contentJson: form.contentJson || '',
-      publishedAt: form.publishedAt || undefined,
+      contentHtml: sanitizeHtml(form.contentHtml || ''),
+      contentJson: null,
+      publishedAt: toBackendDateTime(form.publishedAt || null) || undefined,
     }
     if (isEdit.value) await blogApi.update(String(route.params.id), payload)
     else await blogApi.create(payload)

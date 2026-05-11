@@ -15,6 +15,7 @@
         :model-value="localValue"
         :disabled="isDisabled"
         :init="editorInit"
+        @init="onInit"
         @update:model-value="onUpdate"
       />
       <p v-if="error || localError" class="text-sm font-semibold text-red-600">
@@ -55,6 +56,10 @@ type BlobInfo = {
   filename: () => string
 }
 
+type TinyEditorInstance = {
+  getContent: () => string
+}
+
 const props = withDefaults(
   defineProps<{
     modelValue?: unknown
@@ -90,6 +95,7 @@ const emit = defineEmits<{
 const editorId = `rich-text-editor-${Math.random().toString(36).slice(2)}`
 const localError = ref('')
 const localValue = ref(normalizeRichTextInput(props.modelValue))
+let editorInstance: TinyEditorInstance | null = null
 const heading = computed(() => props.title || props.label)
 const isDisabled = computed(() => props.disabled || props.readonly)
 
@@ -114,11 +120,15 @@ const editorInit = computed(() => ({
     'link image table blockquote | code preview fullscreen',
 
   block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4',
+  valid_styles: {
+    '*': 'color,background-color,text-align',
+  },
 
   paste_data_images: false,
   automatic_uploads: true,
   images_upload_credentials: true,
   file_picker_types: 'image',
+  invalid_elements: 'script,style,iframe,object,embed',
 
   image_title: true,
   image_caption: true,
@@ -186,7 +196,7 @@ const editorInit = computed(() => ({
         throw new Error('Upload image failed')
       }
 
-      return resolveFileUrl(uploaded.url)
+      return resolveFileUrl(uploaded.rawUrl || uploaded.path || uploaded.url)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Upload image failed'
       localError.value = message
@@ -203,11 +213,25 @@ watch(
   },
 )
 
+function isTinyEditorInstance(value: unknown): value is TinyEditorInstance {
+  return Boolean(value && typeof (value as TinyEditorInstance).getContent === 'function')
+}
+
+function onInit(...args: unknown[]) {
+  const directEditor = args.find(isTinyEditorInstance)
+  const nestedEditor = args
+    .map((arg) => (arg && typeof arg === 'object' ? (arg as { editor?: unknown }).editor : null))
+    .find(isTinyEditorInstance)
+
+  editorInstance = directEditor || nestedEditor || null
+}
+
 function onUpdate(value: string) {
-  if (value === localValue.value) return
-  localValue.value = value
-  emit('update:modelValue', value)
-  emit('change', value)
+  const content = editorInstance?.getContent() ?? value
+  if (content === localValue.value) return
+  localValue.value = content
+  emit('update:modelValue', content)
+  emit('change', content)
 }
 </script>
 

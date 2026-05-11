@@ -44,88 +44,23 @@
       </div>
     </section>
 
-    <section
-      v-if="collections.length"
-      class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8"
-    >
-      <SectionHeader title="Bạn đang tìm?" to="/products" label="Xem tất cả" />
-      <div class="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-4">
-        <RouterLink
-          v-for="(collection, index) in collections.slice(0, 4)"
-          :key="collection.id"
-          :to="`/collections/${collection.slug}`"
-          class="animate-fade-up group overflow-hidden bg-[#f7f7f5] text-black no-underline shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl"
-          :style="{ animationDelay: `${index * 80}ms` }"
-        >
-          <div class="aspect-[4/3] bg-[#eeeeeb]">
-            <img
-              v-if="coverUrl(collection)"
-              :src="coverUrl(collection)"
-              :alt="collection.name"
-              class="h-full w-full object-cover grayscale transition duration-500 group-hover:scale-105 group-hover:grayscale-0"
-            />
-          </div>
-          <div class="p-5 md:p-6">
-            <h3 class="font-black">{{ collection.name }}</h3>
-            <p class="mt-2 line-clamp-2 text-sm text-black/65">
-              {{ collection.description || `${collection.productCount || 0} sản phẩm` }}
-            </p>
-            <span class="mt-6 inline-block text-2xl transition group-hover:translate-x-2">→</span>
-          </div>
-        </RouterLink>
-      </div>
+    <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
+      <SectionHeader title="Bộ sưu tập nổi bật?" to="/collections" label="Xem tất cả" />
+      <CollectionSwiper :collections="collections" :loading="loading" />
     </section>
 
     <section class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8">
       <SectionHeader title="Sản phẩm nổi bật" to="/products" label="Xem tất cả" />
-      <div v-if="loading" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-5">
-        <div v-for="i in 5" :key="i" class="h-80 animate-pulse bg-black/10" />
-      </div>
-      <div v-else-if="featured.length" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-5">
-        <ProductCard
-          v-for="(product, index) in featured.slice(0, 5)"
-          :key="product.id"
-          :product="product"
-          class="animate-fade-up"
-          :style="{ animationDelay: `${index * 70}ms` }"
-        />
-      </div>
-      <div
-        v-else
-        class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
-      >
-        Chưa có sản phẩm nổi bật.
-      </div>
+      <FeaturedProductSwiper :products="featured" :loading="loading" />
     </section>
 
-    <section v-if="randomBlog" class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+    <section
+      v-if="loading || randomBlog"
+      class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8"
+    >
       <SectionHeader title="Một bài blog hay" to="/blogs" label="Xem tất cả blog" />
-      <RouterLink
-        :to="`/blogs/${randomBlog.slug}`"
-        class="animate-fade-up grid bg-[#f7f7f5] text-black no-underline shadow-sm ring-1 ring-black/5 md:grid-cols-[1.15fr_1fr]"
-      >
-        <img
-          v-if="coverUrl(randomBlog)"
-          :src="coverUrl(randomBlog)"
-          :alt="randomBlog.title"
-          class="h-64 w-full object-cover grayscale transition duration-500 hover:grayscale-0 md:h-full md:min-h-72"
-        />
-        <div v-else class="min-h-72 bg-[#e8e8e5]" />
-        <div class="flex flex-col justify-center p-5 md:p-10">
-          <p class="text-sm font-semibold">
-            {{ formatDateTime(randomBlog.publishedAt || randomBlog.createdAt) }}
-          </p>
-          <h2 class="mt-5 max-w-md text-2xl leading-tight font-black md:text-3xl">
-            {{ randomBlog.title }}
-          </h2>
-          <p class="mt-5 max-w-md text-sm leading-6 text-black/65">{{ randomBlog.excerpt }}</p>
-          <span
-            class="mt-8 inline-flex w-fit bg-black px-6 py-3 text-xs font-black tracking-wide text-white uppercase"
-          >
-            Đọc ngay →
-          </span>
-        </div>
-      </RouterLink>
+      <UiSkeleton v-if="loading" variant="card" class="min-h-80" :rows="5" />
+      <BlogCard v-else-if="randomBlog" :blog="randomBlog" layout="featured" />
     </section>
   </main>
 </template>
@@ -133,13 +68,15 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import ProductCard from '@/components/storefront/ProductCard.vue'
+import CollectionSwiper from '@/components/home/CollectionSwiper.vue'
+import FeaturedProductSwiper from '@/components/home/FeaturedProductSwiper.vue'
+import BlogCard from '@/components/storefront/BlogCard.vue'
+import { UiSkeleton } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import { collectionApi } from '@/modules/content/collection/api'
 import { blogApi } from '@/modules/content/blog/api'
 import { bannerApi } from '@/modules/content/banner/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
-import { formatDateTime } from '@/modules/shared/types'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { Collection } from '@/modules/content/collection/types'
 import type { Blog } from '@/modules/content/blog/types'
@@ -171,10 +108,6 @@ const SectionHeader = defineComponent({
       ])
   },
 })
-
-function coverUrl(row: { coverUrl?: string; imageUrl?: string }) {
-  return resolveFileUrl(row.coverUrl || row.imageUrl || '')
-}
 
 onMounted(async () => {
   try {

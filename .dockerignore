@@ -1,5 +1,11 @@
 node_modules
 dist
+dist-ssr
+.nuxt
+.output
+.nitro
+.data
+.cache
 .git
 .vscode
 .DS_Store
@@ -7,3 +13,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 coverage
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

@@ -8,7 +8,33 @@
     <div v-if="error" class="border border-red-200 bg-red-50 p-4 text-red-700">
       {{ error }}
     </div>
-    <div v-else-if="loading" class="h-96 animate-pulse bg-black/10" />
+    <div v-else-if="loading" class="space-y-12">
+      <section class="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
+        <div class="grid gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
+          <div
+            class="order-2 flex gap-2 overflow-hidden md:order-1 md:flex-col md:overflow-visible"
+          >
+            <UiSkeleton v-for="i in 5" :key="i" variant="block" class="h-16 w-16 shrink-0" />
+          </div>
+          <UiSkeleton variant="block" class="order-1 aspect-square md:order-2" />
+        </div>
+
+        <aside class="space-y-7">
+          <UiSkeleton :rows="4" />
+          <div class="grid grid-cols-4 gap-3">
+            <UiSkeleton v-for="i in 4" :key="i" variant="block" class="h-[70px]" />
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <UiSkeleton v-for="i in 6" :key="i" variant="block" class="h-12" />
+          </div>
+          <UiSkeleton variant="block" class="h-12" />
+        </aside>
+      </section>
+
+      <section class="border-t border-black/10 pt-8 md:pt-10">
+        <UiSkeleton class="max-w-3xl" :rows="5" />
+      </section>
+    </div>
     <div v-else-if="product" class="space-y-12">
       <section class="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
         <div class="grid gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
@@ -157,7 +183,7 @@
 
       <section class="border-t border-black/10 pt-8 md:pt-10">
         <h2 class="mb-5 text-2xl font-black">Mô tả sản phẩm</h2>
-        <SafeHtmlContent :html="normalizeRichTextInput(product.descriptionJson)" />
+        <SafeHtmlContent :html="productDescriptionHtml" />
       </section>
     </div>
     <div
@@ -170,27 +196,32 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
-import { UiButton, UiTag } from '@/components/ui'
+import { UiButton, UiSkeleton, UiTag } from '@/components/ui'
 import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
-import type { Product, ProductSku, ProductVariant } from '@/modules/catalog/product/types'
+import type { ProductSku, ProductVariant } from '@/modules/catalog/product/types'
 
 const route = useRoute()
-const loading = ref(true)
-const error = ref('')
-const product = ref<Product | null>(null)
 const selectedImage = ref('')
 const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
+const {
+  data: product,
+  pending: loading,
+  error: productError,
+} = await useAsyncData(`product-detail-${String(route.params.slug)}`, () =>
+  productApi.detail(String(route.params.slug)),
+)
+const error = computed(() => (productError.value ? getErrorMessage(productError.value) : ''))
 const images = computed(() => asArray(product.value?.images))
 const galleryImages = computed(() =>
   images.value
@@ -220,6 +251,9 @@ const currentOriginalPrice = computed(() =>
     ? selectedSku.value?.price || product.value?.price
     : undefined,
 )
+const productDescriptionHtml = computed(() =>
+  normalizeRichTextInput(product.value?.descriptionHtml),
+)
 
 function variantKey(variant: ProductVariant) {
   return variant.id || variant.clientId || variant.name
@@ -246,16 +280,21 @@ function handleAddToCart() {
   addToCart(product.value, selectedSku.value)
 }
 
-onMounted(async () => {
-  try {
-    product.value = await productApi.detail(String(route.params.slug))
+watch(
+  product,
+  () => {
     selectedImage.value = galleryImages.value[0]?.url || ''
     if (variants.value[0]) selectVariant(variants.value[0])
     selectedSku.value = inStockSkus.value[0] || null
-  } catch (err) {
-    error.value = getErrorMessage(err)
-  } finally {
-    loading.value = false
-  }
+  },
+  { immediate: true },
+)
+
+useSeoMeta({
+  title: () => (product.value ? `${product.value.name} - Thepocketshoes` : 'Chi tiet san pham'),
+  description: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
+  ogTitle: () => product.value?.name || 'Thepocketshoes',
+  ogDescription: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
+  ogImage: () => selectedImage.value || undefined,
 })
 </script>
