@@ -128,7 +128,7 @@
       <template #cell-productCount="{ row }">{{
         row.productCount || row.products?.length || 0
       }}</template>
-      <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }"
         ><div class="space-x-3">
           <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton
@@ -152,7 +152,7 @@ import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
-import { formatDateTime } from '@/modules/shared/types'
+import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Collection, CollectionPayload } from '@/modules/content/collection/types'
 import type { Product } from '@/modules/catalog/product/types'
 import type { UploadedFile } from '@/services/file.service'

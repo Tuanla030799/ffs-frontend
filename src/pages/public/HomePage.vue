@@ -81,7 +81,7 @@
       <div v-if="loading" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-5">
         <div v-for="i in 5" :key="i" class="h-80 animate-pulse bg-black/10" />
       </div>
-      <div v-else-if="featured.length" class="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-5">
+      <div v-else-if="featured.length" class="grid gap-4 sm:grid-cols-2 md:gap-3 lg:grid-cols-4">
         <ProductCard
           v-for="(product, index) in featured.slice(0, 5)"
           :key="product.id"
@@ -113,7 +113,7 @@
         <div v-else class="min-h-72 bg-[#e8e8e5]" />
         <div class="flex flex-col justify-center p-5 md:p-10">
           <p class="text-sm font-semibold">
-            {{ formatDateTime(randomBlog.publishedAt || randomBlog.createdAt) }}
+            {{ formatLocalDateTime(randomBlog.publishedAt || randomBlog.createdAt) }}
           </p>
           <h2 class="mt-5 max-w-md text-2xl leading-tight font-black md:text-3xl">
             {{ randomBlog.title }}
@@ -139,7 +139,7 @@ import { collectionApi } from '@/modules/content/collection/api'
 import { blogApi } from '@/modules/content/blog/api'
 import { bannerApi } from '@/modules/content/banner/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
-import { formatDateTime } from '@/modules/shared/types'
+import { formatLocalDateTime } from '@/lib/dateTime'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { Collection } from '@/modules/content/collection/types'
 import type { Blog } from '@/modules/content/blog/types'
@@ -172,8 +172,8 @@ const SectionHeader = defineComponent({
   },
 })
 
-function coverUrl(row: { coverUrl?: string; imageUrl?: string }) {
-  return resolveFileUrl(row.coverUrl || row.imageUrl || '')
+function coverUrl(row: Blog) {
+  return resolveFileUrl(row.coverImageUrl || '')
 }
 
 onMounted(async () => {

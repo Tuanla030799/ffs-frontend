@@ -9,7 +9,7 @@ export interface Blog {
   contentJson?: unknown
   coverFileId?: string
   coverUrl?: string
-  imageUrl?: string
+  coverImageUrl?: string
   status: Status
   publishedAt?: string
   createdAt?: string

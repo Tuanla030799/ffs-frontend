@@ -25,6 +25,8 @@ import BlogListPage from '@/pages/public/BlogListPage.vue'
 import BlogDetailPage from '@/pages/public/BlogDetailPage.vue'
 import BrandListPage from '@/pages/public/BrandListPage.vue'
 import BrandDetailPage from '@/pages/public/BrandDetailPage.vue'
+import CheckoutPage from '@/pages/public/CheckoutPage.vue'
+import OrderSuccessPage from '@/pages/public/OrderSuccessPage.vue'
 import BrandAdminPage from '@/pages/admin/content/BrandAdminPage.vue'
 import NotFoundPage from '@/pages/system/NotFoundPage.vue'
 import { pinia } from '@/stores'
@@ -74,6 +76,18 @@ const routes: RouteRecordRaw[] = [
         component: BlogDetailPage,
         meta: { title: 'Chi tiết blog' },
       },
+      {
+        path: 'checkout',
+        name: 'checkout',
+        component: CheckoutPage,
+        meta: { title: 'Checkout' },
+      },
+      {
+        path: 'order-success',
+        name: 'order-success',
+        component: OrderSuccessPage,
+        meta: { title: 'Hoàn tất đơn hàng' },
+      },
     ],
   },
   { path: '/admin/login', name: 'admin-login', component: LoginPage, meta: { publicOnly: true } },
@@ -113,7 +127,7 @@ const routes: RouteRecordRaw[] = [
         component: ProductAdminPage,
         meta: {
           title: 'Products',
-          description: 'CRUD product, images, variants, SKUs và Editor.js.',
+          description: 'CRUD product, images, variants, SKUs và TinyMCE.',
         },
       },
       {
@@ -122,7 +136,7 @@ const routes: RouteRecordRaw[] = [
         component: ProductAdminFormPage,
         meta: {
           title: 'Create product',
-          description: 'Tạo product, images, variants, SKUs và Editor.js.',
+          description: 'Tạo product, images, variants, SKUs và TinyMCE.',
         },
       },
       {
@@ -131,7 +145,7 @@ const routes: RouteRecordRaw[] = [
         component: ProductAdminFormPage,
         meta: {
           title: 'Edit product',
-          description: 'Cập nhật product, images, variants, SKUs và Editor.js.',
+          description: 'Cập nhật product, images, variants, SKUs và TinyMCE.',
         },
       },
       {

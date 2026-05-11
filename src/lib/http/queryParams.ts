@@ -1,7 +1,8 @@
 import type { QueryParamPrimitive, QueryParams } from '@/types/http'
+import { toBackendDateTime } from '@/lib/dateTime'
 
 function normalizeValue(value: Exclude<QueryParamPrimitive, undefined>): string {
-  if (value instanceof Date) return value.toISOString()
+  if (value instanceof Date) return toBackendDateTime(value) || ''
   if (typeof value === 'boolean') return value ? 'true' : 'false'
   if (value === null) return ''
   return String(value)

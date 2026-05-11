@@ -26,14 +26,14 @@
           class="group overflow-hidden bg-[#f7f7f5] text-black no-underline ring-1 ring-black/5 transition hover:ring-black/15"
         >
           <img
-            :src="coverUrl(row) || '/assets/home.jpg'"
+            :src="coverUrl(row)"
             :alt="row.title"
             class="aspect-[4/3] w-full object-cover grayscale transition duration-300 group-hover:scale-105 group-hover:grayscale-0"
           />
 
           <div class="p-5 md:p-6">
             <p class="text-sm font-semibold text-black/50">
-              {{ formatDateTime(row.publishedAt || row.createdAt) }}
+              {{ formatLocalDateTime(row.publishedAt || row.createdAt) }}
             </p>
 
             <h2 class="mt-3 line-clamp-2 text-xl leading-tight font-black md:text-2xl">
@@ -64,7 +64,7 @@ import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
 import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
-import { formatDateTime } from '@/modules/shared/types'
+import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Blog } from '@/modules/content/blog/types'
 
 // const router = useRouter()
@@ -79,7 +79,7 @@ const query = reactive({
 })
 
 function coverUrl(row: Blog) {
-  return resolveFileUrl(row.coverUrl || row.imageUrl || '')
+  return resolveFileUrl(row.coverImageUrl || '')
 }
 
 async function load() {

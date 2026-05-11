@@ -92,7 +92,7 @@
         </RouterLink>
         <RouterLink
           class="relative inline-flex h-11 w-11 items-center justify-center rounded-[var(--ui-radius-md)] text-black no-underline transition hover:bg-[var(--ui-surface-soft)]"
-          to="/products"
+          to="/checkout"
           aria-label="Giỏ hàng"
         >
           <svg

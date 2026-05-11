@@ -92,7 +92,7 @@
             :key="h.id"
             class="border-b border-slate-100 p-3 text-sm last:border-b-0"
           >
-            {{ formatDateTime(h.createdAt) }} - <b>{{ h.status }}</b> {{ h.note }}
+            {{ formatLocalDateTime(h.createdAt) }} - <b>{{ h.status }}</b> {{ h.note }}
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@
         >{{ row.shippingMethod }} / {{ row.shippingStatus }}</template
       >
       <template #cell-totalAmount="{ row }">{{ money(row.totalAmount) }}</template>
-      <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }"
         ><UiButton variant="ghost" @click="open(row.id)">Detail</UiButton></template
       >
@@ -139,7 +139,8 @@ import { onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import { orderApi } from '@/modules/sales/order/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
-import { money, formatDateTime } from '@/modules/shared/types'
+import { money } from '@/modules/shared/types'
+import { formatLocalDateTime, toBackendDateTime } from '@/lib/dateTime'
 import type { Order, OrderStatusHistory } from '@/modules/sales/order/types'
 
 const rows = ref<Order[]>([])
@@ -152,7 +153,7 @@ const statusForm = reactive({ status: 'CONFIRMED', note: 'Updated by admin' })
 const payment = reactive({
   paymentMethod: 'COD',
   paymentStatus: 'PAID',
-  paidAt: new Date().toISOString(),
+  paidAt: '',
 })
 const shipping = reactive({ shippingMethod: 'GHN', shippingStatus: 'SHIPPING', trackingCode: '' })
 const columns = [
@@ -203,7 +204,10 @@ async function saveStatus(id: string) {
   await load()
 }
 async function savePayment(id: string) {
-  await orderApi.updatePayment(id, payment)
+  await orderApi.updatePayment(id, {
+    ...payment,
+    paidAt: toBackendDateTime(new Date()) || undefined,
+  })
   await open(id)
   await load()
 }

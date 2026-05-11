@@ -52,7 +52,7 @@
       <template #cell-status="{ row }"
         ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
       >
-      <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }"
         ><div class="space-x-3">
           <UiButton variant="ghost" @click="openEdit(row)">Edit</UiButton
@@ -69,7 +69,7 @@ import { onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import { customerApi } from '@/modules/customer/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
-import { formatDateTime } from '@/modules/shared/types'
+import { formatLocalDateTime } from '@/lib/dateTime'
 import type { Customer, CustomerPayload } from '@/modules/customer/types'
 
 const rows = ref<Customer[]>([])

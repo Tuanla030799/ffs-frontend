@@ -54,10 +54,6 @@
           placeholder="Viết bài blog..."
           :min-height="520"
         />
-        <p v-if="hasLegacyContent" class="text-sm font-semibold text-amber-700">
-          Blog này còn dữ liệu Editor.js cũ. TinyMCE chỉ nạp contentHtml; cần convert legacy JSON
-          sang HTML trước khi chỉnh tiếp nội dung cũ.
-        </p>
       </div>
 
       <aside class="space-y-5">
@@ -69,16 +65,6 @@
             title="Upload cover"
             @uploaded="(file) => (form.coverFileId = String(file.fileId))"
           />
-        </UiCard>
-
-        <UiCard title="Publish" padding="md">
-          <p class="mt-1 text-sm text-slate-500">
-            Nếu status ACTIVE mà publishedAt trống, backend sẽ tự set ngày publish.
-          </p>
-          <div class="mt-4 grid gap-2">
-            <UiButton native-type="submit" :loading="saving">Lưu blog</UiButton>
-            <UiButton native-type="button" variant="secondary" @click="goBack">Hủy</UiButton>
-          </div>
         </UiCard>
       </aside>
     </UiForm>
@@ -94,6 +80,7 @@ import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect, UiTextarea } from
 import { blogApi } from '@/modules/content/blog/api'
 import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
+import { toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import type { Blog, BlogPayload } from '@/modules/content/blog/types'
 import type { UploadedFile } from '@/services/file.service'
@@ -136,7 +123,7 @@ function fill(row?: Blog) {
     contentJson: null,
     coverFileId: row?.coverFileId || '',
     status: row?.status || 'DRAFT',
-    publishedAt: row?.publishedAt?.slice(0, 16) || '',
+    publishedAt: toDateTimeLocalInput(row?.publishedAt),
   })
   hasLegacyContent.value = !form.contentHtml && isEditorJsContent(row?.contentJson)
   uploaded.value = null
@@ -159,7 +146,7 @@ async function save() {
       slug: form.slug || slugify(form.title),
       contentHtml: sanitizeHtml(form.contentHtml || ''),
       contentJson: null,
-      publishedAt: form.publishedAt || undefined,
+      publishedAt: toBackendDateTime(form.publishedAt || null) || undefined,
     }
     if (isEdit.value) await blogApi.update(String(route.params.id), payload)
     else await blogApi.create(payload)
