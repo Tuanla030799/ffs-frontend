@@ -50,28 +50,49 @@
               description="Nội dung HTML cho trang chi tiết collection nếu storefront cần hiển thị."
               placeholder="Viết mô tả collection..."
             />
-            <p v-if="hasLegacyDescription" class="mt-2 text-sm font-semibold text-amber-700">
-              Collection này còn dữ liệu Editor.js cũ. TinyMCE chỉ nạp descriptionHtml; cần convert
-              legacy JSON sang HTML trước khi chỉnh tiếp nội dung cũ.
-            </p>
           </div>
           <div class="md:col-span-3">
             <FileUpload
               v-model="uploaded"
               scope="admin"
               accept="image/*"
-              title="Upload cover"
-              @uploaded="(file) => (form.fileId = String(file.fileId))"
+              title="Thêm ảnh cover"
+              description="Ảnh này hiển thị ở danh sách collection và trang chi tiết collection."
+              trigger-text="Thêm ảnh"
+              @uploaded="assignCoverImage"
             />
+            <div
+              v-if="form.fileId || coverPreviewUrl"
+              class="mt-3 grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[104px_minmax(0,1fr)]"
+            >
+              <ImagePreview
+                :src="coverPreviewUrl"
+                :alt="form.name || 'Collection cover'"
+                :title="form.name || 'Collection cover'"
+              />
+              <div class="space-y-2">
+                <UiInput :model-value="form.fileId" label="File ID" readonly />
+                <div class="flex justify-end">
+                  <UiButton
+                    native-type="button"
+                    variant="danger"
+                    size="sm"
+                    @click="clearCoverImage"
+                  >
+                    Xóa ảnh
+                  </UiButton>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <section class="rounded-2xl border border-slate-200 p-4">
-          <div class="mb-3 flex items-center justify-between">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h3 class="font-black">Products</h3>
-            <UiButton native-type="button" variant="outline" size="sm" @click="addProduct"
-              >+ Product</UiButton
-            >
+            <UiButton native-type="button" variant="outline" size="sm" @click="addProduct">
+              + Product
+            </UiButton>
           </div>
           <div class="grid gap-2">
             <div
@@ -79,11 +100,16 @@
               :key="index"
               class="grid gap-2 rounded-xl border border-slate-200 p-3 md:grid-cols-[1fr_140px_auto]"
             >
-              <UiSelect v-model="item.productId" placeholder="Chọn sản phẩm" label="Chọn sản phẩm">
-                <option v-for="product in products" :key="product.id" :value="product.id">
-                  {{ product.name }}
-                </option>
-              </UiSelect>
+              <AsyncSelect
+                v-model="item.productId"
+                label="Chọn sản phẩm"
+                placeholder="Chọn sản phẩm"
+                search-placeholder="Tìm kiếm product..."
+                :page-size="20"
+                :selected-options="selectedProductOptions"
+                :fetch-options="fetchProductOptions"
+                @selected="rememberSelectedProduct"
+              />
               <UiInput v-model.number="item.sortOrder" placeholder="Sort" label="Sort" />
               <UiButton
                 native-type="button"
@@ -142,6 +168,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
+import AsyncSelect, { type AsyncSelectOption } from '@/components/common/AsyncSelect.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
 import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
@@ -159,13 +186,14 @@ import type { UploadedFile } from '@/services/file.service'
 import ImagePreview from '@/components/common/ImagePreview.vue'
 
 const rows = ref<Collection[]>([])
-const products = ref<Product[]>([])
+const selectedProducts = ref<Record<string, Product>>({})
 const loading = ref(false)
 const error = ref('')
 const notice = ref('')
 const editing = ref<Collection | 'new' | null>(null)
 const deleting = ref<Collection | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
+const coverPreviewUrl = ref('')
 const hasLegacyDescription = ref(false)
 const query = reactive({ keyword: '', status: '', page: 1, limit: 50 })
 const form = reactive<CollectionPayload>({
@@ -186,6 +214,9 @@ const commonStatuses = computed(
       { value: 'ACTIVE', label: 'ACTIVE' },
       { value: 'INACTIVE', label: 'INACTIVE' },
     ],
+)
+const selectedProductOptions = computed(() =>
+  Object.values(selectedProducts.value).map(productToOption),
 )
 const columns = [
   { key: 'name', label: 'Name' },
@@ -217,15 +248,30 @@ function badgeClass(status: string) {
 function coverUrl(row: Collection) {
   return resolveFileUrl(row.coverUrl || row.imageUrl || '')
 }
-async function ensureProductsLoaded() {
-  if (products.value.length) return
-  products.value = (await productApi.adminList({ limit: 200 })).items
-}
-async function addProduct() {
-  await ensureProductsLoaded()
+function addProduct() {
   form.products.push({ productId: '', sortOrder: form.products.length })
 }
+function productToOption(product: Product): AsyncSelectOption {
+  return { value: product.id, label: product.name, raw: product }
+}
+async function fetchProductOptions(params: { keyword: string; page: number; limit: number }) {
+  const result = await productApi.adminList(params)
+  return {
+    items: result.items.map(productToOption),
+    total: result.total,
+    page: result.page,
+  }
+}
+function rememberSelectedProduct(option: AsyncSelectOption) {
+  const product = option.raw as Product | undefined
+  if (product?.id) selectedProducts.value[product.id] = product
+}
 function fill(row?: Collection) {
+  selectedProducts.value = {}
+  const collectionProducts = row?.products || []
+  collectionProducts.forEach((item) => {
+    if (item.product?.id) selectedProducts.value[item.product.id] = item.product
+  })
   Object.assign(form, {
     name: row?.name || '',
     slug: row?.slug || '',
@@ -240,19 +286,28 @@ function fill(row?: Collection) {
       sortOrder: item.sortOrder || 0,
     })),
   })
+  coverPreviewUrl.value = row ? coverUrl(row) : ''
   hasLegacyDescription.value = !form.descriptionHtml && isEditorJsContent(row?.descriptionJson)
   uploaded.value = null
 }
-async function openCreate() {
+function assignCoverImage(file: UploadedFile) {
+  form.fileId = String(file.fileId)
+  coverPreviewUrl.value = file.url || file.path || ''
+  uploaded.value = null
+}
+function clearCoverImage() {
+  form.fileId = ''
+  coverPreviewUrl.value = ''
+  uploaded.value = null
+}
+function openCreate() {
   editing.value = 'new'
   fill()
-  await ensureProductsLoaded()
 }
 async function openEdit(id: string) {
   const row = await collectionApi.adminDetail(id)
   editing.value = row
   fill(row)
-  await ensureProductsLoaded()
 }
 async function load() {
   loading.value = true

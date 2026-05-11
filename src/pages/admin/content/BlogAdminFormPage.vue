@@ -59,12 +59,33 @@
       <aside class="space-y-5">
         <UiCard title="Cover image" padding="md">
           <FileUpload
+            v-if="!form.coverFileId && !coverPreviewUrl"
             v-model="uploaded"
             scope="admin"
             accept="image/*"
-            title="Upload cover"
-            @uploaded="(file) => (form.coverFileId = String(file.fileId))"
+            title="Thêm ảnh cover"
+            description="Ảnh này hiển thị ở danh sách blog, trang chi tiết và các block nổi bật."
+            trigger-text="Thêm ảnh"
+            @uploaded="assignCoverImage"
           />
+          <div
+            v-if="form.coverFileId || coverPreviewUrl"
+            class="mt-3 grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[104px_minmax(0,1fr)]"
+          >
+            <ImagePreview
+              :src="coverPreviewUrl"
+              :alt="form.title || 'Blog cover'"
+              :title="form.title || 'Blog cover'"
+            />
+            <div class="space-y-2">
+              <UiInput :model-value="form.coverFileId" label="File ID" readonly />
+              <div class="flex justify-end">
+                <UiButton native-type="button" variant="danger" size="sm" @click="clearCoverImage">
+                  Xóa ảnh
+                </UiButton>
+              </div>
+            </div>
+          </div>
         </UiCard>
       </aside>
     </UiForm>
@@ -75,6 +96,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FileUpload from '@/components/common/FileUpload.vue'
+import ImagePreview from '@/components/common/ImagePreview.vue'
 import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import { UiAlert, UiButton, UiCard, UiForm, UiInput, UiSelect, UiTextarea } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
@@ -91,6 +113,7 @@ const isEdit = computed(() => Boolean(route.params.id))
 const saving = ref(false)
 const error = ref('')
 const uploaded = ref<UploadedFile | null>(null)
+const coverPreviewUrl = ref('')
 const hasLegacyContent = ref(false)
 const form = reactive<BlogPayload>({
   title: '',
@@ -125,7 +148,18 @@ function fill(row?: Blog) {
     status: row?.status || 'DRAFT',
     publishedAt: toDateTimeLocalInput(row?.publishedAt),
   })
+  coverPreviewUrl.value = row?.coverUrl || row?.coverImageUrl || ''
   hasLegacyContent.value = !form.contentHtml && isEditorJsContent(row?.contentJson)
+  uploaded.value = null
+}
+function assignCoverImage(file: UploadedFile) {
+  form.coverFileId = String(file.fileId)
+  coverPreviewUrl.value = file.url || file.path || ''
+  uploaded.value = null
+}
+function clearCoverImage() {
+  form.coverFileId = ''
+  coverPreviewUrl.value = ''
   uploaded.value = null
 }
 function goBack() {

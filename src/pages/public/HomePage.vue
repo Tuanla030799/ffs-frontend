@@ -172,8 +172,9 @@ const SectionHeader = defineComponent({
   },
 })
 
-function coverUrl(row: Blog) {
-  return resolveFileUrl(row.coverImageUrl || '')
+function coverUrl(row: { coverImageUrl?: string; coverUrl?: string; imageUrl?: string }) {
+  const rawUrl = row.coverImageUrl || row.coverUrl || row.imageUrl || ''
+  return resolveFileUrl(rawUrl)
 }
 
 onMounted(async () => {
