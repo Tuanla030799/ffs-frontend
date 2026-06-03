@@ -17,8 +17,8 @@
         </UiButton>
         <RouterLink to="/" class="flex items-center gap-3 no-underline">
           <div class="leading-none text-black">
-            <p class="text-xl font-black tracking-[0.08em] md:text-2xl">THE POCKET</p>
-            <p class="text-[11px] font-bold tracking-[0.18em]">SHOES</p>
+            <p class="text-xl font-black tracking-[0.08em] md:text-2xl">THE</p>
+            <p class="text-[11px] font-bold tracking-[0.18em]">POCKET SHOES</p>
           </div>
         </RouterLink>
       </div>
