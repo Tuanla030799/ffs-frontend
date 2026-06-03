@@ -41,9 +41,11 @@ npm run dev
 `.env.example`:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8080
-VITE_API_TIMEOUT=15000
-VITE_FILE_BASE_URL=http://localhost:8080
+NUXT_PUBLIC_API_BASE_URL=/api
+NUXT_PUBLIC_API_TIMEOUT=15000
+NUXT_PUBLIC_FILE_BASE_URL=
+NUXT_PUBLIC_SITE_URL=http://thepocketshoes.store
+FRONTEND_HTTP_PORT=80
 ```
 
 ## Routes chính
@@ -68,4 +70,13 @@ Admin:
 
 ## Ghi chú tích hợp backend
 
-Axios `baseURL` là `VITE_API_BASE_URL`. Nếu backend đã prefix `/api`, đặt `VITE_API_BASE_URL=http://localhost:8080/api`. Nếu backend expose đúng như request (`/api/...`) qua reverse proxy, giữ nguyên `http://localhost:8080` và chỉnh endpoint ở `api.ts` khi cần.
+Axios `baseURL` là `NUXT_PUBLIC_API_BASE_URL`. Khi deploy production nên dùng cùng domain qua reverse proxy, ví dụ `/api`; khi backend chạy ở domain riêng thì đặt thành URL đầy đủ của backend.
+
+## Deploy bằng Docker
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+Compose chạy Nuxt SSR ở container nội bộ `fds-web:3000` và public qua Nginx ở port `FRONTEND_HTTP_PORT` mặc định là `80`.

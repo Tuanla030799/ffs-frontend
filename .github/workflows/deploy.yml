@@ -1,0 +1,93 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production VM
+    runs-on: ubuntu-22.04
+    environment: production
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup SSH
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT || '22' }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$VM_HOST"
+          test -n "$VM_SSH_KEY"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$VM_PORT" -H "$VM_HOST" >> ~/.ssh/known_hosts
+
+      - name: Ensure deploy directory exists
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT || '22' }}
+          VM_USER: ${{ secrets.VM_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          test -n "$VM_USER"
+          test -n "$DEPLOY_PATH"
+          ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "mkdir -p '$DEPLOY_PATH'"
+
+      - name: Sync source to VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT || '22' }}
+          VM_USER: ${{ secrets.VM_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p $VM_PORT" \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.env' \
+            --include '.env.example' \
+            --exclude '.env.*' \
+            --exclude 'node_modules/' \
+            --exclude '.nuxt/' \
+            --exclude '.output/' \
+            --exclude '.nitro/' \
+            --exclude '.cache/' \
+            --exclude 'dist/' \
+            --exclude 'coverage/' \
+            ./ "$VM_USER@$VM_HOST:$DEPLOY_PATH/"
+
+      - name: Deploy with Docker Compose
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT || '22' }}
+          VM_USER: ${{ secrets.VM_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "cd '$DEPLOY_PATH' && test -f .env && docker compose up -d --build && docker image prune -f"
