@@ -160,7 +160,7 @@ const mobileMenuOpen = ref(false)
 const mobileSearchOpen = ref(false)
 const searchKeyword = ref('')
 const navItems = [
-  { label: 'Trang ', to: '/' },
+  { label: 'Trang chủ', to: '/' },
   { label: 'Sản phẩm', to: '/products' },
   { label: 'Thương hiệu', to: '/brands' },
   { label: 'Bộ sưu tập', to: '/collections' },
