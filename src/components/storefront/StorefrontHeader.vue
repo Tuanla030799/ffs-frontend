@@ -160,11 +160,12 @@ const mobileMenuOpen = ref(false)
 const mobileSearchOpen = ref(false)
 const searchKeyword = ref('')
 const navItems = [
-  { label: 'New & Featured', to: '/' },
-  { label: 'Cửa hàng', to: '/products' },
+  { label: 'Trang ', to: '/' },
+  { label: 'Sản phẩm', to: '/products' },
   { label: 'Thương hiệu', to: '/brands' },
   { label: 'Bộ sưu tập', to: '/collections' },
   { label: 'Blog', to: '/blogs' },
+  { label: 'About Us', to: '/about' },
 ]
 
 function submitSearch() {

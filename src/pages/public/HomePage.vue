@@ -20,9 +20,7 @@
           <div
             class="animate-banner-copy max-w-[34rem] text-black drop-shadow-[0_10px_28px_rgba(255,255,255,0.75)]"
           >
-            <p class="text-xs font-black tracking-[0.2em] uppercase md:text-sm">
-              {{ hero?.title ? 'Walk story' : 'We find' }}
-            </p>
+            <p class="text-xs font-black tracking-[0.2em] uppercase md:text-sm">The Pocket Shoes</p>
             <h1
               class="mt-5 max-w-2xl text-4xl leading-[0.96] font-black tracking-tight sm:text-5xl lg:text-7xl"
             >
@@ -31,13 +29,13 @@
             <p
               class="mt-5 max-w-sm text-sm leading-6 font-medium text-black/75 md:mt-7 md:text-base md:leading-7"
             >
-              {{ hero?.subtitle || 'Một đôi giày phù hợp sẽ đưa bạn đến những nơi tuyệt vời.' }}
+              {{ hero?.subtitle || 'We curate shoes you didn’t know you needed.' }}
             </p>
             <RouterLink
               :to="hero?.linkUrl || '/products'"
               class="mt-7 inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:mt-8 md:px-7 md:py-4"
             >
-              Khám phá ngay
+              About us
             </RouterLink>
           </div>
         </div>
