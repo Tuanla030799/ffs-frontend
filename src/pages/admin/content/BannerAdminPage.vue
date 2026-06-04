@@ -3,7 +3,7 @@
     v-model:keyword="query.keyword"
     v-model:status="query.status"
     title="Quản lý landing banner"
-    description="Hero/banner CMS cho storefront."
+    description="Banner hiển thị ở trang chủ, có thể lên lịch hiển thị theo ngày bắt đầu và kết thúc."
     :loading="loading"
     :error="error || masterError"
     :show-modal="Boolean(editing)"
@@ -19,8 +19,8 @@
   >
     <template #form>
       <UiForm as="form" class="grid gap-3 md:grid-cols-3" @submit.prevent="save">
-        <UiInput v-model="form.title" placeholder="Title" required label="Title" />
-        <UiInput v-model="form.subtitle" placeholder="Subtitle" label="Subtitle" />
+        <UiInput v-model="form.title" placeholder="Title" required label="Tiêu đề" />
+        <UiInput v-model="form.subtitle" placeholder="Subtitle" label="Tiêu đề phụ" />
         <!-- <UiInput v-model="form.linkUrl" placeholder="Link URL" label="Link URL" />
         <UiInput v-model="form.fileId" placeholder="File ID" label="File ID" /> -->
         <UiSelect v-model="form.status" label="Trạng thái">

@@ -75,12 +75,12 @@ const notice = ref('')
 const deleting = ref<Blog | null>(null)
 const query = reactive({ keyword: '', status: '', page: 1, limit: 50 })
 const columns = [
-  { key: 'title', label: 'Title' },
-  { key: 'cover', label: 'Cover' },
+  { key: 'title', label: 'Tiêu đề' },
+  { key: 'cover', label: 'Ảnh bìa' },
   { key: 'slug', label: 'Slug' },
-  { key: 'status', label: 'Status' },
-  { key: 'publishedAt', label: 'Published' },
-  { key: 'createdAt', label: 'Created' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'publishedAt', label: 'Đã xuất bản' },
+  { key: 'createdAt', label: 'Ngày tạo' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ] as const
 

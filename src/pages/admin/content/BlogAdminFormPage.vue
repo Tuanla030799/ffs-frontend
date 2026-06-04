@@ -19,30 +19,24 @@
       <div class="space-y-5">
         <UiCard title="Thông tin bài viết" padding="md">
           <div class="grid gap-3 md:grid-cols-3">
-            <UiInput
-              v-model="form.title"
-              placeholder="Title *"
-              required
-              @update:model-value="syncSlug"
-              label="Title"
-            />
+            <UiInput v-model="form.title" placeholder="Title *" required label="Tiêu đề bài viết" />
             <UiInput v-model="form.slug" placeholder="Slug" label="Slug" />
             <UiSelect v-model="form.status" label="Trạng thái">
-              <option>DRAFT</option>
               <option>ACTIVE</option>
               <option>INACTIVE</option>
+              <option>DRAFT</option>
             </UiSelect>
             <UiInput
               v-model="form.publishedAt"
               type="datetime-local"
               placeholder="Published at"
-              label="Published at"
+              label="Ngày hiển thị"
             />
             <UiTextarea
               v-model="form.excerpt"
               class="md:col-span-2"
               placeholder="Excerpt"
-              label="Excerpt"
+              label="Đoạn trích ngắn (hiển thị ở danh sách blog và trang chi tiết)"
             />
           </div>
         </UiCard>
@@ -50,21 +44,21 @@
         <RichTextEditorField
           v-model="form.contentHtml"
           title="Nội dung blog"
-          description="Nội dung HTML sẽ được lưu vào field contentHtml."
+          description="Nội dung bài viết, có thể bao gồm text, hình ảnh, video,..."
           placeholder="Viết bài blog..."
           :min-height="520"
         />
       </div>
 
       <aside class="space-y-5">
-        <UiCard title="Cover image" padding="md">
+        <UiCard title="Ảnh bìa" padding="md">
           <FileUpload
             v-if="!form.coverFileId && !coverPreviewUrl"
             v-model="uploaded"
             scope="admin"
             accept="image/*"
-            title="Thêm ảnh cover"
-            description="Ảnh này hiển thị ở danh sách blog, trang chi tiết và các block nổi bật."
+            title="Thêm ảnh bìa"
+            description="Kích thước đề xuất: 1200x630 (tỷ lệ 1.91:1) để hiển thị tốt trên mạng xã hội."
             trigger-text="Thêm ảnh"
             @uploaded="assignCoverImage"
           />
@@ -93,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FileUpload from '@/components/common/FileUpload.vue'
 import ImagePreview from '@/components/common/ImagePreview.vue'
@@ -103,6 +97,7 @@ import { blogApi } from '@/modules/content/blog/api'
 import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
 import { toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
+import { slugify, syncAutoSlug } from '@/lib/slug'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import type { Blog, BlogPayload } from '@/modules/content/blog/types'
 import type { UploadedFile } from '@/services/file.service'
@@ -126,17 +121,6 @@ const form = reactive<BlogPayload>({
   publishedAt: '',
 })
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-}
-function syncSlug() {
-  if (!form.slug) form.slug = slugify(form.title)
-}
 function fill(row?: Blog) {
   Object.assign(form, {
     title: row?.title || '',
@@ -152,6 +136,12 @@ function fill(row?: Blog) {
   hasLegacyContent.value = !form.contentHtml && isEditorJsContent(row?.contentJson)
   uploaded.value = null
 }
+watch(
+  () => form.title,
+  (title, previousTitle) => {
+    form.slug = syncAutoSlug(form.slug, previousTitle, title)
+  },
+)
 function assignCoverImage(file: UploadedFile) {
   form.coverFileId = String(file.fileId)
   coverPreviewUrl.value = file.url || file.path || ''

@@ -2,14 +2,14 @@
   <CrudShell
     v-model:keyword="query.keyword"
     v-model:status="query.status"
-    title="Quản lý category"
-    description="Danh mục sản phẩm có phân cấp, sort order và trạng thái hiển thị."
+    title="Quản lý danh mục"
+    description="Danh mục sản phẩm"
     :loading="loading"
     :error="error || masterError"
     :show-modal="Boolean(editing)"
-    :modal-title="editing === 'new' ? 'Tạo category' : 'Cập nhật category'"
+    :modal-title="editing === 'new' ? 'Tạo danh mục' : 'Cập nhật danh mục'"
     :confirm-open="Boolean(deleting)"
-    :confirm-text="`Xóa category ${deleting?.name || ''}?`"
+    :confirm-text="`Xóa danh mục ${deleting?.name || ''}?`"
     @create="openCreate"
     @reload="load"
     @search="load"
@@ -24,7 +24,7 @@
           class="rounded-xl border border-slate-200 p-3"
           placeholder="Name"
           required
-          label="Name"
+          label="Tên danh mục"
         />
         <UiInput
           v-model="form.slug"
@@ -36,7 +36,7 @@
         <UiSelect
           :model-value="form.parentId || ''"
           class="rounded-xl border border-slate-200 p-3"
-          label="Parent category"
+          label="Danh mục cha"
           @update:model-value="form.parentId = $event || null"
         >
           <option value="">Không có parent</option>
@@ -62,19 +62,19 @@
           v-model.number="form.sortOrder"
           class="rounded-xl border border-slate-200 p-3"
           placeholder="Sort order"
-          label="Sort order"
+          label="Sắp xếp"
         />
         <UiTextarea
           v-model="form.description"
           class="rounded-xl border border-slate-200 p-3 md:col-span-2"
           placeholder="Description"
-          label="Description"
+          label="Mô tả"
         />
         <div class="flex justify-end gap-2 md:col-span-2">
           <UiButton native-type="button" variant="secondary" @click="editing = null">
-            Cancel
+            Hủy
           </UiButton>
-          <UiButton native-type="submit" variant="dark"> Save </UiButton>
+          <UiButton native-type="submit" variant="dark"> Lưu </UiButton>
         </div>
       </UiForm>
     </template>
@@ -109,11 +109,12 @@
 
 <script setup lang="ts">
 import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import { categoryApi } from '@/modules/catalog/category/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
+import { syncAutoSlug } from '@/lib/slug'
 import type { Category, CategoryPayload } from '@/modules/catalog/category/types'
 
 const rows = ref<Category[]>([])
@@ -176,12 +177,12 @@ const parentOptions = computed(() => {
   return options
 })
 const columns = [
-  { key: 'name', label: 'Name' },
+  { key: 'name', label: 'Tên danh mục' },
   { key: 'slug', label: 'Slug' },
-  { key: 'parentId', label: 'Parent' },
-  { key: 'status', label: 'Status' },
-  { key: 'sortOrder', label: 'Sort' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'parentId', label: 'Danh mục cha' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'sortOrder', label: 'Sắp xếp' },
+  { key: 'actions', label: 'Hành động', align: 'right' },
 ] as const
 
 function badgeClass(status: string) {
@@ -218,6 +219,13 @@ function fill(row?: Category) {
   form.status = row?.status || 'ACTIVE'
   form.sortOrder = row?.sortOrder || 0
 }
+
+watch(
+  () => form.name,
+  (name, previousName) => {
+    form.slug = syncAutoSlug(form.slug, previousName, name)
+  },
+)
 
 function openCreate() {
   editing.value = 'new'

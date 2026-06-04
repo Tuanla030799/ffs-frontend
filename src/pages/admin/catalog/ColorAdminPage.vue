@@ -3,7 +3,7 @@
     v-model:keyword="query.keyword"
     v-model:status="query.status"
     title="Quản lý colors"
-    description="Master data màu cho variant."
+    description="Quản lý màu sắc cho sản phẩm"
     :loading="loading"
     :error="error"
     :show-modal="Boolean(editing)"
@@ -28,12 +28,10 @@
           <option>ACTIVE</option>
           <option>INACTIVE</option>
         </UiSelect>
-        <UiInput v-model.number="form.sortOrder" placeholder="Sort" label="Sort" />
+        <UiInput v-model.number="form.sortOrder" placeholder="Sort" label="Sắp xếp" />
         <div class="flex justify-end gap-2 md:col-span-2">
-          <UiButton native-type="button" variant="secondary" @click="editing = null"
-            >Cancel</UiButton
-          >
-          <UiButton native-type="submit">Save</UiButton>
+          <UiButton native-type="button" variant="secondary" @click="editing = null">Hủy</UiButton>
+          <UiButton native-type="submit">Lưu</UiButton>
         </div>
       </UiForm>
     </template>
@@ -88,12 +86,12 @@ const colorPickerValue = computed({
   set: (value) => (form.colorCode = value),
 })
 const columns = [
-  { key: 'swatch', label: 'Color' },
-  { key: 'value', label: 'Name' },
-  { key: 'colorCode', label: 'Color code' },
-  { key: 'status', label: 'Status' },
-  { key: 'sortOrder', label: 'Sort' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'swatch', label: 'Màu' },
+  { key: 'value', label: 'Tên' },
+  { key: 'colorCode', label: 'Mã màu' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'sortOrder', label: 'Sắp xếp' },
+  { key: 'actions', label: 'Hành động', align: 'right' },
 ] as const
 
 function fill(row?: ProductColor) {

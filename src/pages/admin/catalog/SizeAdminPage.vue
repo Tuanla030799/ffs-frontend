@@ -3,7 +3,7 @@
     v-model:keyword="query.keyword"
     v-model:status="query.status"
     title="Quản lý sizes"
-    description="Master data size cho SKU."
+    description="Quản lý kích cỡ cho sản phẩm"
     :loading="loading"
     :error="error"
     :show-modal="Boolean(editing)"
@@ -19,13 +19,13 @@
   >
     <template #form>
       <UiForm as="form" class="grid gap-3 md:grid-cols-2" @submit.prevent="save">
-        <UiInput v-model="form.value" required placeholder="36" label="Value" />
+        <UiInput v-model="form.value" required placeholder="36" label="Size" />
         <UiInput v-model="form.label" placeholder="36" label="Label" />
         <UiSelect v-model="form.status" label="Trạng thái">
           <option>ACTIVE</option>
           <option>INACTIVE</option>
         </UiSelect>
-        <UiInput v-model.number="form.sortOrder" placeholder="Sort" label="Sort" />
+        <UiInput v-model.number="form.sortOrder" placeholder="Sort" label="Thứ tự sắp xếp" />
         <div class="flex justify-end gap-2 md:col-span-2">
           <UiButton native-type="button" variant="secondary" @click="editing = null"
             >Cancel</UiButton
@@ -69,10 +69,10 @@ const deleting = ref<ProductSize | null>(null)
 const query = reactive({ keyword: '', status: '' })
 const form = reactive<ProductSizePayload>({ value: '', label: '', status: 'ACTIVE', sortOrder: 0 })
 const columns = [
-  { key: 'value', label: 'Value' },
+  { key: 'value', label: 'Size' },
   { key: 'label', label: 'Label' },
-  { key: 'status', label: 'Status' },
-  { key: 'sortOrder', label: 'Sort' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'sortOrder', label: 'Thứ tự sắp xếp' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ] as const
 

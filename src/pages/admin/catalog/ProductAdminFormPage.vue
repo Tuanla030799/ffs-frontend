@@ -19,9 +19,9 @@
       <div class="space-y-5">
         <UiCard title="Thông tin cơ bản" padding="md">
           <div class="grid gap-3 md:grid-cols-3">
-            <UiInput v-model="form.name" placeholder="Name" required label="Name" />
+            <UiInput v-model="form.name" placeholder="Name" required label="Tên sản phẩm" />
             <UiInput v-model="form.slug" placeholder="Slug" required label="Slug" />
-            <UiSelect v-model="form.categoryId" placeholder="Category" label="Category">
+            <UiSelect v-model="form.categoryId" placeholder="Category" label="Danh mục">
               <option
                 v-for="category in masterData?.categories || []"
                 :key="category.id"
@@ -35,7 +35,7 @@
                 {{ brand.name }}
               </option>
             </UiSelect>
-            <UiSelect v-model="form.gender" placeholder="Gender" label="Gender">
+            <UiSelect v-model="form.gender" placeholder="Gender" label="Giới tính">
               <option
                 v-for="gender in masterData?.productGenders || []"
                 :key="gender.value"
@@ -48,7 +48,7 @@
               v-model="form.shortDescription"
               class="md:col-span-2"
               placeholder="Short description"
-              label="Short description"
+              label="Mô tả ngắn"
             />
             <UiSelect v-model="form.status" label="Trạng thái">
               <option
@@ -59,11 +59,11 @@
                 {{ status.label }}
               </option>
             </UiSelect>
-            <UiCheckbox v-model="form.isFeatured" label="Featured" />
+            <UiCheckbox v-model="form.isFeatured" label="Featured (Hiển thị sản phẩm nổi bật)" />
             <UiInput
               v-model.number="form.featuredOrder"
-              placeholder="Featured order"
-              label="Featured order"
+              placeholder="Thứ tự nổi bật(Số nhỏ sẽ được ưu tiên hiển thị)"
+              label="Thứ tự nổi bật"
             />
           </div>
         </UiCard>
@@ -117,7 +117,7 @@
               <UiInput
                 v-model.number="variant.sortOrder"
                 placeholder="Sort order"
-                label="Sort order"
+                label="Thứ tự sắp xếp variant"
               />
               <UiButton
                 native-type="button"
@@ -164,9 +164,13 @@
                 title="Chọn size"
                 placeholder="Chọn size"
               />
-              <UiInput v-model.number="sku.price" placeholder="Price" label="Price" />
-              <UiInput v-model.number="sku.salePrice" placeholder="Sale price" label="Sale price" />
-              <UiInput v-model.number="sku.stock" placeholder="Stock" label="Stock" />
+              <UiInput v-model.number="sku.price" placeholder="Price" label="Giá" />
+              <UiInput
+                v-model.number="sku.salePrice"
+                placeholder="Sale price"
+                label="Giá khuyến mãi"
+              />
+              <UiInput v-model.number="sku.stock" placeholder="Stock" label="Số lượng tồn kho" />
               <UiSelect v-model="sku.status" label="Trạng thái">
                 <option>ACTIVE</option>
                 <option>INACTIVE</option>
@@ -223,7 +227,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
@@ -234,6 +238,7 @@ import { UiAlert, UiButton, UiCard, UiCheckbox, UiForm, UiInput, UiSelect } from
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
+import { syncAutoSlug } from '@/lib/slug'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
@@ -277,6 +282,13 @@ const skuVariantOptions = computed(() =>
     value: variantSelectValue(variant),
     label: variant.name || selectedColorLabel(variant.colorId) || `Variant ${index + 1}`,
   })),
+)
+
+watch(
+  () => form.name,
+  (name, previousName) => {
+    form.slug = syncAutoSlug(form.slug, previousName, name)
+  },
 )
 
 function reset(row?: Product) {

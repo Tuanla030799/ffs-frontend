@@ -329,13 +329,13 @@ const paymentOptions = computed(() => toSelectOptions(PAYMENT_STATUSES))
 const shippingOptions = computed(() => toSelectOptions(SHIPPING_STATUSES))
 
 const columns = [
-  { key: 'code', label: 'Code' },
-  { key: 'customer', label: 'Customer' },
-  { key: 'status', label: 'Status' },
-  { key: 'payment', label: 'Payment' },
-  { key: 'shipping', label: 'Shipping' },
-  { key: 'totalAmount', label: 'Total' },
-  { key: 'createdAt', label: 'Created' },
+  { key: 'code', label: 'Mã đơn hàng' },
+  { key: 'customer', label: 'Khách hàng' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'payment', label: 'Thanh toán' },
+  { key: 'shipping', label: 'Vận chuyển' },
+  { key: 'totalAmount', label: 'Tổng cộng' },
+  { key: 'createdAt', label: 'Ngày tạo' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ] as const
 

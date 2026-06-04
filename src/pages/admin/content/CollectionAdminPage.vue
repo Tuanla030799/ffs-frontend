@@ -23,31 +23,29 @@
           {{ notice }}
         </p>
         <div class="grid gap-3 md:grid-cols-3">
-          <UiInput
-            v-model="form.name"
-            placeholder="Name *"
-            required
-            @update:model-value="syncSlug"
-            label="Name"
-          />
+          <UiInput v-model="form.name" placeholder="Name *" required label="Tên" />
           <UiInput v-model="form.slug" placeholder="Slug" label="Slug" />
           <UiSelect v-model="form.status" label="Trạng thái">
             <option v-for="status in commonStatuses" :key="status.value" :value="status.value">
               {{ status.label }}
             </option>
           </UiSelect>
-          <UiInput v-model.number="form.sortOrder" placeholder="Sort order" label="Sort order" />
+          <UiInput
+            v-model.number="form.sortOrder"
+            placeholder="Sort order"
+            label="Thứ tự sắp xếp"
+          />
           <UiTextarea
             v-model="form.excerpt"
             class="md:col-span-2"
             placeholder="Excerpt"
-            label="Excerpt"
+            label="Mô tả ngắn"
           />
           <div class="md:col-span-3">
             <RichTextEditorField
               v-model="form.descriptionHtml"
               title="Nội dung collection"
-              description="Nội dung HTML cho trang chi tiết collection nếu storefront cần hiển thị."
+              description="Nội dung chi tiết về collection, có thể bao gồm text, hình ảnh,..."
               placeholder="Viết mô tả collection..."
             />
           </div>
@@ -56,8 +54,8 @@
               v-model="uploaded"
               scope="admin"
               accept="image/*"
-              title="Thêm ảnh cover"
-              description="Ảnh này hiển thị ở danh sách collection và trang chi tiết collection."
+              title="Thêm ảnh bìa"
+              description="Ảnh đại diện cho collection, hiển thị ở trang danh sách và chi tiết collection."
               trigger-text="Thêm ảnh"
               @uploaded="assignCoverImage"
             />
@@ -89,9 +87,9 @@
 
         <section class="rounded-2xl border border-slate-200 p-4">
           <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <h3 class="font-black">Products</h3>
+            <h3 class="font-black">Sản phẩm</h3>
             <UiButton native-type="button" variant="outline" size="sm" @click="addProduct">
-              + Product
+              + Thêm sản phẩm
             </UiButton>
           </div>
           <div class="grid gap-2">
@@ -110,7 +108,7 @@
                 :fetch-options="fetchProductOptions"
                 @selected="rememberSelectedProduct"
               />
-              <UiInput v-model.number="item.sortOrder" placeholder="Sort" label="Sort" />
+              <UiInput v-model.number="item.sortOrder" placeholder="Sort" label="Thứ tự sắp xếp" />
               <UiButton
                 native-type="button"
                 variant="danger"
@@ -166,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import AsyncSelect, { type AsyncSelectOption } from '@/components/common/AsyncSelect.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
@@ -180,6 +178,7 @@ import { resolveFileUrl } from '@/lib/fileUrl'
 import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
 import { formatLocalDateTime } from '@/lib/dateTime'
+import { slugify, syncAutoSlug } from '@/lib/slug'
 import type { Collection, CollectionPayload } from '@/modules/content/collection/types'
 import type { Product } from '@/modules/catalog/product/types'
 import type { UploadedFile } from '@/services/file.service'
@@ -219,27 +218,16 @@ const selectedProductOptions = computed(() =>
   Object.values(selectedProducts.value).map(productToOption),
 )
 const columns = [
-  { key: 'name', label: 'Name' },
-  { key: 'cover', label: 'Cover' },
+  { key: 'name', label: 'Tên' },
+  { key: 'cover', label: 'Ảnh bìa' },
   { key: 'slug', label: 'Slug' },
-  { key: 'status', label: 'Status' },
-  { key: 'sortOrder', label: 'Sort' },
-  { key: 'productCount', label: 'Products' },
-  { key: 'createdAt', label: 'Created' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'sortOrder', label: 'Sắp xếp' },
+  { key: 'productCount', label: 'Sản phẩm' },
+  { key: 'createdAt', label: 'Ngày tạo' },
+  { key: 'actions', label: 'Hành động', align: 'right' },
 ] as const
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-}
-function syncSlug() {
-  if (!form.slug) form.slug = slugify(form.name)
-}
 function badgeClass(status: string) {
   return status === 'ACTIVE'
     ? 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
@@ -290,6 +278,12 @@ function fill(row?: Collection) {
   hasLegacyDescription.value = !form.descriptionHtml && isEditorJsContent(row?.descriptionJson)
   uploaded.value = null
 }
+watch(
+  () => form.name,
+  (name, previousName) => {
+    form.slug = syncAutoSlug(form.slug, previousName, name)
+  },
+)
 function assignCoverImage(file: UploadedFile) {
   form.fileId = String(file.fileId)
   coverPreviewUrl.value = file.url || file.path || ''

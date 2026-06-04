@@ -3,7 +3,7 @@
     v-model:keyword="query.keyword"
     v-model:status="query.status"
     title="Quản lý brands"
-    description="Thương hiệu sản phẩm, logo và trạng thái hiển thị."
+    description="Thương hiệu sản phẩm"
     :loading="loading"
     :error="error || masterError"
     :status-options="commonStatusValues"
@@ -24,32 +24,30 @@
           {{ notice }}
         </p>
         <div class="grid gap-3 md:grid-cols-3">
-          <UiInput
-            v-model="form.name"
-            placeholder="Name *"
-            required
-            @update:model-value="syncSlug"
-            label="Name"
-          />
+          <UiInput v-model="form.name" placeholder="Name *" required label="Tên thương hiệu" />
           <UiInput v-model="form.slug" placeholder="Slug" label="Slug" />
           <UiSelect v-model="form.status" label="Trạng thái">
             <option v-for="status in commonStatuses" :key="status.value" :value="status.value">
               {{ status.label }}
             </option>
           </UiSelect>
-          <UiInput v-model.number="form.sortOrder" placeholder="Sort order" label="Sort order" />
+          <UiInput
+            v-model.number="form.sortOrder"
+            placeholder="Sort order"
+            label="Thứ tự sắp xếp"
+          />
           <UiTextarea
             v-model="form.description"
             class="md:col-span-2"
             placeholder="Description"
-            label="Description"
+            label="Mô tả"
           />
           <div class="md:col-span-3">
             <FileUpload
               v-model="uploaded"
               scope="admin"
               accept="image/*"
-              title="Upload logo / cover"
+              title="Logo thương hiệu"
               @uploaded="(file) => (form.fileId = String(file.fileId))"
             />
           </div>
@@ -100,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
 import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
@@ -109,6 +107,7 @@ import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { formatLocalDateTime } from '@/lib/dateTime'
+import { slugify, syncAutoSlug } from '@/lib/slug'
 import type { Brand, BrandPayload } from '@/modules/content/brand/types'
 import type { UploadedFile } from '@/services/file.service'
 
@@ -138,26 +137,15 @@ const commonStatuses = computed(
 )
 const commonStatusValues = computed(() => commonStatuses.value.map((item) => item.value))
 const columns = [
-  { key: 'name', label: 'Brand' },
+  { key: 'name', label: 'Tên thương hiệu' },
   { key: 'logo', label: 'Logo' },
   { key: 'slug', label: 'Slug' },
-  { key: 'status', label: 'Status' },
-  { key: 'sortOrder', label: 'Sort' },
-  { key: 'createdAt', label: 'Created' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'sortOrder', label: 'Thứ tự sắp xếp' },
+  { key: 'createdAt', label: 'Ngày tạo' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ] as const
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-}
-function syncSlug() {
-  if (!form.slug) form.slug = slugify(form.name)
-}
 function badgeClass(status: string) {
   return status === 'ACTIVE'
     ? 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700'
@@ -180,6 +168,12 @@ function fill(row?: Brand) {
   })
   uploaded.value = null
 }
+watch(
+  () => form.name,
+  (name, previousName) => {
+    form.slug = syncAutoSlug(form.slug, previousName, name)
+  },
+)
 function openCreate() {
   editing.value = 'new'
   fill()

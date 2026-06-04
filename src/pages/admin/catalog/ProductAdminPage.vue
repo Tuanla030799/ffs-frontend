@@ -3,7 +3,7 @@
     v-model:keyword="query.keyword"
     v-model:status="query.status"
     title="Quản lý product"
-    description="CRUD product, ảnh, variants, SKUs và mô tả Editor.js."
+    description="Danh sách sản phẩm"
     :loading="loading"
     :error="error"
     :status-options="['ACTIVE', 'INACTIVE', 'DRAFT']"
@@ -112,14 +112,15 @@ const query = reactive({
 })
 const { data: masterData, load: loadMasterData } = useMasterData('admin')
 const columns = [
-  { key: 'name', label: 'Name' },
+  { key: 'name', label: 'Tên sản phẩm' },
   { key: 'slug', label: 'Slug' },
   { key: 'brandName', label: 'Brand' },
-  { key: 'gender', label: 'Gender' },
-  { key: 'status', label: 'Status' },
-  { key: 'isFeatured', label: 'Featured' },
-  { key: 'stock', label: 'Stock' },
-  { key: 'price', label: 'Price' },
+  { key: 'gender', label: 'Giới tính' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'isFeatured', label: 'Sản phẩm nổi bật' },
+  { key: 'stock', label: 'Số lượng tồn kho' },
+  { key: 'price', label: 'Giá' },
+  { key: 'salePrice', label: 'Giá khuyến mãi' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ] as const
 
