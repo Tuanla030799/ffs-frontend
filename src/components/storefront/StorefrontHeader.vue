@@ -24,7 +24,8 @@
         <RouterLink
           v-for="item in navItems"
           :key="item.to"
-          class="text-black no-underline transition hover:opacity-60"
+          class="storefront-nav-link text-black no-underline transition hover:opacity-60"
+          :class="{ 'storefront-nav-link-active': isNavActive(item.to) }"
           :to="item.to"
         >
           {{ item.label }}
@@ -127,7 +128,8 @@
         <RouterLink
           v-for="item in navItems"
           :key="item.to"
-          class="border-b border-black/10 py-4 text-xl font-black text-black no-underline"
+          class="storefront-mobile-nav-link border-b border-black/10 py-4 text-xl font-black text-black no-underline"
+          :class="{ 'storefront-mobile-nav-link-active': isNavActive(item.to) }"
           :to="item.to"
           @click="mobileMenuOpen = false"
         >
@@ -147,11 +149,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import logoUrl from '@/assets/logo.jpg'
 import { UiButton, UiDrawer, UiForm, UiInput } from '@/components/ui'
 import { useCartCount } from '@/composables/useCart'
 
+const route = useRoute()
 const router = useRouter()
 const { totalQuantity } = useCartCount()
 const mobileMenuOpen = ref(false)
@@ -165,6 +168,11 @@ const navItems = [
   { label: 'Blog', to: '/blogs' },
   { label: 'About Us', to: '/about' },
 ]
+
+function isNavActive(path: string) {
+  if (path === '/') return route.path === '/'
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
 
 function submitSearch() {
   const keyword = searchKeyword.value.trim()
@@ -185,5 +193,38 @@ function submitSearch() {
 :deep(.storefront-search-input input:focus) {
   border: 0;
   box-shadow: none;
+}
+
+.storefront-nav-link {
+  position: relative;
+  padding-block: 0.5rem;
+}
+
+.storefront-nav-link::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  content: '';
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 150ms ease;
+}
+
+.storefront-nav-link-active::after {
+  transform: scaleX(1);
+}
+
+.storefront-mobile-nav-link {
+  text-decoration-color: transparent;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.35em;
+}
+
+.storefront-mobile-nav-link-active {
+  text-decoration-line: underline;
+  text-decoration-color: currentColor;
 }
 </style>
