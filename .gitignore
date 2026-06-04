@@ -29,6 +29,10 @@ coverage
 !.env.example
 *.local
 
+# TLS certificates
+nginx/ssl/*
+!nginx/ssl/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
