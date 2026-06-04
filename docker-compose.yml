@@ -31,4 +31,5 @@ services:
 
 networks:
   app-network:
+    external: true
     name: thepocketshoes_net

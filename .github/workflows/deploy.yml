@@ -90,4 +90,5 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "docker network inspect thepocketshoes_net >/dev/null 2>&1 || docker network create thepocketshoes_net"
           ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "cd '$DEPLOY_PATH' && test -f .env && docker compose up -d --build && docker image prune -f"

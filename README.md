@@ -88,3 +88,8 @@ Nginx container là reverse proxy public duy nhất:
 - `/files/*` proxy sang backend service `backend:8080`
 
 Backend container không cần publish port `80/443`. Khi chạy backend bằng Docker, cho backend join network `thepocketshoes_net` và đặt service name hoặc network alias là `backend`.
+Network `thepocketshoes_net` là Docker network dùng chung bên ngoài Compose. Tạo một lần trên server nếu chưa có:
+
+```bash
+docker network inspect thepocketshoes_net >/dev/null 2>&1 || docker network create thepocketshoes_net
+```
