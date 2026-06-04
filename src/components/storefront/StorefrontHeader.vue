@@ -16,10 +16,7 @@
           </svg>
         </UiButton>
         <RouterLink to="/" class="flex items-center gap-3 no-underline">
-          <div class="leading-none text-black">
-            <p class="text-xl font-black tracking-[0.08em] md:text-2xl">THE</p>
-            <p class="text-[11px] font-bold tracking-[0.18em]">POCKET SHOES</p>
-          </div>
+          <img class="h-12 w-auto md:h-14" :src="logoUrl" alt="The Pocket Shoes" />
         </RouterLink>
       </div>
 
@@ -65,7 +62,7 @@
             <path d="m16.5 16.5 4 4" stroke-width="1.8" stroke-linecap="round" />
           </svg>
         </UiButton>
-        <RouterLink
+        <!-- <RouterLink
           class="inline-flex h-11 w-11 items-center justify-center rounded-[var(--ui-radius-md)] text-black no-underline transition hover:bg-[var(--ui-surface-soft)]"
           to="/admin"
           aria-label="Tài khoản"
@@ -89,7 +86,7 @@
           aria-label="Wishlist"
         >
           <span class="text-2xl leading-none">♡</span>
-        </RouterLink>
+        </RouterLink> -->
         <RouterLink
           class="relative inline-flex h-11 w-11 items-center justify-center rounded-[var(--ui-radius-md)] text-black no-underline transition hover:bg-[var(--ui-surface-soft)]"
           to="/checkout"
@@ -151,6 +148,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import logoUrl from '@/assets/logo.jpg'
 import { UiButton, UiDrawer, UiForm, UiInput } from '@/components/ui'
 import { useCartCount } from '@/composables/useCart'
 

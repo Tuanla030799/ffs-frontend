@@ -210,7 +210,6 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  { path: '/fds', redirect: '/' },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundPage },
 ]
 

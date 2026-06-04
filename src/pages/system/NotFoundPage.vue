@@ -9,19 +9,9 @@
             404
           </div>
           <h1 class="mt-5 text-2xl font-bold text-[var(--ui-text)]">Trang không tồn tại</h1>
-          <p class="mt-2 text-sm leading-6 text-[var(--ui-text-muted)]">
-            Route bạn truy cập chưa được cấu hình hoặc đã bị thay đổi. Hãy quay lại các khu chính
-            của app.
-          </p>
-          <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <RouterLink to="/fds" class="block no-underline">
-              <UiButton block> Về /fds </UiButton>
-            </RouterLink>
-            <RouterLink to="/guide" class="block no-underline">
-              <UiButton block variant="secondary"> Mở /guide </UiButton>
-            </RouterLink>
-            <RouterLink to="/admin" class="block no-underline">
-              <UiButton block variant="outline"> Mở /admin </UiButton>
+          <div class="mt-6 flex items-center justify-center gap-3">
+            <RouterLink to="/" class="block no-underline">
+              <UiButton block> Về trang chủ </UiButton>
             </RouterLink>
           </div>
         </div>

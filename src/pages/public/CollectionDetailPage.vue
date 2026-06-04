@@ -34,7 +34,7 @@
         class="grid overflow-hidden bg-[#f7f7f5] shadow-sm ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]"
       >
         <img
-          :src="coverUrl(collection) || '/assets/home.jpg'"
+          :src="coverUrl(collection)"
           :alt="collection.name"
           class="h-full min-h-80 w-full object-cover grayscale"
         />

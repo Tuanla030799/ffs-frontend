@@ -37,6 +37,7 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#ffffff' },
       ],
       link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg?v=1' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
