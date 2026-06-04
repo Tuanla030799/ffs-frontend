@@ -21,8 +21,8 @@
       <UiForm as="form" class="grid gap-3 md:grid-cols-3" @submit.prevent="save">
         <UiInput v-model="form.title" placeholder="Title" required label="Title" />
         <UiInput v-model="form.subtitle" placeholder="Subtitle" label="Subtitle" />
-        <UiInput v-model="form.linkUrl" placeholder="Link URL" label="Link URL" />
-        <UiInput v-model="form.fileId" placeholder="File ID" required label="File ID" />
+        <!-- <UiInput v-model="form.linkUrl" placeholder="Link URL" label="Link URL" />
+        <UiInput v-model="form.fileId" placeholder="File ID" label="File ID" /> -->
         <UiSelect v-model="form.status" label="Trạng thái">
           <option v-for="status in commonStatuses" :key="status.value" :value="status.value">
             {{ status.label }}
