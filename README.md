@@ -80,3 +80,11 @@ docker compose up -d --build
 ```
 
 Compose chạy Nuxt SSR ở container nội bộ `fds-web:3000` và public qua Nginx ở port `FRONTEND_HTTP_PORT` mặc định là `80`.
+
+Nginx container là reverse proxy public duy nhất:
+
+- `/` và `/_nuxt/*` proxy sang frontend Nuxt service `fds-web:3000`
+- `/api/*` proxy sang backend service `backend:8080`
+- `/files/*` proxy sang backend service `backend:8080`
+
+Backend container không cần publish port `80/443`. Khi chạy backend bằng Docker, cho backend join network `thepocketshoes_net` và đặt service name hoặc network alias là `backend`.
