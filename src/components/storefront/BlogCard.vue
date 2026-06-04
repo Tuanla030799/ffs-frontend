@@ -69,6 +69,7 @@ import { computed } from 'vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
 import { formatLocalDateTime } from '@/lib/dateTime'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
 import type { Blog } from '@/modules/content/blog/types'
 
 const props = withDefaults(
@@ -81,5 +82,8 @@ const props = withDefaults(
   },
 )
 
-const image = computed(() => resolveFileUrl(props.blog.coverImageUrl || props.blog.coverUrl || ''))
+const image = computed(
+  () =>
+    resolveFileUrl(props.blog.coverImageUrl || props.blog.coverUrl || '') || DEFAULT_OG_IMAGE_PATH,
+)
 </script>

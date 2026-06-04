@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRuntimeConfig } from '#imports'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
@@ -42,9 +43,11 @@ import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
 import { formatLocalDateTime } from '@/lib/dateTime'
+import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import type { Blog } from '@/modules/content/blog/types'
 
 const route = useRoute()
+const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
 const { data: blog, pending: loading } = await useAsyncData(
   `blog-detail-${String(route.params.slug)}`,
   () => blogApi.detail(String(route.params.slug)),
@@ -54,7 +57,7 @@ const blogContentHtml = computed(() =>
 )
 
 function coverUrl(row: Blog) {
-  return resolveFileUrl(row.coverImageUrl || '')
+  return resolveFileUrl(row.coverImageUrl || row.coverUrl || '') || DEFAULT_OG_IMAGE_PATH
 }
 
 useSeoMeta({
@@ -62,6 +65,7 @@ useSeoMeta({
   description: () => blog.value?.excerpt || 'Bai viet tu Thepocketshoes.',
   ogTitle: () => blog.value?.title || 'Thepocketshoes Blog',
   ogDescription: () => blog.value?.excerpt || 'Bai viet tu Thepocketshoes.',
-  ogImage: () => (blog.value ? coverUrl(blog.value) || undefined : undefined),
+  ogImage: () => ogImageOrDefault(blog.value ? coverUrl(blog.value) : '', siteUrl),
+  twitterImage: () => ogImageOrDefault(blog.value ? coverUrl(blog.value) : '', siteUrl),
 })
 </script>

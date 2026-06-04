@@ -5,6 +5,10 @@ const apiBaseUrl = process.env.NUXT_PUBLIC_API_BASE_URL || process.env.VITE_API_
 const apiTimeout = process.env.NUXT_PUBLIC_API_TIMEOUT || process.env.VITE_API_TIMEOUT || '15000'
 const fileBaseUrl = process.env.NUXT_PUBLIC_FILE_BASE_URL || process.env.VITE_FILE_BASE_URL || ''
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+const publicSiteUrl = siteUrl.includes('localhost')
+  ? siteUrl.replace(/\/+$/, '')
+  : siteUrl.replace(/^http:\/\//, 'https://').replace(/\/+$/, '')
+const defaultOgImage = `${publicSiteUrl}/thepocketshoes-og.jpg`
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-05-11',
@@ -35,6 +39,12 @@ export default defineNuxtConfig({
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'theme-color', content: '#ffffff' },
+        { property: 'og:image', content: defaultOgImage },
+        { property: 'og:image:alt', content: 'The Pocket Shoes' },
+        { property: 'og:image:width', content: '1000' },
+        { property: 'og:image:height', content: '1000' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: defaultOgImage },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg?v=1' },

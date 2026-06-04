@@ -64,6 +64,7 @@ import StorefrontListingLayout from '@/components/storefront/StorefrontListingLa
 import { UiSkeleton } from '@/components/ui'
 import { brandApi } from '@/modules/content/brand/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
 import type { Brand } from '@/modules/content/brand/types'
 
 // const router = useRouter()
@@ -73,7 +74,7 @@ const loading = ref(false)
 const keyword = ref('')
 
 function imageUrl(row: Brand) {
-  return resolveFileUrl(row.imageUrl || '')
+  return resolveFileUrl(row.imageUrl || '') || DEFAULT_OG_IMAGE_PATH
 }
 
 async function load() {

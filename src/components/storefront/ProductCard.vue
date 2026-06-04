@@ -101,12 +101,15 @@ import { computed } from 'vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
 import { UiTag } from '@/components/ui'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
 import type { Product, ProductFeatured } from '@/modules/catalog/product/types'
 import { money } from '@/modules/shared/types'
 
 const props = defineProps<{ product: Product | ProductFeatured }>()
 
-const image = computed(() => resolveFileUrl(primaryImageUrl(props.product)))
+const image = computed(
+  () => resolveFileUrl(primaryImageUrl(props.product)) || DEFAULT_OG_IMAGE_PATH,
+)
 const displayPrice = computed(() => productPrice(props.product))
 const originalPrice = computed(() => productOriginalPrice(props.product))
 const inStock = computed(() => productStock(props.product) > 0)

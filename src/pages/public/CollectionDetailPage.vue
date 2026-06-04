@@ -69,6 +69,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRuntimeConfig } from '#imports'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
@@ -77,10 +78,12 @@ import { UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
+import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { CollectionDetail } from '@/modules/content/collection/types'
 
 const route = useRoute()
+const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
 const { data: collection, pending: loading } = await useAsyncData(
   `collection-detail-${String(route.params.slug)}`,
   () => collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 }),
@@ -91,7 +94,7 @@ const collectionDescriptionHtml = computed(() =>
 )
 
 function coverUrl(row: CollectionDetail) {
-  return resolveFileUrl(row.coverUrl || row.imageUrl || '')
+  return resolveFileUrl(row.coverUrl || row.imageUrl || '') || DEFAULT_OG_IMAGE_PATH
 }
 
 useSeoMeta({
@@ -101,6 +104,7 @@ useSeoMeta({
   ogTitle: () => collection.value?.name || 'Bo suu tap Thepocketshoes',
   ogDescription: () =>
     collection.value?.excerpt || 'Kham pha bo suu tap giay duoc chon loc tai Thepocketshoes.',
-  ogImage: () => (collection.value ? coverUrl(collection.value) || undefined : undefined),
+  ogImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
+  twitterImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
 })
 </script>

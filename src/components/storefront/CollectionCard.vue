@@ -41,6 +41,7 @@
 import { computed } from 'vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
 import { resolveFileUrl } from '@/lib/fileUrl'
+import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
 import type { Collection, CollectionDetail } from '@/modules/content/collection/types'
 
 const props = withDefaults(
@@ -54,6 +55,7 @@ const props = withDefaults(
 )
 
 const image = computed(() =>
-  resolveFileUrl(props.collection.coverUrl || props.collection.imageUrl || ''),
+  resolveFileUrl(props.collection.coverUrl || props.collection.imageUrl || '') ||
+  DEFAULT_OG_IMAGE_PATH,
 )
 </script>

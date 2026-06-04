@@ -197,6 +197,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRuntimeConfig } from '#imports'
 import { useRoute } from 'vue-router'
 import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
@@ -205,12 +206,14 @@ import { UiButton, UiSkeleton, UiTag } from '@/components/ui'
 import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
+import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
 import type { ProductSku, ProductVariant } from '@/modules/catalog/product/types'
 
 const route = useRoute()
+const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
 const selectedImage = ref('')
 const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
@@ -283,7 +286,7 @@ function handleAddToCart() {
 watch(
   product,
   () => {
-    selectedImage.value = galleryImages.value[0]?.url || ''
+    selectedImage.value = galleryImages.value[0]?.url || DEFAULT_OG_IMAGE_PATH
     if (variants.value[0]) selectVariant(variants.value[0])
     selectedSku.value = inStockSkus.value[0] || null
   },
@@ -295,6 +298,7 @@ useSeoMeta({
   description: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
   ogTitle: () => product.value?.name || 'Thepocketshoes',
   ogDescription: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
-  ogImage: () => selectedImage.value || undefined,
+  ogImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
+  twitterImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
 })
 </script>
