@@ -52,15 +52,19 @@
                 class="block aspect-square overflow-hidden bg-[#f3f3f1]"
                 :to="{ name: 'product-detail', params: { slug: item.cart.slug } }"
               >
-                <img
-                  v-if="item.imageUrl"
+                <StorefrontImage
                   :src="item.imageUrl"
+                  :fallback-src="null"
+                  fit="contain"
                   :alt="item.product?.name || item.cart.name"
                   class="h-full w-full object-contain p-4"
-                />
-                <div v-else class="grid h-full place-items-center text-xs font-bold text-black/35">
-                  No image
-                </div>
+                >
+                  <template #fallback>
+                    <div class="grid h-full place-items-center text-xs font-bold text-black/35">
+                      No image
+                    </div>
+                  </template>
+                </StorefrontImage>
               </RouterLink>
 
               <div class="grid min-w-0 gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
@@ -263,6 +267,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import {
   UiAlert,
   UiButton,

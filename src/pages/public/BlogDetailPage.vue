@@ -13,10 +13,10 @@
     </article>
 
     <article v-else-if="blog" class="bg-[#f7f7f5] shadow-sm ring-1 ring-black/5">
-      <img
-        :src="coverUrl(blog)"
+      <StorefrontImage
+        :src="blog.coverImageUrl || blog.coverUrl"
         :alt="blog.title"
-        class="aspect-[16/9] w-full object-cover grayscale"
+        class="aspect-[16/9] w-full object-cover"
       />
       <div class="p-5 md:p-12">
         <p class="text-sm text-black/50">
@@ -38,6 +38,7 @@ import { useRuntimeConfig } from '#imports'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiSkeleton } from '@/components/ui'
 import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'

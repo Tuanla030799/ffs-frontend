@@ -4,11 +4,12 @@
       <div
         class="animate-hero-image relative min-h-[calc(100svh-128px)] w-full overflow-hidden bg-[#e8e8e5] shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px]"
       >
-        <img
-          v-if="heroImage"
-          :src="heroImage"
+        <StorefrontImage
+          :src="hero?.imageUrl"
           :alt="hero?.title || 'WALK banner'"
-          class="absolute inset-0 h-full w-full object-cover grayscale"
+          :fallback-src="null"
+          loading="eager"
+          class="absolute inset-0 h-full w-full object-cover"
         />
         <div class="absolute inset-0 bg-gradient-to-r from-white/88 via-white/42 to-transparent" />
         <div
@@ -69,12 +70,12 @@ import { RouterLink } from 'vue-router'
 import CollectionSwiper from '@/components/home/CollectionSwiper.vue'
 import FeaturedProductSwiper from '@/components/home/FeaturedProductSwiper.vue'
 import BlogCard from '@/components/storefront/BlogCard.vue'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiSkeleton } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import { collectionApi } from '@/modules/content/collection/api'
 import { blogApi } from '@/modules/content/blog/api'
 import { bannerApi } from '@/modules/content/banner/api'
-import { resolveFileUrl } from '@/lib/fileUrl'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { Collection } from '@/modules/content/collection/types'
 import type { Blog } from '@/modules/content/blog/types'
@@ -86,7 +87,6 @@ const collections = ref<Collection[]>([])
 const banners = ref<LandingBanner[]>([])
 const randomBlog = ref<Blog | null>(null)
 const hero = computed(() => banners.value[0])
-const heroImage = computed(() => resolveFileUrl(hero.value?.imageUrl || ''))
 
 const SectionHeader = defineComponent({
   props: {

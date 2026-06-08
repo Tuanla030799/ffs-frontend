@@ -33,10 +33,10 @@
       <section
         class="grid overflow-hidden bg-[#f7f7f5] shadow-sm ring-1 ring-black/5 lg:grid-cols-[1.1fr_0.9fr]"
       >
-        <img
-          :src="coverUrl(collection)"
+        <StorefrontImage
+          :src="collection.coverUrl || collection.imageUrl"
           :alt="collection.name"
-          class="h-full min-h-80 w-full object-cover grayscale"
+          class="h-full min-h-80 w-full object-cover"
         />
         <div class="flex flex-col justify-center p-5 md:p-12">
           <p class="text-sm font-bold tracking-[0.18em] text-black/50 uppercase">Collection</p>
@@ -74,6 +74,7 @@ import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'

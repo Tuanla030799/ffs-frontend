@@ -49,9 +49,11 @@
               :class="selectedImage === image.url ? 'border-black' : 'border-transparent'"
               @click="selectedImage = image.url || ''"
             >
-              <img
+              <StorefrontImage
                 v-if="image.url"
                 :src="image.url"
+                :fallback-src="null"
+                fit="contain"
                 class="h-full w-full object-contain"
                 :alt="image.altText || product.name"
               />
@@ -60,13 +62,16 @@
 
           <div class="order-1 md:order-2">
             <div class="relative aspect-square overflow-hidden rounded-lg bg-[#f3f3f1]">
-              <img
-                v-if="selectedImage"
+              <StorefrontImage
                 :src="selectedImage"
+                fit="contain"
                 class="h-full w-full object-contain p-8 md:p-12"
                 :alt="product.name"
-              />
-              <div v-else class="grid h-full place-items-center text-black/40">No image</div>
+              >
+                <template #fallback>
+                  <div class="grid h-full place-items-center text-black/40">No image</div>
+                </template>
+              </StorefrontImage>
               <div class="absolute right-6 bottom-6 hidden gap-3 md:flex">
                 <button
                   class="grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
@@ -120,9 +125,11 @@
                   :title="variant.colorName || variant.name"
                   @click="selectVariant(variant)"
                 >
-                  <img
+                  <StorefrontImage
                     v-if="variant.imageUrl"
-                    :src="resolveFileUrl(variant.imageUrl)"
+                    :src="variant.imageUrl"
+                    :fallback-src="null"
+                    fit="contain"
                     class="h-full w-full object-contain"
                     :alt="variant.name"
                   />
@@ -202,6 +209,7 @@ import { useRoute } from 'vue-router'
 import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiButton, UiSkeleton, UiTag } from '@/components/ui'
 import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'

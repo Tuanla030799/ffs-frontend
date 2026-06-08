@@ -10,15 +10,11 @@
     <template #media>
       <div class="overflow-hidden">
         <div class="h-[200px] overflow-hidden max-[400px]:h-[180px]">
-          <img
-            v-if="image"
-            :src="image"
+          <StorefrontImage
+            :src="primaryImageUrl(product)"
             :alt="product.name"
             class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div v-else class="grid h-full place-items-center bg-[#f4f4f5] text-sm text-zinc-400">
-            No image
-          </div>
         </div>
       </div>
     </template>
@@ -99,17 +95,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiTag } from '@/components/ui'
-import { resolveFileUrl } from '@/lib/fileUrl'
-import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
 import type { Product, ProductFeatured } from '@/modules/catalog/product/types'
 import { money } from '@/modules/shared/types'
 
 const props = defineProps<{ product: Product | ProductFeatured }>()
 
-const image = computed(
-  () => resolveFileUrl(primaryImageUrl(props.product)) || DEFAULT_OG_IMAGE_PATH,
-)
 const displayPrice = computed(() => productPrice(props.product))
 const originalPrice = computed(() => productOriginalPrice(props.product))
 const inStock = computed(() => productStock(props.product) > 0)

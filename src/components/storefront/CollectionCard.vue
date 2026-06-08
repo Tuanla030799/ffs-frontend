@@ -7,13 +7,11 @@
   >
     <template #media>
       <div class="aspect-[4/3] overflow-hidden bg-[#ededeb]">
-        <img
-          v-if="image"
-          :src="image"
+        <StorefrontImage
+          :src="collection.coverUrl || collection.imageUrl"
           :alt="collection.name"
-          class="h-full w-full object-cover grayscale transition duration-300 group-hover:scale-105 group-hover:grayscale-0"
+          class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
-        <div v-else class="grid h-full place-items-center text-sm text-black/40">No image</div>
       </div>
     </template>
 
@@ -38,13 +36,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
-import { resolveFileUrl } from '@/lib/fileUrl'
-import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import type { Collection, CollectionDetail } from '@/modules/content/collection/types'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     collection: Collection | CollectionDetail
     showArrow?: boolean
@@ -52,10 +48,5 @@ const props = withDefaults(
   {
     showArrow: false,
   },
-)
-
-const image = computed(() =>
-  resolveFileUrl(props.collection.coverUrl || props.collection.imageUrl || '') ||
-  DEFAULT_OG_IMAGE_PATH,
 )
 </script>

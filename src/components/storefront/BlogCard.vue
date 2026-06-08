@@ -13,22 +13,15 @@
             : 'aspect-[4/3] overflow-hidden bg-[#eeeeeb]'
         "
       >
-        <img
-          v-if="image"
-          :src="image"
+        <StorefrontImage
+          :src="blog.coverImageUrl || blog.coverUrl"
           :alt="blog.title"
           :class="
             layout === 'featured'
-              ? 'h-full w-full object-cover grayscale transition duration-500 group-hover:scale-105 group-hover:grayscale-0'
-              : 'h-full w-full object-cover grayscale transition duration-300 group-hover:scale-105 group-hover:grayscale-0'
+              ? 'h-full w-full object-cover transition duration-500 group-hover:scale-105'
+              : 'h-full w-full object-cover transition duration-300 group-hover:scale-105'
           "
         />
-        <div
-          v-else
-          class="grid h-full min-h-56 place-items-center bg-[#e8e8e5] text-sm text-black/40"
-        >
-          No image
-        </div>
       </div>
     </template>
 
@@ -65,14 +58,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
+import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { formatLocalDateTime } from '@/lib/dateTime'
-import { resolveFileUrl } from '@/lib/fileUrl'
-import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
 import type { Blog } from '@/modules/content/blog/types'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     blog: Blog
     layout?: 'default' | 'featured'
@@ -80,10 +71,5 @@ const props = withDefaults(
   {
     layout: 'default',
   },
-)
-
-const image = computed(
-  () =>
-    resolveFileUrl(props.blog.coverImageUrl || props.blog.coverUrl || '') || DEFAULT_OG_IMAGE_PATH,
 )
 </script>
