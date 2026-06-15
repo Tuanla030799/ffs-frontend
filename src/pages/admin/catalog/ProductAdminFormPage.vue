@@ -44,7 +44,7 @@
                 {{ gender.label }}
               </option>
             </UiSelect>
-            <UiInput
+            <UiTextarea
               v-model="form.shortDescription"
               class="md:col-span-2"
               placeholder="Short description"

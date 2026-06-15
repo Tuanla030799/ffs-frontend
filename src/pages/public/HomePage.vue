@@ -97,7 +97,7 @@ const SectionHeader = defineComponent({
   setup(props) {
     return () =>
       h('div', { class: 'mb-8 flex items-center justify-between gap-4' }, [
-        h('h2', { class: 'text-2xl font-black uppercase tracking-tight' }, props.title),
+        h('h2', { class: 'text-2xl font-black tracking-tight' }, props.title),
         h(
           RouterLink,
           { to: props.to, class: 'text-sm font-semibold text-black no-underline hover:opacity-60' },

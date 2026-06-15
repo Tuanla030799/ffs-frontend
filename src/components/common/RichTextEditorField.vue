@@ -103,6 +103,8 @@ const editorInit = computed(() => ({
   license_key: 'gpl',
   promotion: false,
   branding: false,
+  skin: false,
+  content_css: false,
   menubar: false,
 
   readonly: isDisabled.value,
@@ -136,7 +138,7 @@ const editorInit = computed(() => ({
 
   content_style: `
     body {
-      font-family: Montserrat, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 15px;
       line-height: 1.75;
       color: #111827;
