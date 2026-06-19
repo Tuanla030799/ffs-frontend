@@ -4,14 +4,16 @@
       v-if="open"
       class="fixed inset-0 z-50 flex bg-slate-950/45"
       :class="
-        mobileSheet
-          ? 'items-end sm:items-center sm:justify-center sm:p-4'
-          : 'items-center justify-center p-4'
+        fullscreen
+          ? 'items-stretch justify-center p-0'
+          : mobileSheet
+            ? 'items-end sm:items-center sm:justify-center sm:p-4'
+            : 'items-center justify-center p-4'
       "
       @click.self="emit('close')"
     >
       <div :class="panelClasses">
-        <div class="mb-4 flex items-start justify-between gap-3">
+        <div class="mb-4 flex shrink-0 items-start justify-between gap-3">
           <div>
             <h3 v-if="title" class="text-base font-semibold text-[var(--ui-text)]">
               {{ title }}
@@ -44,12 +46,14 @@ const props = withDefaults(
     title?: string
     description?: string
     mobileSheet?: boolean
+    fullscreen?: boolean
     maxWidth?: 'sm' | 'md' | 'lg' | 'xl'
   }>(),
   {
     title: '',
     description: '',
     mobileSheet: true,
+    fullscreen: false,
     maxWidth: 'lg',
   },
 )
@@ -59,6 +63,10 @@ const emit = defineEmits<{
 }>()
 
 const panelClasses = computed(() => {
+  if (props.fullscreen) {
+    return cn('flex h-dvh w-screen flex-col overflow-hidden bg-[var(--ui-surface)] p-4 sm:p-5')
+  }
+
   const widths = {
     sm: 'sm:max-w-sm',
     md: 'sm:max-w-md',

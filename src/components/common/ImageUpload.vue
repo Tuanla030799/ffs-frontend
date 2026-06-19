@@ -1,18 +1,14 @@
 <template>
   <div class="space-y-3">
-    <div v-if="previewSrc" class="relative max-w-36">
-      <ImagePreview :src="previewSrc" :alt="previewAlt" :title="previewTitle" />
-      <UiButton
-        native-type="button"
-        variant="danger"
-        size="sm"
-        square
-        class="absolute top-2 right-2 shadow-lg"
-        :disabled="disabled"
-        @click="$emit('update:modelValue', null)"
-      >
-        ×
-      </UiButton>
+    <div v-if="previewSrc" class="w-36 max-w-full">
+      <ImagePreview
+        :src="previewSrc"
+        :alt="previewAlt"
+        :title="previewTitle"
+        show-remove
+        :remove-disabled="disabled"
+        @remove="$emit('update:modelValue', null)"
+      />
     </div>
     <FileUpload
       :model-value="modelValue"
@@ -36,7 +32,6 @@
 import { computed } from 'vue'
 import FileUpload from '@/components/common/FileUpload.vue'
 import ImagePreview from '@/components/common/ImagePreview.vue'
-import { UiButton } from '@/components/ui'
 import type { FileUploadScope, UploadedFile } from '@/services/file.service'
 
 const props = withDefaults(

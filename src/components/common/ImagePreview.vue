@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="relative">
     <button
       type="button"
       :disabled="!resolvedSrc"
@@ -22,6 +22,19 @@
         Xem ảnh
       </div>
     </button>
+    <div v-if="showRemove && resolvedSrc" class="absolute top-2 right-2 z-20">
+      <UiButton
+        native-type="button"
+        variant="danger"
+        size="sm"
+        square
+        class="shadow-lg"
+        :disabled="removeDisabled"
+        @click="$emit('remove')"
+      >
+        ×
+      </UiButton>
+    </div>
 
     <UiModal :open="open" :title="title" max-width="xl" @close="open = false">
       <div class="overflow-hidden rounded-xl bg-slate-100">
@@ -38,7 +51,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UiModal } from '@/components/ui'
+import { UiButton, UiModal } from '@/components/ui'
 import { resolveFileUrl } from '@/lib/fileUrl'
 
 const props = withDefaults(
@@ -46,13 +59,21 @@ const props = withDefaults(
     src?: string | null
     alt?: string
     title?: string
+    showRemove?: boolean
+    removeDisabled?: boolean
   }>(),
   {
     src: '',
     alt: 'preview image',
     title: 'Xem ảnh',
+    showRemove: false,
+    removeDisabled: false,
   },
 )
+
+defineEmits<{
+  remove: []
+}>()
 
 const open = ref(false)
 const resolvedSrc = computed(() => resolveFileUrl(props.src || ''))

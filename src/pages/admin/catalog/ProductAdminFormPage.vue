@@ -214,7 +214,7 @@
                     @update:model-value="(value) => setPrimaryImage(i, value)"
                   />
                   <UiButton native-type="button" variant="danger" size="sm" @click="removeImage(i)">
-                    Xóa ảnh
+                    Xóa
                   </UiButton>
                 </div>
               </div>

@@ -162,7 +162,8 @@ const mobileSearchOpen = ref(false)
 const searchKeyword = ref('')
 const navItems = [
   { label: 'Trang chủ', to: '/' },
-  { label: 'Sản phẩm', to: '/products' },
+  { label: 'Nam', to: '/products?gender=MALE' },
+  { label: 'Nữ', to: '/products?gender=FEMALE' },
   { label: 'Thương hiệu', to: '/brands' },
   { label: 'Bộ sưu tập', to: '/collections' },
   { label: 'Blog', to: '/blogs' },
@@ -171,7 +172,19 @@ const navItems = [
 
 function isNavActive(path: string) {
   if (path === '/') return route.path === '/'
-  return route.path === path || route.path.startsWith(`${path}/`)
+  const isActive = route.path === path || route.path.startsWith(`${path}/`)
+
+  console.log(isActive)
+
+  if (route.path.startsWith('/products')) {
+    const gender = route.query.gender
+    if (gender === '') return false
+    if (path.includes(`gender=${gender}`)) {
+      return true
+    }
+  }
+
+  return isActive
 }
 
 function submitSearch() {

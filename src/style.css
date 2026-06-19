@@ -82,6 +82,26 @@ body {
   min-height: 100vh;
 }
 
+html.admin-scroll-lock,
+body.admin-scroll-lock {
+  height: 100%;
+  overflow: hidden;
+}
+
+body.admin-scroll-lock {
+  overscroll-behavior: none;
+}
+
+.admin-layout-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.admin-layout-main {
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
 button,
 input,
 select,

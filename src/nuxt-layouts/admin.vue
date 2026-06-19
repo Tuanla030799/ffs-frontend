@@ -1,14 +1,19 @@
 <template>
   <div
-    class="h-screen overflow-hidden bg-[var(--ui-bg)] lg:grid lg:grid-cols-[280px_minmax(0,1fr)]"
+    class="admin-layout-shell flex flex-col overflow-hidden bg-[var(--ui-bg)] lg:grid lg:grid-cols-[280px_minmax(0,1fr)]"
   >
     <div class="hidden min-h-0 lg:block">
       <SidebarNav />
     </div>
-    <div class="flex min-h-0 min-w-0 flex-col">
-      <Topbar :title="pageTitle" :description="pageDescription" @logout="logout" />
+    <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <Topbar
+        class="shrink-0"
+        :title="pageTitle"
+        :description="pageDescription"
+        @logout="logout"
+      />
 
-      <div class="border-b border-slate-200 bg-white p-3 lg:hidden">
+      <div class="shrink-0 border-b border-slate-200 bg-white p-3 lg:hidden">
         <div class="flex gap-2 overflow-x-auto">
           <NuxtLink
             v-for="item in quickLinks"
@@ -21,7 +26,9 @@
           </NuxtLink>
         </div>
       </div>
-      <main class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+      <main
+        class="admin-layout-main min-h-0 flex-1 overflow-y-scroll overscroll-contain p-4 sm:p-6"
+      >
         <slot />
       </main>
     </div>
@@ -29,6 +36,7 @@
 </template>
 
 <script setup lang="ts">
+import { useHead } from '#imports'
 import { computed } from 'vue'
 import SidebarNav from '@/components/admin/SidebarNav.vue'
 import Topbar from '@/components/admin/Topbar.vue'
@@ -39,6 +47,11 @@ import { cn } from '@/utils/cn'
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
+
+useHead({
+  htmlAttrs: { class: 'admin-scroll-lock' },
+  bodyAttrs: { class: 'admin-scroll-lock' },
+})
 
 const quickLinks = [
   { label: 'Dashboard', to: '/admin/dashboard' },

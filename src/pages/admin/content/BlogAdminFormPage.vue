@@ -75,7 +75,7 @@
               <UiInput :model-value="form.coverFileId" label="File ID" readonly />
               <div class="flex justify-end">
                 <UiButton native-type="button" variant="danger" size="sm" @click="clearCoverImage">
-                  Xóa ảnh
+                  Xóa
                 </UiButton>
               </div>
             </div>

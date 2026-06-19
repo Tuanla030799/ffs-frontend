@@ -77,7 +77,7 @@
                     size="sm"
                     @click="clearCoverImage"
                   >
-                    Xóa ảnh
+                    Xóa
                   </UiButton>
                 </div>
               </div>

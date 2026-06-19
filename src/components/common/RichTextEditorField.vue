@@ -6,6 +6,15 @@
         <p v-if="description" class="mt-1 text-sm leading-6 text-[var(--ui-text-soft)]">
           {{ description }}
         </p>
+        <UiButton
+          class="mt-3"
+          variant="secondary"
+          size="sm"
+          :disabled="isDisabled"
+          @click="openFullscreenEditor"
+        >
+          Soạn nội dung
+        </UiButton>
       </div>
     </template>
 
@@ -23,6 +32,34 @@
       </p>
     </div>
   </UiCard>
+
+  <UiModal
+    :open="fullscreenEditorOpen"
+    fullscreen
+    title="Soạn nội dung"
+    :description="heading"
+    @close="closeFullscreenEditor"
+  >
+    <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="submitFullscreenEditor">
+      <div class="rich-text-fullscreen-editor min-h-0 flex-1 overflow-hidden">
+        <Editor
+          :id="fullscreenEditorId"
+          :model-value="fullscreenValue"
+          :disabled="isDisabled"
+          :init="fullscreenEditorInit"
+          @init="onFullscreenInit"
+          @update:model-value="onFullscreenUpdate"
+        />
+      </div>
+
+      <div
+        class="flex shrink-0 flex-col-reverse gap-2 border-t border-[var(--ui-border)] pt-4 sm:flex-row sm:justify-end"
+      >
+        <UiButton variant="secondary" @click="closeFullscreenEditor">Hủy</UiButton>
+        <UiButton native-type="submit">Áp dụng nội dung</UiButton>
+      </div>
+    </form>
+  </UiModal>
 </template>
 
 <script setup lang="ts">
@@ -46,7 +83,7 @@ import 'tinymce/plugins/wordcount'
 import 'tinymce/skins/ui/oxide/skin.css'
 import 'tinymce/skins/ui/oxide/content.css'
 import 'tinymce/skins/content/default/content.css'
-import { UiCard } from '@/components/ui'
+import { UiButton, UiCard, UiModal } from '@/components/ui'
 import { fileService } from '@/services/file.service'
 import { normalizeRichTextInput } from '@/lib/richText'
 import { resolveFileUrl } from '@/lib/fileUrl'
@@ -93,9 +130,13 @@ const emit = defineEmits<{
 }>()
 
 const editorId = `rich-text-editor-${Math.random().toString(36).slice(2)}`
+const fullscreenEditorId = `rich-text-editor-fullscreen-${Math.random().toString(36).slice(2)}`
 const localError = ref('')
 const localValue = ref(normalizeRichTextInput(props.modelValue))
+const fullscreenEditorOpen = ref(false)
+const fullscreenValue = ref(localValue.value)
 let editorInstance: TinyEditorInstance | null = null
+let fullscreenEditorInstance: TinyEditorInstance | null = null
 const heading = computed(() => props.title || props.label)
 const isDisabled = computed(() => props.disabled || props.readonly)
 
@@ -207,6 +248,14 @@ const editorInit = computed(() => ({
   },
 }))
 
+const fullscreenEditorInit = computed(() => ({
+  ...editorInit.value,
+  height: '100%',
+  min_height: props.minHeight,
+  max_height: undefined,
+  plugins: 'advlist autolink code fullscreen image link lists preview table wordcount',
+}))
+
 watch(
   () => props.modelValue,
   (next) => {
@@ -228,9 +277,43 @@ function onInit(...args: unknown[]) {
   editorInstance = directEditor || nestedEditor || null
 }
 
+function onFullscreenInit(...args: unknown[]) {
+  const directEditor = args.find(isTinyEditorInstance)
+  const nestedEditor = args
+    .map((arg) => (arg && typeof arg === 'object' ? (arg as { editor?: unknown }).editor : null))
+    .find(isTinyEditorInstance)
+
+  fullscreenEditorInstance = directEditor || nestedEditor || null
+}
+
 function onUpdate(value: string) {
   const content = editorInstance?.getContent() ?? value
   if (content === localValue.value) return
+  localValue.value = content
+  emit('update:modelValue', content)
+  emit('change', content)
+}
+
+function onFullscreenUpdate(value: string) {
+  fullscreenValue.value = fullscreenEditorInstance?.getContent() ?? value
+}
+
+function openFullscreenEditor() {
+  fullscreenValue.value = localValue.value
+  fullscreenEditorOpen.value = true
+}
+
+function closeFullscreenEditor() {
+  fullscreenEditorOpen.value = false
+}
+
+function submitFullscreenEditor() {
+  const content = fullscreenEditorInstance?.getContent() ?? fullscreenValue.value
+  fullscreenValue.value = content
+  fullscreenEditorOpen.value = false
+
+  if (content === localValue.value) return
+
   localValue.value = content
   emit('update:modelValue', content)
   emit('change', content)
@@ -256,5 +339,9 @@ function onUpdate(value: string) {
 
 :deep(.tox .tox-edit-area__iframe) {
   background: white;
+}
+
+.rich-text-fullscreen-editor :deep(.tox.tox-tinymce) {
+  height: 100% !important;
 }
 </style>
