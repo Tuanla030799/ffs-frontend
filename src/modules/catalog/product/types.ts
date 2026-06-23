@@ -122,3 +122,14 @@ export interface ProductListQuery {
   limit?: number
   status?: string
 }
+
+export interface PublicProductListQuery extends Omit<
+  ProductListQuery,
+  'categoryId' | 'brandId' | 'gender' | 'size' | 'color' | 'status'
+> {
+  categoryId?: string[]
+  brandId?: string[]
+  gender?: string[]
+  size?: string[]
+  color?: string[]
+}

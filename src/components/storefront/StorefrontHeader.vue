@@ -23,9 +23,9 @@
       <nav class="hidden justify-center gap-9 text-sm font-bold md:flex">
         <RouterLink
           v-for="item in navItems"
-          :key="item.to"
+          :key="item.label"
           class="storefront-nav-link text-black no-underline transition hover:opacity-60"
-          :class="{ 'storefront-nav-link-active': isNavActive(item.to) }"
+          :class="{ 'storefront-nav-link-active': isNavActive(item) }"
           :to="item.to"
         >
           {{ item.label }}
@@ -127,9 +127,9 @@
       <nav class="grid gap-1">
         <RouterLink
           v-for="item in navItems"
-          :key="item.to"
+          :key="item.label"
           class="storefront-mobile-nav-link border-b border-black/10 py-4 text-xl font-black text-black no-underline"
-          :class="{ 'storefront-mobile-nav-link-active': isNavActive(item.to) }"
+          :class="{ 'storefront-mobile-nav-link-active': isNavActive(item) }"
           :to="item.to"
           @click="mobileMenuOpen = false"
         >
@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import logoUrl from '@/assets/logo.jpg'
 import { UiButton, UiDrawer, UiForm, UiInput } from '@/components/ui'
 import { useCartCount } from '@/composables/useCart'
@@ -160,31 +160,49 @@ const { totalQuantity } = useCartCount()
 const mobileMenuOpen = ref(false)
 const mobileSearchOpen = ref(false)
 const searchKeyword = ref('')
-const navItems = [
-  { label: 'Trang chủ', to: '/' },
-  { label: 'Nam', to: '/products?gender=MALE' },
-  { label: 'Nữ', to: '/products?gender=FEMALE' },
-  { label: 'Thương hiệu', to: '/brands' },
-  { label: 'Bộ sưu tập', to: '/collections' },
-  { label: 'Blog', to: '/blogs' },
-  { label: 'About Us', to: '/about' },
+type NavItem = {
+  label: string
+  path: string
+  to: RouteLocationRaw
+  genders?: string[]
+}
+
+const navItems: NavItem[] = [
+  { label: 'Trang chủ', path: '/', to: '/' },
+  {
+    label: 'Nam',
+    path: '/products',
+    to: { path: '/products', query: { gender: ['MALE', 'UNISEX'] } },
+    genders: ['MALE', 'UNISEX'],
+  },
+  {
+    label: 'Nữ',
+    path: '/products',
+    to: { path: '/products', query: { gender: ['FEMALE', 'UNISEX'] } },
+    genders: ['FEMALE', 'UNISEX'],
+  },
+  { label: 'Thương hiệu', path: '/brands', to: '/brands' },
+  { label: 'Bộ sưu tập', path: '/collections', to: '/collections' },
+  { label: 'Blog', path: '/blogs', to: '/blogs' },
+  { label: 'About Us', path: '/about', to: '/about' },
 ]
 
-function isNavActive(path: string) {
-  if (path === '/') return route.path === '/'
-  const isActive = route.path === path || route.path.startsWith(`${path}/`)
+function isNavActive(item: NavItem) {
+  if (item.genders) {
+    if (route.path !== item.path) return false
 
-  console.log(isActive)
+    const selectedGenders = (
+      Array.isArray(route.query.gender) ? route.query.gender : [route.query.gender]
+    ).filter((gender): gender is string => typeof gender === 'string' && Boolean(gender))
 
-  if (route.path.startsWith('/products')) {
-    const gender = route.query.gender
-    if (gender === '') return false
-    if (path.includes(`gender=${gender}`)) {
-      return true
-    }
+    return (
+      selectedGenders.length === item.genders.length &&
+      item.genders.every((gender) => selectedGenders.includes(gender))
+    )
   }
 
-  return isActive
+  if (item.path === '/') return route.path === '/'
+  return route.path === item.path || route.path.startsWith(`${item.path}/`)
 }
 
 function submitSearch() {

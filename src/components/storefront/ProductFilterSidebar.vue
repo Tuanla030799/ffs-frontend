@@ -3,17 +3,17 @@
     <UiAccordion :default-open="true" title="Danh mục">
       <div class="space-y-3 pt-1 pb-5">
         <UiCheckbox
-          :model-value="!categorySlug"
+          :model-value="!categoryId?.length"
           label="Tất cả sản phẩm"
-          @update:model-value="toggleSingle($event, 'categorySlug', '')"
+          @update:model-value="clearFilter($event, 'categoryId')"
         />
 
         <UiCheckbox
           v-for="category in categories"
           :key="category.id"
-          :model-value="categorySlug === category.slug"
+          :model-value="categoryId?.includes(category.id)"
           :label="category.name"
-          @update:model-value="toggleSingle($event, 'categorySlug', category.slug)"
+          @update:model-value="toggleFilter($event, 'categoryId', category.id)"
         />
       </div>
     </UiAccordion>
@@ -21,17 +21,17 @@
     <UiAccordion :default-open="true" title="Thương hiệu">
       <div class="space-y-3 pt-1 pb-5">
         <UiCheckbox
-          :model-value="!brandSlug"
+          :model-value="!brandId?.length"
           label="Tất cả thương hiệu"
-          @update:model-value="toggleSingle($event, 'brandSlug', '')"
+          @update:model-value="clearFilter($event, 'brandId')"
         />
 
         <UiCheckbox
           v-for="brand in brands"
           :key="brand.id"
-          :model-value="brandSlug === brand.slug"
+          :model-value="brandId?.includes(brand.id)"
           :label="brand.name"
-          @update:model-value="toggleSingle($event, 'brandSlug', brand.slug)"
+          @update:model-value="toggleFilter($event, 'brandId', brand.id)"
         />
       </div>
     </UiAccordion>
@@ -39,46 +39,53 @@
     <UiAccordion :default-open="false" title="Giới tính">
       <div class="space-y-3 pt-1 pb-5">
         <UiCheckbox
-          :model-value="!gender"
+          :model-value="!gender?.length"
           label="Tất cả"
-          @update:model-value="toggleSingle($event, 'gender', '')"
+          @update:model-value="clearFilter($event, 'gender')"
         />
 
         <UiCheckbox
           v-for="item in genders"
           :key="item.value"
-          :model-value="gender === item.value"
+          :model-value="gender?.includes(item.value)"
           :label="item.label"
-          @update:model-value="toggleSingle($event, 'gender', item.value)"
+          @update:model-value="toggleFilter($event, 'gender', item.value)"
         />
       </div>
     </UiAccordion>
 
     <UiAccordion :default-open="false" title="Size">
-      <div class="pt-1 pb-5">
-        <SizeColorPicker
-          :model-value="size"
-          :options="sizes"
-          title="Chọn size"
-          placeholder="Tất cả size"
-          value-field="value"
-          clearable
-          @update:model-value="emit('update:size', String($event || ''))"
+      <div class="space-y-3 pt-1 pb-5">
+        <UiCheckbox
+          :model-value="!size?.length"
+          label="Tất cả size"
+          @update:model-value="clearFilter($event, 'size')"
+        />
+
+        <UiCheckbox
+          v-for="item in sizes"
+          :key="item.id || item.value"
+          :model-value="size?.includes(item.value)"
+          :label="item.label"
+          @update:model-value="toggleFilter($event, 'size', item.value)"
         />
       </div>
     </UiAccordion>
 
     <UiAccordion :default-open="false" title="Màu sắc">
-      <div class="pt-1 pb-5">
-        <SizeColorPicker
-          :model-value="color"
-          :options="colors"
-          title="Chọn màu"
-          placeholder="Tất cả màu"
-          variant="color"
-          value-field="value"
-          clearable
-          @update:model-value="emit('update:color', String($event || ''))"
+      <div class="space-y-3 pt-1 pb-5">
+        <UiCheckbox
+          :model-value="!color?.length"
+          label="Tất cả màu"
+          @update:model-value="clearFilter($event, 'color')"
+        />
+
+        <UiCheckbox
+          v-for="item in colors"
+          :key="item.id || item.value"
+          :model-value="color?.includes(item.value)"
+          :label="item.label"
+          @update:model-value="toggleFilter($event, 'color', item.value)"
         />
       </div>
     </UiAccordion>
@@ -98,7 +105,6 @@
 </template>
 
 <script setup lang="ts">
-import SizeColorPicker from '@/components/common/SizeColorPicker.vue'
 import { UiAccordion, UiCheckbox } from '@/components/ui'
 import type {
   MasterDataColorOption,
@@ -107,11 +113,11 @@ import type {
 } from '@/modules/shared/master-data/types'
 
 const props = defineProps<{
-  categorySlug?: string
-  brandSlug?: string
-  gender?: string
-  size?: string
-  color?: string
+  categoryId?: string[]
+  brandId?: string[]
+  gender?: string[]
+  size?: string[]
+  color?: string[]
   minPrice?: number
   maxPrice?: number
   categories?: MasterDataEntity[]
@@ -122,16 +128,16 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:categorySlug': [value: string]
-  'update:brandSlug': [value: string]
-  'update:gender': [value: string]
-  'update:size': [value: string]
-  'update:color': [value: string]
+  'update:categoryId': [value: string[]]
+  'update:brandId': [value: string[]]
+  'update:gender': [value: string[]]
+  'update:size': [value: string[]]
+  'update:color': [value: string[]]
   'update:minPrice': [value?: number]
   'update:maxPrice': [value?: number]
 }>()
 
-type SingleFilterKey = 'categorySlug' | 'brandSlug' | 'gender'
+type MultiFilterKey = 'categoryId' | 'brandId' | 'gender' | 'size' | 'color'
 
 type PriceRange = {
   label: string
@@ -147,22 +153,25 @@ const priceRanges: PriceRange[] = [
   { label: 'Trên 3.000.000đ', min: 3000000 },
 ]
 
-function toggleSingle(checked: boolean, key: SingleFilterKey, value: string) {
-  if (!checked && props[key] !== value) return
+function updateFilter(key: MultiFilterKey, value: string[]) {
+  if (key === 'categoryId') emit('update:categoryId', value)
+  if (key === 'brandId') emit('update:brandId', value)
+  if (key === 'gender') emit('update:gender', value)
+  if (key === 'size') emit('update:size', value)
+  if (key === 'color') emit('update:color', value)
+}
 
-  const nextValue = checked ? value : ''
+function toggleFilter(checked: boolean, key: MultiFilterKey, value: string) {
+  const currentValue = props[key] || []
+  const nextValue = checked
+    ? [...new Set([...currentValue, value])]
+    : currentValue.filter((item) => item !== value)
 
-  if (key === 'categorySlug') {
-    emit('update:categorySlug', nextValue)
-  }
+  updateFilter(key, nextValue)
+}
 
-  if (key === 'brandSlug') {
-    emit('update:brandSlug', nextValue)
-  }
-
-  if (key === 'gender') {
-    emit('update:gender', nextValue)
-  }
+function clearFilter(checked: boolean, key: MultiFilterKey) {
+  if (checked) updateFilter(key, [])
 }
 
 function isPriceRangeActive(range: PriceRange) {

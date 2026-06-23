@@ -42,8 +42,8 @@
     <StorefrontListingLayout :show-sidebar="showFilters" sidebar-width="260px">
       <template #sidebar>
         <ProductFilterSidebar
-          v-model:category-slug="query.categorySlug"
-          v-model:brand-slug="selectedBrandSlug"
+          :category-id="query.categoryId"
+          :brand-id="query.brandId"
           v-model:gender="query.gender"
           v-model:size="query.size"
           v-model:color="query.color"
@@ -54,13 +54,15 @@
           :genders="masterData?.productGenders || []"
           :sizes="masterData?.sizes || []"
           :colors="masterData?.colors || []"
+          @update:category-id="updateCategoryIds"
+          @update:brand-id="updateBrandIds"
         />
       </template>
 
       <UiDrawer :open="mobileFiltersOpen" title="Filters" @close="mobileFiltersOpen = false">
         <ProductFilterSidebar
-          v-model:category-slug="query.categorySlug"
-          v-model:brand-slug="selectedBrandSlug"
+          :category-id="query.categoryId"
+          :brand-id="query.brandId"
           v-model:gender="query.gender"
           v-model:size="query.size"
           v-model:color="query.color"
@@ -71,6 +73,8 @@
           :genders="masterData?.productGenders || []"
           :sizes="masterData?.sizes || []"
           :colors="masterData?.colors || []"
+          @update:category-id="updateCategoryIds"
+          @update:brand-id="updateBrandIds"
         />
       </UiDrawer>
 
@@ -120,7 +124,7 @@ import StorefrontListingLayout from '@/components/storefront/StorefrontListingLa
 import { UiButton, UiDrawer, UiSkeleton } from '@/components/ui'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { productApi } from '@/modules/catalog/product/api'
-import type { Product, ProductListQuery } from '@/modules/catalog/product/types'
+import type { Product, PublicProductListQuery } from '@/modules/catalog/product/types'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 
@@ -136,15 +140,38 @@ const loadMoreTarget = ref<HTMLElement | null>(null)
 const showFilters = ref(true)
 const mobileFiltersOpen = ref(false)
 const sortBy = ref('featured')
-const selectedBrandSlug = ref(String(route.query.brand || route.query.brandSlug || ''))
+function queryValues(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && Boolean(item))
+  }
 
-const query = reactive<ProductListQuery>({
+  return typeof value === 'string' && value ? [value] : []
+}
+
+function queryValue(value: unknown) {
+  return queryValues(value)[0] || ''
+}
+
+type ProductFilterQuery = Omit<
+  PublicProductListQuery,
+  'categoryId' | 'brandId' | 'gender' | 'size' | 'color'
+> & {
+  categoryId: string[]
+  brandId: string[]
+  gender: string[]
+  size: string[]
+  color: string[]
+}
+
+const query = reactive<ProductFilterQuery>({
   keyword: String(route.query.keyword || ''),
-  categorySlug: String(route.query.categorySlug || ''),
-  brandSlug: selectedBrandSlug.value,
-  gender: String(route.query.gender || ''),
-  size: String(route.query.size || ''),
-  color: String(route.query.color || ''),
+  categoryId: queryValues(route.query.categoryId),
+  categorySlug: queryValue(route.query.categorySlug),
+  brandId: queryValues(route.query.brandId),
+  brandSlug: queryValue(route.query.brandSlug) || queryValue(route.query.brand),
+  gender: queryValues(route.query.gender),
+  size: queryValues(route.query.size),
+  color: queryValues(route.query.color),
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
   page: Number(route.query.page || 1),
@@ -162,6 +189,11 @@ const hasMore = computed(() => {
 })
 
 const currentCategory = computed(() => {
+  if (query.categoryId.length === 1) {
+    return masterData.value?.categories.find((category) => category.id === query.categoryId[0])
+  }
+
+  if (query.categoryId.length) return undefined
   return masterData.value?.categories.find((category) => category.slug === query.categorySlug)
 })
 
@@ -197,6 +229,7 @@ const selectedSortLabel = computed(
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 let loadToken = 0
+let suppressFilterApply = false
 
 async function load(reset = false) {
   if (loading.value && !reset) return
@@ -208,8 +241,13 @@ async function load(reset = false) {
   try {
     const data = await productApi.list({
       ...query,
-      brandSlug: selectedBrandSlug.value || undefined,
-      gender: query.gender || undefined,
+      categoryId: query.categoryId.length ? query.categoryId : undefined,
+      categorySlug: query.categoryId.length ? undefined : query.categorySlug || undefined,
+      brandId: query.brandId.length ? query.brandId : undefined,
+      brandSlug: query.brandId.length ? undefined : query.brandSlug || undefined,
+      gender: query.gender.length ? query.gender : undefined,
+      size: query.size.length ? query.size : undefined,
+      color: query.color.length ? query.color : undefined,
     })
 
     if (token !== loadToken) return
@@ -229,8 +267,14 @@ async function load(reset = false) {
 function routeQuery() {
   return {
     ...query,
-    brand: selectedBrandSlug.value || undefined,
-    brandSlug: undefined,
+    categoryId: query.categoryId.length ? query.categoryId : undefined,
+    categorySlug: query.categoryId.length ? undefined : query.categorySlug || undefined,
+    brandId: query.brandId.length ? query.brandId : undefined,
+    brandSlug: query.brandId.length ? undefined : query.brandSlug || undefined,
+    brand: undefined,
+    gender: query.gender.length ? query.gender : undefined,
+    size: query.size.length ? query.size : undefined,
+    color: query.color.length ? query.color : undefined,
   }
 }
 
@@ -251,6 +295,8 @@ function loadNextPage() {
 }
 
 function scheduleApplyFilters() {
+  if (suppressFilterApply) return
+
   if (searchTimer) {
     clearTimeout(searchTimer)
   }
@@ -258,10 +304,40 @@ function scheduleApplyFilters() {
   searchTimer = setTimeout(applyFilters, 120)
 }
 
+function updateCategoryIds(value: string[]) {
+  query.categoryId = value
+  query.categorySlug = ''
+}
+
+function updateBrandIds(value: string[]) {
+  query.brandId = value
+  query.brandSlug = ''
+}
+
+function hydrateLegacyFilterIds() {
+  if (!query.categoryId.length && query.categorySlug) {
+    const category = masterData.value?.categories.find((item) => item.slug === query.categorySlug)
+    if (category) {
+      query.categoryId = [category.id]
+      query.categorySlug = ''
+    }
+  }
+
+  if (!query.brandId.length && query.brandSlug) {
+    const brand = masterData.value?.brands.find((item) => item.slug === query.brandSlug)
+    if (brand) {
+      query.brandId = [brand.id]
+      query.brandSlug = ''
+    }
+  }
+}
+
 watch(
   () => [
     query.categorySlug,
-    selectedBrandSlug.value,
+    query.categoryId,
+    query.brandId,
+    query.brandSlug,
     query.gender,
     query.size,
     query.color,
@@ -269,6 +345,7 @@ watch(
     query.maxPrice,
   ],
   scheduleApplyFilters,
+  { flush: 'sync' },
 )
 
 watch(
@@ -276,6 +353,21 @@ watch(
   (keyword) => {
     query.keyword = String(keyword || '')
     scheduleApplyFilters()
+  },
+)
+
+watch(
+  () => route.query.gender,
+  (gender) => {
+    const nextGenders = queryValues(gender)
+    if (
+      nextGenders.length === query.gender.length &&
+      nextGenders.every((value) => query.gender.includes(value))
+    ) {
+      return
+    }
+
+    query.gender = nextGenders
   },
 )
 
@@ -288,6 +380,9 @@ useInfiniteScroll({
 
 onMounted(async () => {
   await loadMasterData().catch(() => null)
+  suppressFilterApply = true
+  hydrateLegacyFilterIds()
+  suppressFilterApply = false
   await load(true)
 })
 

@@ -6,11 +6,12 @@ import type {
   ProductFeatured,
   ProductListQuery,
   ProductPayload,
+  PublicProductListQuery,
   ProductSku,
   ProductVariant,
 } from './types'
 export const productApi = {
-  async list(params?: ProductListQuery) {
+  async list(params?: PublicProductListQuery) {
     const res = await httpClient.get<ApiEnvelope<unknown>>('/api/products', { params })
     return unwrapList<Product>(res.data.data, params?.page, params?.limit) as Paginated<Product>
   },
