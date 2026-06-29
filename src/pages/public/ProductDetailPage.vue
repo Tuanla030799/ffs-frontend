@@ -47,7 +47,7 @@
               type="button"
               class="h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-[#f3f3f1] transition hover:border-black"
               :class="selectedImage === image.url ? 'border-black' : 'border-transparent'"
-              @click="selectedImage = image.url || ''"
+              @click="selectImage(image.url || '')"
             >
               <StorefrontImage
                 v-if="image.url"
@@ -62,26 +62,41 @@
 
           <div class="order-1 md:order-2">
             <div class="relative aspect-square overflow-hidden rounded-lg bg-[#f3f3f1]">
-              <StorefrontImage
-                :src="selectedImage"
-                fit="contain"
-                class="h-full w-full object-contain p-8 md:p-12"
-                :alt="product.name"
+              <Swiper
+                class="product-gallery-swiper h-full w-full"
+                :initial-slide="selectedImageIndex"
+                :slides-per-view="1"
+                :space-between="0"
+                :watch-overflow="true"
+                @swiper="setGallerySwiper"
+                @slide-change="handleGallerySlideChange"
               >
-                <template #fallback>
-                  <div class="grid h-full place-items-center text-black/40">No image</div>
-                </template>
-              </StorefrontImage>
-              <div class="absolute right-6 bottom-6 hidden gap-3 md:flex">
+                <SwiperSlide v-for="image in gallerySlides" :key="image.url" class="!h-full">
+                  <StorefrontImage
+                    :src="image.url"
+                    fit="cover"
+                    class="h-full w-full object-cover"
+                    :alt="image.altText || product.name"
+                  >
+                    <template #fallback>
+                      <div class="grid h-full place-items-center text-black/40">No image</div>
+                    </template>
+                  </StorefrontImage>
+                </SwiperSlide>
+              </Swiper>
+              <div
+                v-if="gallerySlides.length > 1"
+                class="pointer-events-none absolute inset-y-0 right-4 left-4 z-10 hidden items-center justify-between md:flex"
+              >
                 <button
-                  class="grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
+                  class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
                   type="button"
                   @click="goImage(-1)"
                 >
                   ‹
                 </button>
                 <button
-                  class="grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
+                  class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
                   type="button"
                   @click="goImage(1)"
                 >
@@ -144,21 +159,15 @@
             </div>
 
             <div>
-              <div class="mb-3 flex items-center justify-between gap-3">
-                <p class="text-sm font-bold">Select Size</p>
-              </div>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="sku in inStockSkus"
-                  :key="sku.id || sku.skuCode"
-                  type="button"
-                  class="min-h-12 rounded-md border px-2 text-sm font-semibold transition hover:border-black"
-                  :class="selectedSku?.id === sku.id ? 'border-black' : 'border-black/20'"
-                  @click="selectedSku = sku"
-                >
-                  {{ sku.size }}
-                </button>
-              </div>
+              <button
+                v-if="brandSizeGuideUrl"
+                type="button"
+                class="text-sm font-bold underline underline-offset-4 transition hover:text-black/60"
+                @click="sizeGuideOpen = true"
+              >
+                Hướng dẫn chọn size
+              </button>
+              <p v-else class="text-sm font-bold text-black/40">Hướng dẫn chọn size</p>
               <p v-if="!inStockSkus.length" class="text-sm font-semibold text-black/50">
                 Tạm thời hết hàng
               </p>
@@ -192,6 +201,20 @@
         <h2 class="mb-5 text-2xl font-black">Mô tả sản phẩm</h2>
         <SafeHtmlContent :html="productDescriptionHtml" />
       </section>
+
+      <UiModal
+        :open="sizeGuideOpen"
+        title="Hướng dẫn chọn size"
+        max-width="xl"
+        @close="sizeGuideOpen = false"
+      >
+        <StorefrontImage
+          :src="brandSizeGuideUrl"
+          fit="contain"
+          class="max-h-[75vh] w-full object-contain"
+          :alt="`Hướng dẫn chọn size ${product.name}`"
+        />
+      </UiModal>
     </div>
     <div
       v-else
@@ -203,14 +226,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRuntimeConfig } from '#imports'
 import { useRoute } from 'vue-router'
+import type { Swiper as SwiperInstance } from 'swiper'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import 'swiper/css'
 import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
-import { UiButton, UiSkeleton, UiTag } from '@/components/ui'
+import { UiButton, UiModal, UiSkeleton, UiTag } from '@/components/ui'
 import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
@@ -225,6 +251,8 @@ const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
 const selectedImage = ref('')
 const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
+const gallerySwiper = ref<SwiperInstance | null>(null)
+const sizeGuideOpen = ref(false)
 const {
   data: product,
   pending: loading,
@@ -242,8 +270,24 @@ const galleryImages = computed(() =>
     }))
     .filter((image) => image.url),
 )
-
 const variants = computed(() => asArray(product.value?.variants))
+const gallerySlides = computed(() => {
+  if (galleryImages.value.length) {
+    return galleryImages.value.map((image) => ({
+      url: image.url,
+      altText: image.altText || product.value?.name,
+    }))
+  }
+
+  return [{ url: DEFAULT_OG_IMAGE_PATH, altText: product.value?.name }]
+})
+const selectedImageIndex = computed(() =>
+  Math.max(
+    gallerySlides.value.findIndex((image) => image.url === selectedImage.value),
+    0,
+  ),
+)
+
 const skus = computed(() => asArray(product.value?.skus))
 const variantSkus = computed(() => {
   if (!selectedVariantKey.value) return skus.value
@@ -265,6 +309,7 @@ const currentOriginalPrice = computed(() =>
 const productDescriptionHtml = computed(() =>
   normalizeRichTextInput(product.value?.descriptionHtml),
 )
+const brandSizeGuideUrl = computed(() => resolveFileUrl(product.value?.brandSizeGuideUrl || ''))
 
 function variantKey(variant: ProductVariant) {
   return variant.id || variant.clientId || variant.name
@@ -272,19 +317,64 @@ function variantKey(variant: ProductVariant) {
 function skuVariantKey(sku: ProductSku) {
   return sku.variantId || sku.variantClientId || ''
 }
-function selectVariant(variant: ProductVariant) {
+function gallerySlideIndex(url: string) {
+  const resolvedUrl = resolveFileUrl(url)
+  return gallerySlides.value.findIndex((image) => image.url === resolvedUrl)
+}
+function setGallerySwiper(swiper: SwiperInstance) {
+  gallerySwiper.value = swiper
+  slideGalleryToSelected({ animate: false })
+}
+function slideGalleryToSelected(options: { animate?: boolean } = {}) {
+  const index = gallerySlideIndex(selectedImage.value)
+  if (index < 0 || gallerySwiper.value?.activeIndex === index) return
+
+  if (options.animate === false) {
+    gallerySwiper.value?.slideTo(index, 0, false)
+    return
+  }
+
+  gallerySwiper.value?.slideTo(index)
+}
+function selectImage(url: string, options: { animate?: boolean } = {}) {
+  const index = gallerySlideIndex(url)
+  if (index < 0) return
+
+  selectedImage.value = gallerySlides.value[index]?.url || selectedImage.value
+  void nextTick(() => slideGalleryToSelected(options))
+}
+function handleGallerySlideChange(swiper: SwiperInstance) {
+  selectedImage.value = gallerySlides.value[swiper.activeIndex]?.url || selectedImage.value
+}
+function selectVariant(
+  variant: ProductVariant,
+  options: { animate?: boolean; updateImage?: boolean } = {},
+) {
   selectedVariantKey.value = variantKey(variant)
-  selectedImage.value = resolveFileUrl(variant.imageUrl || '') || selectedImage.value
+  if (options.updateImage !== false && gallerySlideIndex(variant.imageUrl || '') >= 0) {
+    selectImage(variant.imageUrl || selectedImage.value, options)
+  }
   selectedSku.value = variantSkus.value.find((sku) => sku.stock > 0) || variantSkus.value[0] || null
 }
 function goImage(direction: number) {
-  if (!galleryImages.value.length) return
-  const currentIndex = galleryImages.value.findIndex((image) => image.url === selectedImage.value)
-  const nextIndex =
-    currentIndex < 0
-      ? 0
-      : (currentIndex + direction + galleryImages.value.length) % galleryImages.value.length
-  selectedImage.value = galleryImages.value[nextIndex]?.url || selectedImage.value
+  if (!gallerySlides.value.length) return
+
+  const slideCount = gallerySlides.value.length
+  const swiper = gallerySwiper.value
+  if (!swiper) {
+    const nextIndex = (selectedImageIndex.value + direction + slideCount) % slideCount
+    selectImage(gallerySlides.value[nextIndex]?.url || selectedImage.value)
+    return
+  }
+
+  swiper.update()
+
+  const currentIndex = Math.max(swiper.activeIndex ?? selectedImageIndex.value, 0)
+  const nextIndex = (currentIndex + direction + slideCount) % slideCount
+  const isWrapping = Math.abs(nextIndex - currentIndex) > 1
+
+  selectedImage.value = gallerySlides.value[nextIndex]?.url || selectedImage.value
+  swiper.slideTo(nextIndex, isWrapping ? 0 : 300, !isWrapping)
 }
 function handleAddToCart() {
   if (!product.value || !selectedSku.value) return
@@ -294,8 +384,8 @@ function handleAddToCart() {
 watch(
   product,
   () => {
-    selectedImage.value = galleryImages.value[0]?.url || DEFAULT_OG_IMAGE_PATH
-    if (variants.value[0]) selectVariant(variants.value[0])
+    selectedImage.value = gallerySlides.value[0]?.url || DEFAULT_OG_IMAGE_PATH
+    if (variants.value[0]) selectVariant(variants.value[0], { animate: false, updateImage: false })
     selectedSku.value = inStockSkus.value[0] || null
   },
   { immediate: true },
@@ -310,3 +400,10 @@ useSeoMeta({
   twitterImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
 })
 </script>
+
+<style scoped>
+.product-gallery-swiper :deep(.swiper-wrapper),
+.product-gallery-swiper :deep(.swiper-slide) {
+  height: 100%;
+}
+</style>

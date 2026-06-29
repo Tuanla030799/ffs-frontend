@@ -9,16 +9,30 @@ export interface ListQuery {
   status?: string
 }
 export function unwrapList<T>(data: unknown, fallbackPage = 1, fallbackLimit = 20): PageResult<T> {
-  if (Array.isArray(data))
-    return { items: data as T[], total: data.length, page: fallbackPage, limit: fallbackLimit }
+  if (Array.isArray(data)) {
+    return {
+      items: data as T[],
+      total: data.length,
+      page: fallbackPage,
+      limit: fallbackLimit,
+      totalPages: data.length ? 1 : 0,
+    }
+  }
   const row = (data || {}) as Record<string, unknown>
   const raw = row.items || row.content || row.rows || row.data || []
   const items = Array.isArray(raw) ? (raw as T[]) : []
+  const total = Number(row.total ?? row.totalElements ?? items.length)
+  const limit = Number(row.limit ?? row.size ?? fallbackLimit)
+  const totalPages = Number(
+    row.totalPages ?? row.total_pages ?? Math.ceil(total / Math.max(limit, 1)),
+  )
+
   return {
     items,
-    total: Number(row.total ?? row.totalElements ?? items.length),
+    total,
     page: Number(row.page ?? row.pageNumber ?? fallbackPage),
-    limit: Number(row.limit ?? row.size ?? fallbackLimit),
+    limit,
+    totalPages,
   }
 }
 export function money(value?: number | null) {

@@ -43,12 +43,28 @@
             label="Mô tả"
           />
           <div class="md:col-span-3">
-            <FileUpload
+            <ImageUpload
               v-model="uploaded"
               scope="admin"
               accept="image/*"
               title="Logo thương hiệu"
+              :preview-alt="form.name || 'Logo thương hiệu'"
+              :preview-title="form.name || 'Logo thương hiệu'"
               @uploaded="(file) => (form.fileId = String(file.fileId))"
+              @update:model-value="(file) => !file && (form.fileId = '')"
+            />
+          </div>
+
+          <div class="md:col-span-3">
+            <ImageUpload
+              v-model="uploadSizeGuide"
+              scope="admin"
+              accept="image/*"
+              title="Bảng chọn size"
+              :preview-alt="form.name ? `Bảng chọn size ${form.name}` : 'Bảng chọn size'"
+              :preview-title="form.name ? `Bảng chọn size ${form.name}` : 'Bảng chọn size'"
+              @uploaded="(file) => (form.fileSizeId = String(file.fileId))"
+              @update:model-value="(file) => !file && (form.fileSizeId = '')"
             />
           </div>
         </div>
@@ -100,7 +116,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
-import FileUpload from '@/components/common/FileUpload.vue'
+import ImageUpload from '@/components/common/ImageUpload.vue'
 import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
 import { brandApi } from '@/modules/content/brand/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
@@ -118,6 +134,7 @@ const notice = ref('')
 const editing = ref<Brand | 'new' | null>(null)
 const deleting = ref<Brand | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
+const uploadSizeGuide = ref<UploadedFile | null>(null)
 const query = reactive({ keyword: '', status: '' })
 const form = reactive<BrandPayload>({
   name: '',
@@ -126,6 +143,7 @@ const form = reactive<BrandPayload>({
   fileId: '',
   status: 'ACTIVE',
   sortOrder: 0,
+  fileSizeId: '',
 })
 const { data: masterData, error: masterError, load: loadMasterData } = useMasterData('admin')
 const commonStatuses = computed(
@@ -139,6 +157,7 @@ const commonStatusValues = computed(() => commonStatuses.value.map((item) => ite
 const columns = [
   { key: 'name', label: 'Tên thương hiệu' },
   { key: 'logo', label: 'Logo' },
+  { key: 'sizeGuide', label: 'sizeGuide' },
   { key: 'slug', label: 'Slug' },
   { key: 'status', label: 'Trạng thái' },
   { key: 'sortOrder', label: 'Thứ tự sắp xếp' },
@@ -157,6 +176,16 @@ function statusLabel(status: string) {
 function imageUrl(row: Brand) {
   return resolveFileUrl(row.imageUrl || '')
 }
+function uploadedValue(fileId?: string | number | null, url?: string) {
+  const previewUrl = resolveFileUrl(url || '')
+  if (!fileId && !previewUrl) return null
+
+  return {
+    fileId: fileId || '',
+    url: previewUrl,
+    path: '',
+  } satisfies UploadedFile
+}
 function fill(row?: Brand) {
   Object.assign(form, {
     name: row?.name || '',
@@ -165,8 +194,10 @@ function fill(row?: Brand) {
     fileId: row?.fileId || '',
     status: row?.status || 'ACTIVE',
     sortOrder: row?.sortOrder || 0,
+    fileSizeId: row?.fileSizeId || '',
   })
-  uploaded.value = null
+  uploaded.value = uploadedValue(row?.fileId, row?.imageUrl)
+  uploadSizeGuide.value = uploadedValue(row?.fileSizeId, row?.sizeGuideImageUrl)
 }
 watch(
   () => form.name,

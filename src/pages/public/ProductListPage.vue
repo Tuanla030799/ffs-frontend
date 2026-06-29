@@ -101,14 +101,15 @@
         Không tìm thấy sản phẩm.
       </div>
 
-      <div ref="loadMoreTarget" class="h-px" aria-hidden="true" />
-
-      <div
-        v-if="loading && products.length"
-        class="mt-10 grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
-      >
-        <UiSkeleton v-for="i in 4" :key="i" variant="card" media-class="aspect-square" :rows="4" />
-      </div>
+      <UiPagination
+        v-if="totalPages > 1"
+        class="mt-10"
+        :page="page"
+        :total="total"
+        :total-pages="totalPages"
+        :page-size="Number(query.limit || 12)"
+        @update:page="changePage"
+      />
     </StorefrontListingLayout>
   </section>
 </template>
@@ -121,8 +122,7 @@ import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import ProductFilterSidebar from '@/components/storefront/ProductFilterSidebar.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
-import { UiButton, UiDrawer, UiSkeleton } from '@/components/ui'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { UiButton, UiDrawer, UiPagination, UiSkeleton } from '@/components/ui'
 import { productApi } from '@/modules/catalog/product/api'
 import type { Product, PublicProductListQuery } from '@/modules/catalog/product/types'
 import { getErrorMessage } from '@/modules/shared/hooks'
@@ -135,7 +135,7 @@ const loading = ref(false)
 const error = ref('')
 const products = ref<Product[]>([])
 const total = ref(0)
-const loadMoreTarget = ref<HTMLElement | null>(null)
+const totalPages = ref(0)
 
 const showFilters = ref(true)
 const mobileFiltersOpen = ref(false)
@@ -181,12 +181,7 @@ const query = reactive<ProductFilterQuery>({
 const { data: masterData, error: masterError, load: loadMasterData } = useMasterData('public')
 
 const page = computed(() => Number(query.page || 1))
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / Number(query.limit || 12))))
 const initialLoading = computed(() => loading.value && !products.value.length)
-
-const hasMore = computed(() => {
-  return products.value.length < total.value && page.value < totalPages.value
-})
 
 const currentCategory = computed(() => {
   if (query.categoryId.length === 1) {
@@ -231,9 +226,7 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined
 let loadToken = 0
 let suppressFilterApply = false
 
-async function load(reset = false) {
-  if (loading.value && !reset) return
-
+async function load() {
   const token = ++loadToken
   loading.value = true
   error.value = masterError.value || ''
@@ -252,8 +245,11 @@ async function load(reset = false) {
 
     if (token !== loadToken) return
 
-    products.value = reset ? data.items : [...products.value, ...data.items]
+    products.value = data.items
     total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (err) {
     if (token !== loadToken) return
     error.value = getErrorMessage(err)
@@ -282,16 +278,17 @@ function applyFilters() {
   query.page = 1
 
   void router.replace({ query: routeQuery() })
-  void load(true)
+  void load()
 }
 
-function loadNextPage() {
-  if (loading.value || !hasMore.value) return
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
 
-  query.page = page.value + 1
+  query.page = nextPage
 
   void router.replace({ query: routeQuery() })
   void load()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function scheduleApplyFilters() {
@@ -371,19 +368,12 @@ watch(
   },
 )
 
-useInfiniteScroll({
-  target: loadMoreTarget,
-  canLoadMore: hasMore,
-  loading,
-  onLoadMore: loadNextPage,
-})
-
 onMounted(async () => {
   await loadMasterData().catch(() => null)
   suppressFilterApply = true
   hydrateLegacyFilterIds()
   suppressFilterApply = false
-  await load(true)
+  await load()
 })
 
 onBeforeUnmount(() => {

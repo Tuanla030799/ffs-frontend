@@ -39,6 +39,7 @@ export type ProductPayload = Omit<
   | 'categoryName'
   | 'brandName'
   | 'brandSlug'
+  | 'brandSizeGuideUrl'
   | 'price'
   | 'salePrice'
   | 'stock'
@@ -69,6 +70,7 @@ export interface Product {
   brandId?: string | null
   brandName?: string
   brandSlug?: string
+  brandSizeGuideUrl?: string
   gender?: ProductGender
   name: string
   slug: string
@@ -92,6 +94,7 @@ export interface ProductFeatured {
   brandId?: string | null
   brandName?: string
   brandSlug?: string
+  brandSizeGuideUrl?: string
   gender?: ProductGender
   name: string
   slug: string

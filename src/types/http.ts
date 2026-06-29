@@ -9,6 +9,7 @@ export interface PageResult<T> {
   total: number
   page: number
   limit: number
+  totalPages: number
 }
 export interface ApiErrorPayload {
   message: string

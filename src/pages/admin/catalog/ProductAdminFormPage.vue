@@ -140,7 +140,7 @@
           <div class="grid gap-3 md:grid-cols-2">
             <div
               v-for="sku in skuList"
-              :key="sku.id || sku.skuCode"
+              :key="skuKey(sku)"
               class="grid gap-2 rounded-xl border border-slate-200 p-3"
             >
               <UiSelect
@@ -158,12 +158,6 @@
                 </option>
               </UiSelect>
               <UiInput v-model="sku.skuCode" placeholder="SKU code" label="SKU code" />
-              <SizeColorPicker
-                v-model="sku.sizeId"
-                :options="masterData?.sizes || []"
-                title="Chọn size"
-                placeholder="Chọn size"
-              />
               <UiInput v-model.number="sku.price" placeholder="Price" label="Giá" />
               <UiInput
                 v-model.number="sku.salePrice"
@@ -256,6 +250,7 @@ const isEdit = computed(() => Boolean(route.params.id))
 const saving = ref(false)
 const error = ref('')
 const uploaded = ref<UploadedFile | null>(null)
+const skuKeys = new WeakMap<ProductSku, string>()
 type ProductForm = Omit<Product, 'id'>
 
 const form = reactive<ProductForm>({
@@ -379,6 +374,16 @@ function removeSku(sku: ProductSku) {
   const index = skus.indexOf(sku)
   if (index >= 0) skus.splice(index, 1)
 }
+function skuKey(sku: ProductSku) {
+  if (sku.id) return `id:${sku.id}`
+
+  const existingKey = skuKeys.get(sku)
+  if (existingKey) return existingKey
+
+  const key = `new:${crypto.randomUUID()}`
+  skuKeys.set(sku, key)
+  return key
+}
 function selectedColorLabel(colorId?: string) {
   const color = masterData.value?.colors.find((item) => item.id === colorId)
   return color?.label || color?.value || ''
@@ -497,14 +502,12 @@ function validateProduct() {
   for (const [index, sku] of skus.entries()) {
     const label = `SKU #${index + 1}`
     const skuCode = trimText(sku.skuCode)
-    const sizeId = trimText(sku.sizeId)
     const price = numberOrZero(sku.price)
     const stock = numberOrZero(sku.stock)
     const salePrice =
       sku.salePrice === null || sku.salePrice === undefined ? null : Number(sku.salePrice)
 
     if (!skuCode) return `${label}: SKU code là bắt buộc.`
-    if (!sizeId) return `${label}: Size là bắt buộc.`
     if (variantList.value.length && !skuVariantValue(sku)) return `${label}: Variant là bắt buộc.`
     if (skuCodes.has(skuCode)) return `SKU code "${skuCode}" bị trùng.`
     if (price < 0) return `${label}: Price phải >= 0.`
@@ -551,7 +554,7 @@ function buildPayload(): ProductPayload {
       variantId: sku.variantId || null,
       variantClientId: sku.variantClientId || null,
       skuCode: trimText(sku.skuCode),
-      sizeId: trimText(sku.sizeId),
+      sizeId: trimText(sku.sizeId) || undefined,
       price: numberOrZero(sku.price),
       salePrice:
         sku.salePrice === null || sku.salePrice === undefined ? null : Number(sku.salePrice),

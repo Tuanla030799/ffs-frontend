@@ -10,6 +10,8 @@ export interface Brand {
   status: Status
   sortOrder?: number
   createdAt?: string
+  fileSizeId?: string
+  sizeGuideImageUrl?: string
 }
 
 export interface BrandListQuery {
@@ -24,4 +26,5 @@ export interface BrandPayload {
   fileId?: string
   status: 'ACTIVE' | 'INACTIVE' | string
   sortOrder?: number
+  fileSizeId?: string
 }

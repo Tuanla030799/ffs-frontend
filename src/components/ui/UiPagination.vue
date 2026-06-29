@@ -1,14 +1,15 @@
 <template>
   <nav class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <p class="text-sm text-[var(--ui-text-muted)]">
-      Trang <span class="font-semibold text-[var(--ui-text)]">{{ page }}</span> / {{ totalPages }}
+      Trang <span class="font-semibold text-[var(--ui-text)]">{{ displayPage }}</span> /
+      {{ pageCount }}
     </p>
     <div class="flex items-center gap-2">
       <button
         type="button"
-        :disabled="page <= 1"
+        :disabled="displayPage <= 1"
         class="ui-page-btn"
-        @click="$emit('update:page', page - 1)"
+        @click="$emit('update:page', displayPage - 1)"
       >
         Trước
       </button>
@@ -23,9 +24,9 @@
       </button>
       <button
         type="button"
-        :disabled="page >= totalPages"
+        :disabled="displayPage >= pageCount"
         class="ui-page-btn"
-        @click="$emit('update:page', page + 1)"
+        @click="$emit('update:page', displayPage + 1)"
       >
         Sau
       </button>
@@ -39,11 +40,14 @@ import { computed } from 'vue'
 const props = withDefaults(
   defineProps<{
     page: number
-    total: number
+    total?: number
+    totalPages?: number
     pageSize?: number
     siblingCount?: number
   }>(),
   {
+    total: 0,
+    totalPages: undefined,
     pageSize: 5,
     siblingCount: 1,
   },
@@ -53,11 +57,20 @@ defineEmits<{
   'update:page': [page: number]
 }>()
 
-const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
+const pageCount = computed(() => {
+  if (typeof props.totalPages === 'number') return Math.max(0, props.totalPages)
+  return props.total ? Math.ceil(props.total / Math.max(props.pageSize, 1)) : 0
+})
+const displayPage = computed(() => {
+  if (!pageCount.value) return 0
+  return Math.min(Math.max(props.page, 1), pageCount.value)
+})
 const visiblePages = computed(() => {
-  const start = Math.max(1, props.page - props.siblingCount)
-  const end = Math.min(totalPages.value, props.page + props.siblingCount)
-  const set = new Set<number>([1, totalPages.value])
+  if (!pageCount.value) return []
+
+  const start = Math.max(1, displayPage.value - props.siblingCount)
+  const end = Math.min(pageCount.value, displayPage.value + props.siblingCount)
+  const set = new Set<number>([1, pageCount.value])
   for (let i = start; i <= end; i += 1) set.add(i)
   return Array.from(set).sort((a, b) => a - b)
 })
