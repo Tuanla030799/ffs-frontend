@@ -1,14 +1,20 @@
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 
-const apiBaseUrl = process.env.NUXT_PUBLIC_API_BASE_URL || process.env.VITE_API_BASE_URL || ''
-const apiTimeout = process.env.NUXT_PUBLIC_API_TIMEOUT || process.env.VITE_API_TIMEOUT || '15000'
-const fileBaseUrl = process.env.NUXT_PUBLIC_FILE_BASE_URL || process.env.VITE_FILE_BASE_URL || ''
+const apiBaseUrl = process.env.NUXT_PUBLIC_API_BASE_URL || ''
+const apiTimeout = process.env.NUXT_PUBLIC_API_TIMEOUT || '15000'
+const fileBaseUrl = process.env.NUXT_PUBLIC_FILE_BASE_URL || ''
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 const publicSiteUrl = siteUrl.includes('localhost')
   ? siteUrl.replace(/\/+$/, '')
   : siteUrl.replace(/^http:\/\//, 'https://').replace(/\/+$/, '')
 const defaultOgImage = `${publicSiteUrl}/thepocketshoes-og.jpg`
+const publicDetailCache = {
+  swr: 300,
+  headers: {
+    'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
+  },
+}
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-05-11',
@@ -58,6 +64,10 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    '/products/**': publicDetailCache,
+    '/blogs/**': publicDetailCache,
+    '/collections/**': publicDetailCache,
+    '/brands/**': publicDetailCache,
     '/admin/**': {
       ssr: false,
       headers: { 'x-robots-tag': 'noindex, nofollow' },

@@ -226,9 +226,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
-import { useRuntimeConfig } from '#imports'
-import { useRoute } from 'vue-router'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRuntimeConfig } from '#imports'
 import type { Swiper as SwiperInstance } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/css'
@@ -247,6 +246,7 @@ import { asArray, money } from '@/modules/shared/types'
 import type { ProductSku, ProductVariant } from '@/modules/catalog/product/types'
 
 const route = useRoute()
+const slug = computed(() => String(route.params.slug || ''))
 const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
 const selectedImage = ref('')
 const selectedVariantKey = ref('')
@@ -257,9 +257,12 @@ const {
   data: product,
   pending: loading,
   error: productError,
-} = await useAsyncData(`product-detail-${String(route.params.slug)}`, () =>
-  productApi.detail(String(route.params.slug)),
-)
+  refresh: refreshProduct,
+} = await useAsyncData(() => `product-detail-${slug.value}`, () => productApi.detail(slug.value), {
+  deep: false,
+  dedupe: 'defer',
+  watch: [slug],
+})
 const error = computed(() => (productError.value ? getErrorMessage(productError.value) : ''))
 const images = computed(() => asArray(product.value?.images))
 const galleryImages = computed(() =>
@@ -390,6 +393,10 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(() => {
+  if (!product.value || productError.value) void refreshProduct()
+})
 
 useSeoMeta({
   title: () => (product.value ? `${product.value.name} - Thepocketshoes` : 'Chi tiet san pham'),

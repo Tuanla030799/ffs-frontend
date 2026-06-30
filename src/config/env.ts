@@ -6,11 +6,6 @@ type PublicRuntimeEnv = {
   fileBaseUrl?: string
 }
 
-const viteEnv = ((import.meta as unknown as { env?: Record<string, string> }).env || {}) as Record<
-  string,
-  string | undefined
->
-
 function processEnv(name: string) {
   if (typeof process === 'undefined') return undefined
   return process.env[name]
@@ -27,23 +22,22 @@ function runtimePublicEnv(): PublicRuntimeEnv {
 function readString(
   runtimeKey: keyof PublicRuntimeEnv,
   nuxtKey: string,
-  viteKey: string,
   fallback = '',
 ) {
   const publicEnv = runtimePublicEnv()
-  const value = publicEnv[runtimeKey] ?? processEnv(nuxtKey) ?? viteEnv[viteKey] ?? fallback
+  const value = publicEnv[runtimeKey] ?? processEnv(nuxtKey) ?? fallback
   return String(value).trim()
 }
 
 export const env = {
   get apiBaseUrl() {
-    return readString('apiBaseUrl', 'NUXT_PUBLIC_API_BASE_URL', 'VITE_API_BASE_URL', '/api')
+    return readString('apiBaseUrl', 'NUXT_PUBLIC_API_BASE_URL', '/api')
   },
   get apiTimeout() {
-    const value = readString('apiTimeout', 'NUXT_PUBLIC_API_TIMEOUT', 'VITE_API_TIMEOUT', '15000')
+    const value = readString('apiTimeout', 'NUXT_PUBLIC_API_TIMEOUT', '15000')
     return Number(value || 15000)
   },
   get fileBaseUrl() {
-    return readString('fileBaseUrl', 'NUXT_PUBLIC_FILE_BASE_URL', 'VITE_FILE_BASE_URL')
+    return readString('fileBaseUrl', 'NUXT_PUBLIC_FILE_BASE_URL')
   },
 }
