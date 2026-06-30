@@ -158,9 +158,10 @@
                 </option>
               </UiSelect>
               <UiInput v-model="sku.skuCode" placeholder="SKU code" label="SKU code" />
-              <UiInput v-model.number="sku.price" placeholder="Price" label="Giá" />
+              <UiInput v-model.number="sku.price" type="currency" placeholder="Price" label="Giá" />
               <UiInput
                 v-model.number="sku.salePrice"
+                type="currency"
                 placeholder="Sale price"
                 label="Giá khuyến mãi"
               />

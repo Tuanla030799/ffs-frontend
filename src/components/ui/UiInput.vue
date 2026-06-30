@@ -5,13 +5,14 @@
       <span v-if="required" class="text-[var(--text-error,var(--ui-danger))]"> * </span>
     </span>
     <input
-      :value="modelValue"
-      :type="type"
+      :value="displayValue"
+      :type="inputType"
       :placeholder="placeholder"
       :maxlength="maxlength"
       :min="min"
       :max="max"
       :disabled="disabled"
+      :inputmode="type === 'currency' ? 'numeric' : undefined"
       :class="classes"
       v-bind="$attrs"
       @input="onInput"
@@ -57,8 +58,24 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string | number]
+  'update:modelValue': [value: string | number | null]
 }>()
+
+const currencyFormatter = new Intl.NumberFormat('vi-VN', {
+  maximumFractionDigits: 0,
+})
+
+const inputType = computed(() => (props.type === 'currency' ? 'text' : props.type))
+
+const displayValue = computed(() => {
+  if (props.type !== 'currency') return props.modelValue
+  if (props.modelValue === null || props.modelValue === undefined || props.modelValue === '') {
+    return ''
+  }
+
+  const numericValue = Number(props.modelValue)
+  return Number.isFinite(numericValue) ? currencyFormatter.format(numericValue) : ''
+})
 
 const classes = computed(() =>
   cn(
@@ -79,6 +96,12 @@ function wrapperOnlyClass(value?: string) {
 
 function onInput(event: Event) {
   const value = (event.target as HTMLInputElement).value
+  if (props.type === 'currency') {
+    const numericText = value.replace(/\D/g, '')
+    emit('update:modelValue', numericText ? Number(numericText) : null)
+    return
+  }
+
   if (!props.modelModifiers.number) {
     emit('update:modelValue', value)
     return
