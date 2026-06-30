@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+  <div class="mx-auto max-w-7xl overflow-x-hidden px-4 py-8 sm:px-6 md:py-10 lg:px-8">
     <BreadcrumbNav
       class="mb-5"
       :items="[{ label: 'Cửa hàng', to: '/products' }, { label: product?.name || 'Chi tiết' }]"
@@ -9,8 +9,8 @@
       {{ error }}
     </div>
     <div v-else-if="loading" class="space-y-12">
-      <section class="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
-        <div class="grid gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
+      <section class="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
+        <div class="grid min-w-0 gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
           <div
             class="order-2 flex gap-2 overflow-hidden md:order-1 md:flex-col md:overflow-visible"
           >
@@ -19,7 +19,7 @@
           <UiSkeleton variant="block" class="order-1 aspect-square md:order-2" />
         </div>
 
-        <aside class="space-y-7">
+        <aside class="min-w-0 space-y-7">
           <UiSkeleton :rows="4" />
           <div class="grid grid-cols-4 gap-3">
             <UiSkeleton v-for="i in 4" :key="i" variant="block" class="h-[70px]" />
@@ -36,10 +36,10 @@
       </section>
     </div>
     <div v-else-if="product" class="space-y-12">
-      <section class="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
-        <div class="grid gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
+      <section class="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
+        <div class="grid min-w-0 gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
           <div
-            class="order-2 flex gap-2 overflow-x-auto md:order-1 md:flex-col md:overflow-visible"
+            class="order-2 flex max-w-full gap-2 overflow-x-auto pb-1 md:order-1 md:flex-col md:overflow-visible md:pb-0"
           >
             <button
               v-for="image in galleryImages"
@@ -60,7 +60,7 @@
             </button>
           </div>
 
-          <div class="order-1 md:order-2">
+          <div class="order-1 min-w-0 md:order-2">
             <div class="relative aspect-square overflow-hidden rounded-lg bg-[#f3f3f1]">
               <Swiper
                 class="product-gallery-swiper h-full w-full"
@@ -107,7 +107,7 @@
           </div>
         </div>
 
-        <aside class="lg:sticky lg:top-[92px] lg:self-start">
+        <aside class="min-w-0 lg:sticky lg:top-[92px] lg:self-start">
           <section class="space-y-7 bg-white">
             <div>
               <h1 class="text-2xl leading-tight font-bold text-black md:text-3xl">
@@ -197,7 +197,7 @@
         </aside>
       </section>
 
-      <section class="border-t border-black/10 pt-8 md:pt-10">
+      <section class="min-w-0 border-t border-black/10 pt-8 md:pt-10">
         <UiTabs v-model="activeInfoTab" :items="infoTabs">
           <div v-if="activeInfoTab === 'description'">
             <SafeHtmlContent :html="productDescriptionHtml" />
