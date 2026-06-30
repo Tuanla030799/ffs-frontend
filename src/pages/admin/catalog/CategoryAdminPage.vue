@@ -12,7 +12,7 @@
     :confirm-text="`Xóa danh mục ${deleting?.name || ''}?`"
     @create="openCreate"
     @reload="load"
-    @search="load"
+    @search="search"
     @close="editing = null"
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
@@ -98,31 +98,60 @@
         ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
       >
       <template #cell-actions="{ row }">
-        <div class="space-x-3">
-          <UiButton variant="ghost" @click="openEdit(row)"> Edit </UiButton>
-          <UiButton variant="danger" @click="deleting = row"> Delete </UiButton>
-        </div>
+        <UiDropdown
+          :items="actionItems"
+          placement="right"
+          @select="(key) => handleRowAction(key, row)"
+        >
+          <template #trigger>
+            <UiButton variant="ghost">Thao tác</UiButton>
+          </template>
+        </UiDropdown>
       </template>
     </UiTable>
+
+    <UiPagination
+      v-if="total > 0"
+      :page="page"
+      :total="total"
+      :total-pages="totalPages"
+      :page-size="Number(query.limit || 20)"
+      @update:page="changePage"
+    />
   </CrudShell>
 </template>
 
 <script setup lang="ts">
-import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
+import {
+  UiButton,
+  UiDropdown,
+  UiForm,
+  UiInput,
+  UiPagination,
+  UiSelect,
+  UiTable,
+  UiTextarea,
+} from '@/components/ui'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import { categoryApi } from '@/modules/catalog/category/api'
+import { usePageQuery } from '@/composables/usePageQuery'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { syncAutoSlug } from '@/lib/slug'
 import type { Category, CategoryPayload } from '@/modules/catalog/category/types'
 
 const rows = ref<Category[]>([])
+const allCategoryRows = ref<Category[]>([])
+const pageQuery = usePageQuery()
 const loading = ref(false)
 const error = ref('')
 const editing = ref<Category | 'new' | null>(null)
 const deleting = ref<Category | null>(null)
-const query = reactive({ keyword: '', status: '' })
+const total = ref(0)
+const totalPages = ref(0)
+const query = reactive({ keyword: '', status: '', page: pageQuery.value(), limit: 50 })
+const page = computed(() => Number(query.page || 1))
 const form = reactive<CategoryPayload>({
   name: '',
   slug: '',
@@ -142,12 +171,15 @@ const commonStatuses = computed(
 const currentCategoryId = computed(() =>
   editing.value && editing.value !== 'new' ? editing.value.id : '',
 )
-const categoryById = computed(() => new Map(rows.value.map((row) => [row.id, row])))
+const allCategories = computed(() =>
+  allCategoryRows.value.length ? allCategoryRows.value : rows.value,
+)
+const categoryById = computed(() => new Map(allCategories.value.map((row) => [row.id, row])))
 const parentOptions = computed(() => {
   const childrenByParent = new Map<string, Category[]>()
-  for (const row of rows.value) {
+  for (const row of allCategories.value) {
     const parentKey =
-      row.parentId && rows.value.some((candidate) => candidate.id === row.parentId)
+      row.parentId && allCategories.value.some((candidate) => candidate.id === row.parentId)
         ? row.parentId
         : ''
     childrenByParent.set(parentKey, [...(childrenByParent.get(parentKey) || []), row])
@@ -177,13 +209,17 @@ const parentOptions = computed(() => {
   return options
 })
 const columns = [
-  { key: 'name', label: 'Tên danh mục' },
-  { key: 'slug', label: 'Slug' },
-  { key: 'parentId', label: 'Danh mục cha' },
-  { key: 'status', label: 'Trạng thái' },
-  { key: 'sortOrder', label: 'Sắp xếp' },
-  { key: 'actions', label: 'Hành động', align: 'right' },
+  { key: 'name', label: 'Tên danh mục', cellAlign: 'left', width: '220px' },
+  { key: 'slug', label: 'Slug', cellAlign: 'left', width: '180px' },
+  { key: 'parentId', label: 'Danh mục cha', cellAlign: 'left', width: '180px' },
+  { key: 'status', label: 'Trạng thái', cellAlign: 'center', width: '140px' },
+  { key: 'sortOrder', label: 'Sắp xếp', cellAlign: 'center', width: '120px' },
+  { key: 'actions', label: 'Hành động', cellAlign: 'center', width: '120px' },
 ] as const
+const actionItems = [
+  { key: 'edit', label: 'Edit' },
+  { key: 'delete', label: 'Delete' },
+]
 
 function badgeClass(status: string) {
   return status === 'ACTIVE'
@@ -237,13 +273,24 @@ function openEdit(row: Category) {
   fill(row)
 }
 
+function handleRowAction(key: string, row: Category) {
+  if (key === 'edit') {
+    openEdit(row)
+    return
+  }
+  if (key === 'delete') deleting.value = row
+}
+
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (
-      await categoryApi.adminList({ keyword: query.keyword, status: query.status, limit: 50 })
-    ).items
+    const data = await categoryApi.adminList(query)
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
@@ -251,12 +298,29 @@ async function load() {
   }
 }
 
+async function loadCategoryOptions() {
+  allCategoryRows.value = (await categoryApi.adminList({ limit: 1000 })).items
+}
+
+function search() {
+  query.page = 1
+  void pageQuery.replace(query.page)
+  void load()
+}
+
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
+  query.page = nextPage
+  void pageQuery.replace(query.page)
+  void load()
+}
+
 async function save() {
   try {
     if (editing.value === 'new') await categoryApi.create(form)
     else if (editing.value) await categoryApi.update(editing.value.id, form)
     editing.value = null
-    await load()
+    await Promise.all([load(), loadCategoryOptions(), loadMasterData(true)])
   } catch (err) {
     error.value = getErrorMessage(err)
   }
@@ -266,10 +330,10 @@ async function confirmRemove() {
   if (!deleting.value) return
   await categoryApi.remove(deleting.value.id)
   deleting.value = null
-  await load()
+  await Promise.all([load(), loadCategoryOptions(), loadMasterData(true)])
 }
 
 onMounted(async () => {
-  await Promise.allSettled([loadMasterData(), load()])
+  await Promise.allSettled([loadMasterData(), loadCategoryOptions(), load()])
 })
 </script>

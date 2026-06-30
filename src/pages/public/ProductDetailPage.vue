@@ -198,8 +198,12 @@
       </section>
 
       <section class="border-t border-black/10 pt-8 md:pt-10">
-        <h2 class="mb-5 text-2xl font-black">Mô tả sản phẩm</h2>
-        <SafeHtmlContent :html="productDescriptionHtml" />
+        <UiTabs v-model="activeInfoTab" :items="infoTabs">
+          <div v-if="activeInfoTab === 'description'">
+            <SafeHtmlContent :html="productDescriptionHtml" />
+          </div>
+          <ProductPurchaseShippingInfo v-else />
+        </UiTabs>
       </section>
 
       <UiModal
@@ -234,8 +238,9 @@ import 'swiper/css'
 import addCartIcon from '@/assets/icons/add-cart.svg'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
+import ProductPurchaseShippingInfo from '@/components/storefront/ProductPurchaseShippingInfo.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
-import { UiButton, UiModal, UiSkeleton, UiTag } from '@/components/ui'
+import { UiButton, UiModal, UiSkeleton, UiTabs, UiTag } from '@/components/ui'
 import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
@@ -253,16 +258,25 @@ const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
 const gallerySwiper = ref<SwiperInstance | null>(null)
 const sizeGuideOpen = ref(false)
+const activeInfoTab = ref('description')
+const infoTabs = [
+  { key: 'description', label: 'Mô tả sản phẩm' },
+  { key: 'purchase-shipping', label: 'Cách mua hàng và hình thức vận chuyển' },
+]
 const {
   data: product,
   pending: loading,
   error: productError,
   refresh: refreshProduct,
-} = await useAsyncData(() => `product-detail-${slug.value}`, () => productApi.detail(slug.value), {
-  deep: false,
-  dedupe: 'defer',
-  watch: [slug],
-})
+} = await useAsyncData(
+  () => `product-detail-${slug.value}`,
+  () => productApi.detail(slug.value),
+  {
+    deep: false,
+    dedupe: 'defer',
+    watch: [slug],
+  },
+)
 const error = computed(() => (productError.value ? getErrorMessage(productError.value) : ''))
 const images = computed(() => asArray(product.value?.images))
 const galleryImages = computed(() =>

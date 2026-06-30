@@ -12,7 +12,7 @@
     :confirm-text="`Xóa banner ${deleting?.title || ''}?`"
     @create="openCreate"
     @reload="load"
-    @search="load"
+    @search="search"
     @close="editing = null"
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
@@ -77,20 +77,35 @@
         <span :class="badgeClass(row.status)">{{ row.status }}</span>
       </template>
       <template #cell-actions="{ row }">
-        <div class="space-x-3">
-          <UiButton variant="ghost" @click="openEdit(row)"> Edit </UiButton
-          ><UiButton variant="danger" @click="deleting = row"> Delete </UiButton>
-        </div>
+        <UiDropdown
+          :items="actionItems"
+          placement="right"
+          @select="(key) => handleRowAction(key, row)"
+        >
+          <template #trigger>
+            <UiButton variant="ghost">Thao tác</UiButton>
+          </template>
+        </UiDropdown>
       </template>
     </UiTable>
+
+    <UiPagination
+      v-if="total > 0"
+      :page="page"
+      :total="total"
+      :total-pages="totalPages"
+      :page-size="Number(query.limit || 20)"
+      @update:page="changePage"
+    />
   </CrudShell>
 </template>
 
 <script setup lang="ts">
-import { UiButton, UiForm, UiInput, UiSelect, UiTable } from '@/components/ui'
+import { UiButton, UiDropdown, UiForm, UiInput, UiPagination, UiSelect, UiTable } from '@/components/ui'
 import { computed, onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
+import { usePageQuery } from '@/composables/usePageQuery'
 import { bannerApi } from '@/modules/content/banner/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
@@ -101,12 +116,16 @@ import type { UploadedFile } from '@/services/file.service'
 import ImagePreview from '@/components/common/ImagePreview.vue'
 
 const rows = ref<LandingBanner[]>([])
+const pageQuery = usePageQuery()
 const loading = ref(false)
 const error = ref('')
 const editing = ref<LandingBanner | 'new' | null>(null)
 const deleting = ref<LandingBanner | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
-const query = reactive({ keyword: '', status: '' })
+const total = ref(0)
+const totalPages = ref(0)
+const query = reactive({ keyword: '', status: '', page: pageQuery.value(), limit: 50 })
+const page = computed(() => Number(query.page || 1))
 const form = reactive<LandingBannerPayload>({
   title: '',
   subtitle: '',
@@ -126,12 +145,16 @@ const commonStatuses = computed(
     ],
 )
 const columns = [
-  { key: 'title', label: 'Tên' },
-  { key: 'preview', label: 'Ảnh' },
-  { key: 'status', label: 'Trạng thái' },
-  { key: 'sortOrder', label: 'Thứ tự' },
-  { key: 'actions', label: 'Hành động', align: 'right' },
+  { key: 'title', label: 'Tên', cellAlign: 'left', width: '260px' },
+  { key: 'preview', label: 'Ảnh', cellAlign: 'center', width: '130px' },
+  { key: 'status', label: 'Trạng thái', cellAlign: 'center', width: '140px' },
+  { key: 'sortOrder', label: 'Thứ tự', cellAlign: 'center', width: '120px' },
+  { key: 'actions', label: 'Hành động', cellAlign: 'center', width: '120px' },
 ] as const
+const actionItems = [
+  { key: 'edit', label: 'Edit' },
+  { key: 'delete', label: 'Delete' },
+]
 
 function badgeClass(status: string) {
   return status === 'ACTIVE'
@@ -158,18 +181,39 @@ function openEdit(r: LandingBanner) {
   editing.value = r
   fill(r)
 }
+function handleRowAction(key: string, row: LandingBanner) {
+  if (key === 'edit') {
+    openEdit(row)
+    return
+  }
+  if (key === 'delete') deleting.value = row
+}
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (
-      await bannerApi.adminList({ keyword: query.keyword, status: query.status, limit: 50 })
-    ).items
+    const data = await bannerApi.adminList(query)
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
     loading.value = false
   }
+}
+function search() {
+  query.page = 1
+  void pageQuery.replace(query.page)
+  void load()
+}
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
+  query.page = nextPage
+  void pageQuery.replace(query.page)
+  void load()
 }
 async function save() {
   try {

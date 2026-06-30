@@ -19,7 +19,7 @@ export const brandApi = {
   },
   async adminList(params?: BrandListQuery) {
     const res = await httpClient.get<ApiEnvelope<unknown>>('/api/admin/brands', { params })
-    return unwrapList<Brand>(res.data.data) as Paginated<Brand>
+    return unwrapList<Brand>(res.data.data, params?.page, params?.limit) as Paginated<Brand>
   },
   async adminDetail(id: string) {
     const res = await httpClient.get<ApiEnvelope<Brand>>(`/api/admin/brands/${id}`)

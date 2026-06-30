@@ -1,17 +1,15 @@
 <template>
   <div class="space-y-4">
-    <div
-      class="grid grid-cols-1 gap-2 rounded-[var(--ui-radius-md)] bg-[var(--ui-surface-soft)] p-1 sm:auto-cols-fr sm:grid-flow-col sm:grid-cols-none"
-    >
+    <div class="flex items-end justify-start gap-1 border-b border-[var(--ui-border)]">
       <button
         v-for="item in items"
         :key="item.key"
         type="button"
-        class="rounded-[calc(var(--ui-radius-md)-4px)] px-4 py-2.5 text-sm font-medium transition"
+        class="-mb-px w-auto rounded-t-[var(--ui-radius-md)] border border-transparent border-b-[var(--ui-border)] px-4 py-2.5 text-sm font-medium transition"
         :class="
           item.key === modelValue
-            ? 'bg-[var(--ui-surface)] text-[var(--ui-primary)] shadow-sm'
-            : 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface)]/70'
+            ? 'border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-primary)]'
+            : 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-soft)] hover:text-[var(--ui-text)]'
         "
         @click="$emit('update:modelValue', item.key)"
       >

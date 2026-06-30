@@ -13,7 +13,7 @@
     :confirm-text="`Xóa brand ${deleting?.name || ''}?`"
     @create="openCreate"
     @reload="load"
-    @search="load"
+    @search="search"
     @close="editing = null"
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
@@ -104,12 +104,26 @@
       >
       <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }"
-        ><div class="space-x-3">
-          <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton
-          ><UiButton variant="danger" @click="deleting = row">Delete</UiButton>
-        </div></template
+        ><UiDropdown
+          :items="actionItems"
+          placement="right"
+          @select="(key) => handleRowAction(key, row)"
+        >
+          <template #trigger>
+            <UiButton variant="ghost">Thao tác</UiButton>
+          </template>
+        </UiDropdown></template
       >
     </UiTable>
+
+    <UiPagination
+      v-if="total > 0"
+      :page="page"
+      :total="total"
+      :total-pages="totalPages"
+      :page-size="Number(query.limit || 20)"
+      @update:page="changePage"
+    />
   </CrudShell>
 </template>
 
@@ -117,7 +131,17 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import ImageUpload from '@/components/common/ImageUpload.vue'
-import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
+import { usePageQuery } from '@/composables/usePageQuery'
+import {
+  UiButton,
+  UiDropdown,
+  UiForm,
+  UiInput,
+  UiPagination,
+  UiSelect,
+  UiTable,
+  UiTextarea,
+} from '@/components/ui'
 import { brandApi } from '@/modules/content/brand/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
@@ -128,6 +152,7 @@ import type { Brand, BrandPayload } from '@/modules/content/brand/types'
 import type { UploadedFile } from '@/services/file.service'
 
 const rows = ref<Brand[]>([])
+const pageQuery = usePageQuery()
 const loading = ref(false)
 const error = ref('')
 const notice = ref('')
@@ -135,7 +160,10 @@ const editing = ref<Brand | 'new' | null>(null)
 const deleting = ref<Brand | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
 const uploadSizeGuide = ref<UploadedFile | null>(null)
-const query = reactive({ keyword: '', status: '' })
+const total = ref(0)
+const totalPages = ref(0)
+const query = reactive({ keyword: '', status: '', page: pageQuery.value(), limit: 50 })
+const page = computed(() => Number(query.page || 1))
 const form = reactive<BrandPayload>({
   name: '',
   slug: '',
@@ -155,15 +183,19 @@ const commonStatuses = computed(
 )
 const commonStatusValues = computed(() => commonStatuses.value.map((item) => item.value))
 const columns = [
-  { key: 'name', label: 'Tên thương hiệu' },
-  { key: 'logo', label: 'Logo' },
-  { key: 'sizeGuide', label: 'sizeGuide' },
-  { key: 'slug', label: 'Slug' },
-  { key: 'status', label: 'Trạng thái' },
-  { key: 'sortOrder', label: 'Thứ tự sắp xếp' },
-  { key: 'createdAt', label: 'Ngày tạo' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'name', label: 'Tên thương hiệu', cellAlign: 'left', width: '220px' },
+  { key: 'logo', label: 'Logo', cellAlign: 'center', width: '120px' },
+  { key: 'sizeGuide', label: 'sizeGuide', cellAlign: 'center', width: '120px' },
+  { key: 'slug', label: 'Slug', cellAlign: 'left', width: '180px' },
+  { key: 'status', label: 'Trạng thái', cellAlign: 'center', width: '140px' },
+  { key: 'sortOrder', label: 'Thứ tự sắp xếp', cellAlign: 'center', width: '150px' },
+  { key: 'createdAt', label: 'Ngày tạo', cellAlign: 'center', width: '180px' },
+  { key: 'actions', label: 'Actions', cellAlign: 'center', width: '120px' },
 ] as const
+const actionItems = [
+  { key: 'edit', label: 'Edit' },
+  { key: 'delete', label: 'Delete' },
+]
 
 function badgeClass(status: string) {
   return status === 'ACTIVE'
@@ -214,16 +246,39 @@ async function openEdit(id: string) {
   editing.value = row
   fill(row)
 }
+function handleRowAction(key: string, row: Brand) {
+  if (key === 'edit') {
+    void openEdit(row.id)
+    return
+  }
+  if (key === 'delete') deleting.value = row
+}
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (await brandApi.adminList(query)).items
+    const data = await brandApi.adminList(query)
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
     loading.value = false
   }
+}
+function search() {
+  query.page = 1
+  void pageQuery.replace(query.page)
+  void load()
+}
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
+  query.page = nextPage
+  void pageQuery.replace(query.page)
+  void load()
 }
 async function save() {
   const msg = required(form.name, 'Name')

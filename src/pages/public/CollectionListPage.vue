@@ -28,51 +28,67 @@
       >
         Không tìm thấy bộ sưu tập.
       </div>
+
+      <UiPagination
+        v-if="totalPages > 1"
+        class="mt-10"
+        :page="page"
+        :total="total"
+        :total-pages="totalPages"
+        :page-size="Number(query.limit || 20)"
+        @update:page="changePage"
+      />
     </StorefrontListingLayout>
   </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import CollectionCard from '@/components/storefront/CollectionCard.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
-import { UiSkeleton } from '@/components/ui'
+import { UiPagination, UiSkeleton } from '@/components/ui'
+import { usePageQuery } from '@/composables/usePageQuery'
 import { collectionApi } from '@/modules/content/collection/api'
 import type { Collection } from '@/modules/content/collection/types'
 
-// const router = useRouter()
+const pageQuery = usePageQuery()
 
 const rows = ref<Collection[]>([])
 const loading = ref(false)
+const total = ref(0)
+const totalPages = ref(0)
 
 const query = reactive({
   keyword: '',
-  page: 1,
+  page: pageQuery.value(),
   limit: 20,
 })
+const page = computed(() => Number(query.page || 1))
 
 async function load() {
   loading.value = true
 
   try {
-    rows.value = (await collectionApi.list(query)).items
+    const data = await collectionApi.list(query)
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } finally {
     loading.value = false
   }
 }
 
-// function search() {
-//   query.page = 1
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
 
-//   void router.replace({
-//     query: {
-//       keyword: query.keyword || undefined,
-//     },
-//   })
-
-//   void load()
-// }
+  query.page = nextPage
+  void pageQuery.replace(query.page)
+  void load()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 onMounted(load)
 </script>

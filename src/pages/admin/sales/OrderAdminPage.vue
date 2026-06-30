@@ -12,7 +12,7 @@
     :modal-title="detail ? `Order ${orderCode(detail.order)}` : ''"
     modal-description="Chi tiết order, sản phẩm, thanh toán, vận chuyển và lịch sử trạng thái."
     @reload="load"
-    @search="load"
+    @search="search"
     @close="closeDetail"
   >
     <template #form>
@@ -272,11 +272,26 @@
       <template #cell-totalAmount="{ row }">{{ money(row.totalAmount) }}</template>
       <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }">
-        <UiButton variant="ghost" :loading="openingId === row.id" @click="open(row.id)">
-          Detail
-        </UiButton>
+        <UiDropdown
+          :items="actionItems"
+          placement="right"
+          @select="(key) => handleRowAction(key, row)"
+        >
+          <template #trigger>
+            <UiButton variant="ghost" :loading="openingId === row.id">Thao tác</UiButton>
+          </template>
+        </UiDropdown>
       </template>
     </UiTable>
+
+    <UiPagination
+      v-if="total > 0"
+      :page="page"
+      :total="total"
+      :total-pages="totalPages"
+      :page-size="Number(query.limit || 20)"
+      @update:page="changePage"
+    />
   </CrudShell>
 </template>
 
@@ -285,8 +300,9 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import OrderInfoRow from '@/components/admin/order/OrderInfoRow.vue'
 import OrderMoneyRow from '@/components/admin/order/OrderMoneyRow.vue'
 import OrderSectionCard from '@/components/admin/order/OrderSectionCard.vue'
-import { UiButton, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
+import { UiButton, UiDropdown, UiInput, UiPagination, UiSelect, UiTable, UiTextarea } from '@/components/ui'
 import CrudShell from '@/pages/admin/CrudShell.vue'
+import { usePageQuery } from '@/composables/usePageQuery'
 import { useToast } from '@/composables/useToast'
 import { orderApi } from '@/modules/sales/order/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
@@ -306,6 +322,7 @@ const SHIPPING_STATUSES = [
 ] as const
 
 const toast = useToast()
+const pageQuery = usePageQuery()
 const rows = ref<Order[]>([])
 const detail = ref<OrderDetail | null>(null)
 const history = ref<OrderStatusHistory[]>([])
@@ -315,7 +332,10 @@ const savingStatus = ref(false)
 const savingPayment = ref(false)
 const savingShipping = ref(false)
 const error = ref('')
-const query = reactive({ keyword: '', status: '' })
+const total = ref(0)
+const totalPages = ref(0)
+const query = reactive({ keyword: '', status: '', page: pageQuery.value(), limit: 50 })
+const page = computed(() => Number(query.page || 1))
 const statusForm = reactive({ status: 'PENDING', note: '' })
 const paymentForm = reactive({
   paymentMethod: '',
@@ -329,15 +349,16 @@ const paymentOptions = computed(() => toSelectOptions(PAYMENT_STATUSES))
 const shippingOptions = computed(() => toSelectOptions(SHIPPING_STATUSES))
 
 const columns = [
-  { key: 'code', label: 'Mã đơn hàng' },
-  { key: 'customer', label: 'Khách hàng' },
-  { key: 'status', label: 'Trạng thái' },
-  { key: 'payment', label: 'Thanh toán' },
-  { key: 'shipping', label: 'Vận chuyển' },
-  { key: 'totalAmount', label: 'Tổng cộng' },
-  { key: 'createdAt', label: 'Ngày tạo' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'code', label: 'Mã đơn hàng', cellAlign: 'left', width: '180px' },
+  { key: 'customer', label: 'Khách hàng', cellAlign: 'left', width: '200px' },
+  { key: 'status', label: 'Trạng thái', cellAlign: 'center', width: '140px' },
+  { key: 'payment', label: 'Thanh toán', cellAlign: 'center', width: '170px' },
+  { key: 'shipping', label: 'Vận chuyển', cellAlign: 'center', width: '170px' },
+  { key: 'totalAmount', label: 'Tổng cộng', cellAlign: 'right', width: '140px' },
+  { key: 'createdAt', label: 'Ngày tạo', cellAlign: 'center', width: '180px' },
+  { key: 'actions', label: 'Actions', cellAlign: 'center', width: '120px' },
 ] as const
+const actionItems = [{ key: 'detail', label: 'Detail' }]
 
 function toSelectOptions(values: readonly string[]) {
   return values.map((value) => ({ label: value, value }))
@@ -377,14 +398,30 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (
-      await orderApi.adminList({ keyword: query.keyword, status: query.status, limit: 50 })
-    ).items
+    const data = await orderApi.adminList(query)
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
     loading.value = false
   }
+}
+
+function search() {
+  query.page = 1
+  void pageQuery.replace(query.page)
+  void load()
+}
+
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
+  query.page = nextPage
+  void pageQuery.replace(query.page)
+  void load()
 }
 
 async function refreshDetail(id: string, includeHistory = false) {
@@ -409,6 +446,10 @@ async function open(id: string) {
   } finally {
     openingId.value = ''
   }
+}
+
+function handleRowAction(key: string, row: Order) {
+  if (key === 'detail') void open(row.id)
 }
 
 async function saveStatus(id: string) {

@@ -66,7 +66,7 @@
 
       <div class="flex items-center justify-between border-t border-[#F4F4F5] pt-3">
         <div class="flex items-center gap-0.5">
-          <svg
+          <!-- <svg
             v-for="index in 5"
             :key="index"
             class="h-4 w-4"
@@ -79,7 +79,7 @@
               points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
             />
           </svg>
-          <span class="ml-1.5 text-[11px] text-[#71717A]">{{ reviewCount }} Reviews</span>
+          <span class="ml-1.5 text-[11px] text-[#71717A]">{{ reviewCount }} Reviews</span> -->
         </div>
         <div
           class="text-[11px] font-semibold"
@@ -105,7 +105,7 @@ const props = defineProps<{ product: Product | ProductFeatured }>()
 const displayPrice = computed(() => productPrice(props.product))
 const originalPrice = computed(() => productOriginalPrice(props.product))
 const inStock = computed(() => productStock(props.product) > 0)
-const reviewCount = computed(() => seededReviewCount(props.product.id || props.product.slug))
+// const reviewCount = computed(() => seededReviewCount(props.product.id || props.product.slug))
 
 function primaryImageUrl(product: Product | ProductFeatured) {
   if ('primaryImageUrl' in product) return product.primaryImageUrl
@@ -130,11 +130,11 @@ function productStock(product: Product | ProductFeatured) {
   return product.stock || 0
 }
 
-function seededReviewCount(seed: string) {
-  let hash = 0
-  for (const char of seed) {
-    hash = (hash * 31 + char.charCodeAt(0)) % 251
-  }
-  return hash
-}
+// function seededReviewCount(seed: string) {
+//   let hash = 0
+//   for (const char of seed) {
+//     hash = (hash * 31 + char.charCodeAt(0)) % 251
+//   }
+//   return hash
+// }
 </script>

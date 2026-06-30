@@ -70,25 +70,42 @@
       <template #cell-status="{ row }"
         ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
       >
-      <template #cell-isFeatured="{ row }">{{ row.isFeatured ? 'Yes' : 'No' }}</template>
-      <template #cell-stock="{ row }">{{ row.stock ?? '-' }}</template>
-      <template #cell-price="{ row }">{{ money(row.salePrice || row.price) }}</template>
+      <!-- <template #cell-isFeatured="{ row }">{{ row.isFeatured ? 'Yes' : 'No' }}</template>
+      <template #cell-stock="{ row }">{{ row.totalStock ?? '-' }}</template> -->
+      <template #cell-sort="{ row }">{{ row.featuredOrder }}</template>
+      <template #cell-price="{ row }">{{ money(row.minPrice) }}</template>
+      <template #cell-salePrice="{ row }">{{ money(row.minSalePrice) }}</template>
       <template #cell-actions="{ row }">
-        <div class="space-x-3">
-          <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton>
-          <UiButton variant="danger" @click="deleting = row">Delete</UiButton>
-        </div>
+        <UiDropdown
+          :items="actionItems"
+          placement="right"
+          @select="(key) => handleRowAction(key, row)"
+        >
+          <template #trigger>
+            <UiButton variant="ghost">Thao tác</UiButton>
+          </template>
+        </UiDropdown>
       </template>
     </UiTable>
+
+    <UiPagination
+      v-if="total > 0"
+      :page="page"
+      :total="total"
+      :total-pages="totalPages"
+      :page-size="Number(query.limit || 20)"
+      @update:page="changePage"
+    />
   </CrudShell>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import SizeColorPicker from '@/components/common/SizeColorPicker.vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
-import { UiButton, UiSelect, UiTable } from '@/components/ui'
+import { UiButton, UiDropdown, UiPagination, UiSelect, UiTable } from '@/components/ui'
+import { usePageQuery } from '@/composables/usePageQuery'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { money } from '@/modules/shared/types'
@@ -96,10 +113,13 @@ import { useMasterData } from '@/modules/shared/master-data/hooks'
 import type { Product } from '@/modules/catalog/product/types'
 
 const router = useRouter()
+const pageQuery = usePageQuery()
 const rows = ref<Product[]>([])
 const loading = ref(false)
 const error = ref('')
 const deleting = ref<Product | null>(null)
+const total = ref(0)
+const totalPages = ref(0)
 const query = reactive({
   keyword: '',
   status: '',
@@ -107,22 +127,28 @@ const query = reactive({
   gender: '',
   size: '',
   color: '',
-  page: 1,
-  limit: 50,
+  page: pageQuery.value(),
+  limit: 20,
 })
+const page = computed(() => Number(query.page || 1))
 const { data: masterData, load: loadMasterData } = useMasterData('admin')
 const columns = [
-  { key: 'name', label: 'Tên sản phẩm' },
-  { key: 'slug', label: 'Slug' },
-  { key: 'brandName', label: 'Brand' },
-  { key: 'gender', label: 'Giới tính' },
-  { key: 'status', label: 'Trạng thái' },
-  { key: 'isFeatured', label: 'Sản phẩm nổi bật' },
-  { key: 'stock', label: 'Số lượng tồn kho' },
-  { key: 'price', label: 'Giá' },
-  { key: 'salePrice', label: 'Giá khuyến mãi' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'name', label: 'Tên sản phẩm', cellAlign: 'left', width: '240px' },
+  { key: 'slug', label: 'Slug', cellAlign: 'left', width: '180px' },
+  { key: 'brandName', label: 'Brand', cellAlign: 'center', width: '140px' },
+  { key: 'gender', label: 'Giới tính', cellAlign: 'center', width: '110px' },
+  { key: 'status', label: 'Trạng thái', cellAlign: 'center', width: '120px' },
+  // { key: 'isFeatured', label: 'Sản phẩm nổi bật', cellAlign: 'center', width: '140px' },
+  // { key: 'stock', label: 'Số lượng tồn kho', cellAlign: 'center', width: '130px' },
+  { key: 'sort', label: 'Thứ tự', cellAlign: 'center' },
+  { key: 'price', label: 'Giá', cellAlign: 'right', width: '120px' },
+  { key: 'salePrice', label: 'Giá khuyến mãi', cellAlign: 'right', width: '140px' },
+  { key: 'actions', label: 'Actions', cellAlign: 'center', width: '120px' },
 ] as const
+const actionItems = [
+  { key: 'edit', label: 'Edit' },
+  { key: 'delete', label: 'Delete' },
+]
 
 function badgeClass(status: string) {
   if (status === 'ACTIVE')
@@ -140,6 +166,14 @@ function openEdit(id: string) {
   void router.push({ name: 'admin-product-edit', params: { id } })
 }
 
+function handleRowAction(key: string, row: Product) {
+  if (key === 'edit') {
+    openEdit(row.id)
+    return
+  }
+  if (key === 'delete') deleting.value = row
+}
+
 function genderLabel(value?: string) {
   if (!value) return '-'
   return masterData.value?.productGenders.find((item) => item.value === value)?.label || value
@@ -149,18 +183,21 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (
-      await productApi.adminList({
-        keyword: query.keyword,
-        status: query.status,
-        brandId: query.brandId || undefined,
-        gender: query.gender || undefined,
-        size: query.size || undefined,
-        color: query.color || undefined,
-        page: query.page,
-        limit: query.limit,
-      })
-    ).items
+    const data = await productApi.adminList({
+      keyword: query.keyword,
+      status: query.status,
+      brandId: query.brandId || undefined,
+      gender: query.gender || undefined,
+      size: query.size || undefined,
+      color: query.color || undefined,
+      page: query.page,
+      limit: query.limit,
+    })
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (err) {
     error.value = getErrorMessage(err)
   } finally {
@@ -170,6 +207,14 @@ async function load() {
 
 function search() {
   query.page = 1
+  void pageQuery.replace(query.page)
+  void load()
+}
+
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
+  query.page = nextPage
+  void pageQuery.replace(query.page)
   void load()
 }
 

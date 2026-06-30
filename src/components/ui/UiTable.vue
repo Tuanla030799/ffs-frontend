@@ -15,7 +15,12 @@
         </caption>
         <thead class="bg-slate-50" :class="stickyHeader && 'sticky top-0 z-10'">
           <tr>
-            <th v-for="column in columns" :key="column.key" :class="headerCellClass(column)">
+            <th
+              v-for="(column, columnIndex) in columns"
+              :key="column.key"
+              :class="headerCellClass(column, columnIndex)"
+              :style="columnStyle(column)"
+            >
               {{ column.label }}
             </th>
           </tr>
@@ -50,9 +55,10 @@
             :class="bodyRowClass(row, rowIndex)"
           >
             <td
-              v-for="column in columns"
+              v-for="(column, columnIndex) in columns"
               :key="column.key"
-              :class="bodyCellClass(column, row, rowIndex)"
+              :class="bodyCellClass(column, row, rowIndex, columnIndex)"
+              :style="columnStyle(column)"
             >
               <slot
                 :name="`cell-${column.key}`"
@@ -81,6 +87,8 @@ type TableColumn<Row extends Record<string, unknown>> = {
   key: (keyof Row & string) | string
   label: string
   align?: 'left' | 'center' | 'right'
+  cellAlign?: 'left' | 'center' | 'right'
+  width?: string
   class?: string | ((row: Row, index: number) => string)
   headerClass?: string
   cellClass?: string | ((row: Row, index: number) => string)
@@ -142,11 +150,27 @@ function resolveDynamicClass(
   return typeof value === 'function' ? value(row, index) : value
 }
 
-function headerCellClass(column: TableColumn<T>) {
+function columnStyle(column: TableColumn<T>) {
+  return column.width ? { width: column.width, minWidth: column.width } : undefined
+}
+
+function defaultBodyAlignClass(index: number) {
+  if (index === 0) return 'text-left'
+  if (index === props.columns.length - 1) return 'text-right'
+  return 'text-center'
+}
+
+function defaultHeaderAlignClass(index: number) {
+  if (index === 0) return 'text-left'
+  if (index === props.columns.length - 1) return 'text-right'
+  return 'text-center'
+}
+
+function headerCellClass(column: TableColumn<T>, columnIndex: number) {
   return cn(
     cellPaddingClass.value,
-    'border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-500',
-    alignClass(column.align),
+    'align-middle border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-500',
+    column.align ? alignClass(column.align) : defaultHeaderAlignClass(columnIndex),
     column.widthClass,
     column.headerClass,
   )
@@ -154,18 +178,20 @@ function headerCellClass(column: TableColumn<T>) {
 
 function bodyRowClass(row: T, index: number) {
   return cn(
-    'align-top hover:bg-[var(--ui-surface-muted)]/70',
+    'align-middle hover:bg-[var(--ui-surface-muted)]/70',
     'transition-colors hover:bg-slate-50',
     props.striped && index % 2 === 1 && 'bg-slate-50/50',
     resolveDynamicClass(props.rowClass, row, index),
   )
 }
 
-function bodyCellClass(column: TableColumn<T>, row: T, index: number) {
+function bodyCellClass(column: TableColumn<T>, row: T, index: number, columnIndex: number) {
   return cn(
     cellPaddingClass.value,
-    'border-b border-slate-100 text-sm text-slate-600 last:border-b-0',
-    alignClass(column.align),
+    'align-middle border-b border-slate-100 text-sm text-slate-600 last:border-b-0',
+    column.cellAlign || column.align
+      ? alignClass(column.cellAlign || column.align)
+      : defaultBodyAlignClass(columnIndex),
     column.widthClass,
     resolveDynamicClass(column.class, row, index),
     resolveDynamicClass(column.cellClass, row, index),

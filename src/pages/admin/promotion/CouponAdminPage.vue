@@ -12,7 +12,7 @@
     :confirm-text="`Xóa coupon ${deleting?.code || ''}?`"
     @create="openCreate"
     @reload="load"
-    @search="load"
+    @search="search"
     @close="editing = null"
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
@@ -69,19 +69,34 @@
         ><span :class="badgeClass(row.status)">{{ row.status }}</span></template
       >
       <template #cell-actions="{ row }"
-        ><div class="space-x-3">
-          <UiButton variant="ghost" @click="openEdit(row)">Edit</UiButton
-          ><UiButton variant="danger" @click="deleting = row">Delete</UiButton>
-        </div></template
+        ><UiDropdown
+          :items="actionItems"
+          placement="right"
+          @select="(key) => handleRowAction(key, row)"
+        >
+          <template #trigger>
+            <UiButton variant="ghost">Thao tác</UiButton>
+          </template>
+        </UiDropdown></template
       >
     </UiTable>
+
+    <UiPagination
+      v-if="total > 0"
+      :page="page"
+      :total="total"
+      :total-pages="totalPages"
+      :page-size="Number(query.limit || 20)"
+      @update:page="changePage"
+    />
   </CrudShell>
 </template>
 
 <script setup lang="ts">
-import { UiButton, UiForm, UiInput, UiSelect, UiTable } from '@/components/ui'
-import { onMounted, reactive, ref } from 'vue'
+import { UiButton, UiDropdown, UiForm, UiInput, UiPagination, UiSelect, UiTable } from '@/components/ui'
+import { computed, onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
+import { usePageQuery } from '@/composables/usePageQuery'
 import { couponApi } from '@/modules/promotion/coupon/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { money } from '@/modules/shared/types'
@@ -89,11 +104,15 @@ import { toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
 import type { Coupon, CouponPayload } from '@/modules/promotion/coupon/types'
 
 const rows = ref<Coupon[]>([])
+const pageQuery = usePageQuery()
 const loading = ref(false)
 const error = ref('')
 const editing = ref<Coupon | 'new' | null>(null)
 const deleting = ref<Coupon | null>(null)
-const query = reactive({ keyword: '', status: '' })
+const total = ref(0)
+const totalPages = ref(0)
+const query = reactive({ keyword: '', status: '', page: pageQuery.value(), limit: 50 })
+const page = computed(() => Number(query.page || 1))
 const form = reactive<CouponPayload>({
   code: '',
   name: '',
@@ -107,14 +126,18 @@ const form = reactive<CouponPayload>({
   status: 'ACTIVE',
 })
 const columns = [
-  { key: 'code', label: 'Code' },
-  { key: 'name', label: 'Name' },
-  { key: 'discountType', label: 'Type' },
-  { key: 'discountValue', label: 'Value' },
-  { key: 'minOrderAmount', label: 'Min order' },
-  { key: 'status', label: 'Status' },
-  { key: 'actions', label: 'Actions', align: 'right' },
+  { key: 'code', label: 'Code', cellAlign: 'left', width: '150px' },
+  { key: 'name', label: 'Name', cellAlign: 'left', width: '220px' },
+  { key: 'discountType', label: 'Type', cellAlign: 'center', width: '130px' },
+  { key: 'discountValue', label: 'Value', cellAlign: 'right', width: '120px' },
+  { key: 'minOrderAmount', label: 'Min order', cellAlign: 'right', width: '140px' },
+  { key: 'status', label: 'Status', cellAlign: 'center', width: '130px' },
+  { key: 'actions', label: 'Actions', cellAlign: 'center', width: '120px' },
 ] as const
+const actionItems = [
+  { key: 'edit', label: 'Edit' },
+  { key: 'delete', label: 'Delete' },
+]
 
 function badgeClass(status: string) {
   return status === 'ACTIVE'
@@ -143,18 +166,39 @@ function openEdit(r: Coupon) {
   editing.value = r
   fill(r)
 }
+function handleRowAction(key: string, row: Coupon) {
+  if (key === 'edit') {
+    openEdit(row)
+    return
+  }
+  if (key === 'delete') deleting.value = row
+}
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (
-      await couponApi.adminList({ keyword: query.keyword, status: query.status, limit: 50 })
-    ).items
+    const data = await couponApi.adminList(query)
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
     loading.value = false
   }
+}
+function search() {
+  query.page = 1
+  void pageQuery.replace(query.page)
+  void load()
+}
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
+  query.page = nextPage
+  void pageQuery.replace(query.page)
+  void load()
 }
 async function save() {
   try {

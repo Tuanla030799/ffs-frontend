@@ -85,6 +85,9 @@ export interface Product {
   price?: number
   salePrice?: number
   stock?: number
+  minPrice?: number
+  minSalePrice?: number
+  totalStock?: number
 }
 
 export interface ProductFeatured {

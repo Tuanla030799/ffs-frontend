@@ -116,20 +116,21 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from '#imports'
 import DropdownSelect from '@/components/common/DropdownSelect.vue'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import ProductFilterSidebar from '@/components/storefront/ProductFilterSidebar.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
 import { UiButton, UiDrawer, UiPagination, UiSkeleton } from '@/components/ui'
+import { usePageQuery } from '@/composables/usePageQuery'
 import { productApi } from '@/modules/catalog/product/api'
 import type { Product, PublicProductListQuery } from '@/modules/catalog/product/types'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 
 const route = useRoute()
-const router = useRouter()
+const pageQuery = usePageQuery()
 
 const loading = ref(false)
 const error = ref('')
@@ -174,7 +175,7 @@ const query = reactive<ProductFilterQuery>({
   color: queryValues(route.query.color),
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
-  page: Number(route.query.page || 1),
+  page: pageQuery.value(),
   limit: 12,
 })
 
@@ -277,7 +278,7 @@ function routeQuery() {
 function applyFilters() {
   query.page = 1
 
-  void router.replace({ query: routeQuery() })
+  void pageQuery.replace(query.page, routeQuery())
   void load()
 }
 
@@ -286,7 +287,7 @@ function changePage(nextPage: number) {
 
   query.page = nextPage
 
-  void router.replace({ query: routeQuery() })
+  void pageQuery.replace(query.page, routeQuery())
   void load()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }

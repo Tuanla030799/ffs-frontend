@@ -1,4 +1,4 @@
-import type { Status } from '@/modules/shared/types'
+import type { ListQuery, Status } from '@/modules/shared/types'
 
 export interface Brand {
   id: string
@@ -14,10 +14,7 @@ export interface Brand {
   sizeGuideImageUrl?: string
 }
 
-export interface BrandListQuery {
-  keyword?: string
-  status?: string
-}
+export type BrandListQuery = ListQuery
 
 export interface BrandPayload {
   name: string

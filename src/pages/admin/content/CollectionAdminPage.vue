@@ -12,7 +12,7 @@
     :confirm-text="`Xóa collection ${deleting?.name || ''}?`"
     @create="openCreate"
     @reload="load"
-    @search="load"
+    @search="search"
     @close="editing = null"
     @cancel-delete="deleting = null"
     @confirm-delete="confirmRemove"
@@ -154,12 +154,26 @@
       }}</template>
       <template #cell-createdAt="{ row }">{{ formatLocalDateTime(row.createdAt) }}</template>
       <template #cell-actions="{ row }"
-        ><div class="space-x-3">
-          <UiButton variant="ghost" @click="openEdit(row.id)">Edit</UiButton
-          ><UiButton variant="danger" @click="deleting = row">Delete</UiButton>
-        </div></template
+        ><UiDropdown
+          :items="actionItems"
+          placement="right"
+          @select="(key) => handleRowAction(key, row)"
+        >
+          <template #trigger>
+            <UiButton variant="ghost">Thao tác</UiButton>
+          </template>
+        </UiDropdown></template
       >
     </UiTable>
+
+    <UiPagination
+      v-if="total > 0"
+      :page="page"
+      :total="total"
+      :total-pages="totalPages"
+      :page-size="Number(query.limit || 20)"
+      @update:page="changePage"
+    />
   </CrudShell>
 </template>
 
@@ -169,7 +183,17 @@ import CrudShell from '@/pages/admin/CrudShell.vue'
 import AsyncSelect, { type AsyncSelectOption } from '@/components/common/AsyncSelect.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
 import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
-import { UiButton, UiForm, UiInput, UiSelect, UiTable, UiTextarea } from '@/components/ui'
+import { usePageQuery } from '@/composables/usePageQuery'
+import {
+  UiButton,
+  UiDropdown,
+  UiForm,
+  UiInput,
+  UiPagination,
+  UiSelect,
+  UiTable,
+  UiTextarea,
+} from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage, required } from '@/modules/shared/hooks'
@@ -185,6 +209,7 @@ import type { UploadedFile } from '@/services/file.service'
 import ImagePreview from '@/components/common/ImagePreview.vue'
 
 const rows = ref<Collection[]>([])
+const pageQuery = usePageQuery()
 const selectedProducts = ref<Record<string, Product>>({})
 const loading = ref(false)
 const error = ref('')
@@ -194,7 +219,10 @@ const deleting = ref<Collection | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
 const coverPreviewUrl = ref('')
 const hasLegacyDescription = ref(false)
-const query = reactive({ keyword: '', status: '', page: 1, limit: 50 })
+const total = ref(0)
+const totalPages = ref(0)
+const query = reactive({ keyword: '', status: '', page: pageQuery.value(), limit: 50 })
+const page = computed(() => Number(query.page || 1))
 const form = reactive<CollectionPayload>({
   name: '',
   slug: '',
@@ -218,15 +246,19 @@ const selectedProductOptions = computed(() =>
   Object.values(selectedProducts.value).map(productToOption),
 )
 const columns = [
-  { key: 'name', label: 'Tên' },
-  { key: 'cover', label: 'Ảnh bìa' },
-  { key: 'slug', label: 'Slug' },
-  { key: 'status', label: 'Trạng thái' },
-  { key: 'sortOrder', label: 'Sắp xếp' },
-  { key: 'productCount', label: 'Sản phẩm' },
-  { key: 'createdAt', label: 'Ngày tạo' },
-  { key: 'actions', label: 'Hành động', align: 'right' },
+  { key: 'name', label: 'Tên', cellAlign: 'left', width: '220px' },
+  { key: 'cover', label: 'Ảnh bìa', cellAlign: 'center', width: '130px' },
+  { key: 'slug', label: 'Slug', cellAlign: 'left', width: '180px' },
+  { key: 'status', label: 'Trạng thái', cellAlign: 'center', width: '140px' },
+  { key: 'sortOrder', label: 'Sắp xếp', cellAlign: 'center', width: '120px' },
+  { key: 'productCount', label: 'Sản phẩm', cellAlign: 'center', width: '120px' },
+  { key: 'createdAt', label: 'Ngày tạo', cellAlign: 'center', width: '180px' },
+  { key: 'actions', label: 'Hành động', cellAlign: 'center', width: '120px' },
 ] as const
+const actionItems = [
+  { key: 'edit', label: 'Edit' },
+  { key: 'delete', label: 'Delete' },
+]
 
 function badgeClass(status: string) {
   return status === 'ACTIVE'
@@ -303,16 +335,39 @@ async function openEdit(id: string) {
   editing.value = row
   fill(row)
 }
+function handleRowAction(key: string, row: Collection) {
+  if (key === 'edit') {
+    void openEdit(row.id)
+    return
+  }
+  if (key === 'delete') deleting.value = row
+}
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    rows.value = (await collectionApi.adminList(query)).items
+    const data = await collectionApi.adminList(query)
+    rows.value = data.items
+    total.value = data.total
+    totalPages.value = data.totalPages
+    query.page = data.page || query.page
+    query.limit = data.limit || query.limit
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
     loading.value = false
   }
+}
+function search() {
+  query.page = 1
+  void pageQuery.replace(query.page)
+  void load()
+}
+function changePage(nextPage: number) {
+  if (loading.value || nextPage === page.value) return
+  query.page = nextPage
+  void pageQuery.replace(query.page)
+  void load()
 }
 async function save() {
   const msg = required(form.name, 'Name')
