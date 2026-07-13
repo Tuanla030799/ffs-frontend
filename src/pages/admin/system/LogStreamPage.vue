@@ -78,6 +78,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { UiBadge, UiButton } from '@/components/ui'
+import { env } from '@/config/env'
 import { useAppStore } from '@/stores/app'
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
@@ -88,7 +89,7 @@ type LogLine = { id: number; text: string; level: LogLevel }
 const INITIAL_LINE_OPTIONS = [100, 200, 500, 1000] as const
 const MAX_VISIBLE_LINES = 5000
 const NEAR_BOTTOM_THRESHOLD = 80
-const STREAM_PATH = '/api/admin/logs/stream'
+const STREAM_PATH = '/admin/logs/stream'
 
 const appStore = useAppStore()
 const initialLines = ref<InitialLineCount>(200)
@@ -237,7 +238,8 @@ async function connect() {
   lastHeartbeat.value = ''
 
   try {
-    const response = await fetch(`${STREAM_PATH}?lines=${initialLines.value}`, {
+    const apiBaseUrl = env.apiBaseUrl.replace(/\/+$/, '')
+    const response = await fetch(`${apiBaseUrl}${STREAM_PATH}?lines=${initialLines.value}`, {
       method: 'GET',
       signal: nextController.signal,
       headers: {

@@ -72,10 +72,6 @@ export default defineNuxtConfig({
       ssr: false,
       headers: { 'x-robots-tag': 'noindex, nofollow' },
     },
-    '/logs': {
-      ssr: false,
-      headers: { 'x-robots-tag': 'noindex, nofollow' },
-    },
     '/checkout': {
       ssr: false,
       headers: { 'x-robots-tag': 'noindex, nofollow' },
