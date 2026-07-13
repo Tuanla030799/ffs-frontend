@@ -20,20 +20,20 @@ function normalizeOrderDetail(data: OrderDetail | Order | null | undefined): Ord
 
 export const orderApi = {
   async create(payload: CreateOrderPayload) {
-    const res = await httpClient.post<ApiEnvelope<Order>>('/api/orders', payload)
+    const res = await httpClient.post<ApiEnvelope<Order>>('/orders', payload)
     return res.data.data
   },
   async adminList(params?: ListQuery) {
-    const res = await httpClient.get<ApiEnvelope<unknown>>('/api/admin/orders', { params })
+    const res = await httpClient.get<ApiEnvelope<unknown>>('/admin/orders', { params })
     return unwrapList<Order>(res.data.data, params?.page, params?.limit) as Paginated<Order>
   },
   async detail(id: string) {
-    const res = await httpClient.get<ApiEnvelope<OrderDetail | Order>>(`/api/admin/orders/${id}`)
+    const res = await httpClient.get<ApiEnvelope<OrderDetail | Order>>(`/admin/orders/${id}`)
     return normalizeOrderDetail(res.data.data)
   },
   async updateStatus(id: string, payload: { status: string; note?: string }) {
     const res = await httpClient.patch<ApiEnvelope<Order>>(
-      `/api/admin/orders/${id}/status`,
+      `/admin/orders/${id}/status`,
       payload,
     )
     return res.data
@@ -43,7 +43,7 @@ export const orderApi = {
     payload: { paymentMethod: string; paymentStatus: string; paidAt?: string | null },
   ) {
     const res = await httpClient.patch<ApiEnvelope<Order>>(
-      `/api/admin/orders/${id}/payment`,
+      `/admin/orders/${id}/payment`,
       payload,
     )
     return res.data
@@ -53,14 +53,14 @@ export const orderApi = {
     payload: { shippingMethod: string; shippingStatus: string; trackingCode?: string },
   ) {
     const res = await httpClient.patch<ApiEnvelope<Order>>(
-      `/api/admin/orders/${id}/shipping`,
+      `/admin/orders/${id}/shipping`,
       payload,
     )
     return res.data
   },
   async history(id: string) {
     const res = await httpClient.get<ApiEnvelope<OrderStatusHistory[]>>(
-      `/api/admin/orders/${id}/status-history`,
+      `/admin/orders/${id}/status-history`,
     )
     return res.data.data || []
   },

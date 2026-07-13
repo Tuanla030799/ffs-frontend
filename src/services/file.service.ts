@@ -37,7 +37,7 @@ function normalizeUploadedFile(row: Record<string, any>): UploadedFile {
 export const fileService = {
   async upload(file: File, options: UploadFileOptions = {}) {
     const scope = options.scope || 'client'
-    const endpoint = scope === 'admin' ? '/api/admin/files/upload' : '/api/files/upload'
+    const endpoint = scope === 'admin' ? '/admin/files/upload' : '/files/upload'
     const formData = new FormData()
     formData.append(options.fieldName || 'file', file)
 

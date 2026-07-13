@@ -10,14 +10,14 @@ export interface LoginPayload {
 export const adminAuthService = {
   async login(payload: LoginPayload) {
     const response = await httpClient.post<ApiEnvelope<AuthTokenPayload>>(
-      '/api/admin/auth/login',
+      '/admin/auth/login',
       payload,
     )
     return response.data.data
   },
   async refresh(refreshToken: string) {
     const response = await httpClient.post<ApiEnvelope<AuthTokenPayload>>(
-      '/api/admin/auth/refresh',
+      '/admin/auth/refresh',
       {
         refreshToken,
       },
@@ -25,7 +25,7 @@ export const adminAuthService = {
     return response.data.data
   },
   async logout(refreshToken?: string) {
-    const response = await httpClient.post<ApiEnvelope<null>>('/api/admin/auth/logout', {
+    const response = await httpClient.post<ApiEnvelope<null>>('/admin/auth/logout', {
       refreshToken,
     })
     return response.data.data

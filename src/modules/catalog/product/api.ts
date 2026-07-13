@@ -12,76 +12,76 @@ import type {
 } from './types'
 export const productApi = {
   async list(params?: PublicProductListQuery) {
-    const res = await httpClient.get<ApiEnvelope<unknown>>('/api/products', { params })
+    const res = await httpClient.get<ApiEnvelope<unknown>>('/products', { params })
     return unwrapList<Product>(res.data.data, params?.page, params?.limit) as Paginated<Product>
   },
   async featured(limit = 12) {
-    const res = await httpClient.get<ApiEnvelope<ProductFeatured[]>>('/api/products/featured', {
+    const res = await httpClient.get<ApiEnvelope<ProductFeatured[]>>('/products/featured', {
       params: { limit },
     })
     return res.data.data || []
   },
   async detail(slug: string) {
-    const res = await httpClient.get<ApiEnvelope<Product>>(`/api/products/${slug}`)
+    const res = await httpClient.get<ApiEnvelope<Product>>(`/products/${slug}`)
     return res.data.data
   },
   async adminList(params?: ProductListQuery) {
-    const res = await httpClient.get<ApiEnvelope<unknown>>('/api/admin/products', { params })
+    const res = await httpClient.get<ApiEnvelope<unknown>>('/admin/products', { params })
     return unwrapList<Product>(res.data.data, params?.page, params?.limit) as Paginated<Product>
   },
   async adminDetail(id: string) {
-    const res = await httpClient.get<ApiEnvelope<Product>>(`/api/admin/products/${id}`)
+    const res = await httpClient.get<ApiEnvelope<Product>>(`/admin/products/${id}`)
     return res.data.data
   },
   async create(payload: ProductPayload) {
-    const res = await httpClient.post<ApiEnvelope<Product>>('/api/admin/products', payload)
+    const res = await httpClient.post<ApiEnvelope<Product>>('/admin/products', payload)
     return res.data.data
   },
   async update(id: string, payload: ProductPayload) {
-    const res = await httpClient.put<ApiEnvelope<Product>>(`/api/admin/products/${id}`, payload)
+    const res = await httpClient.put<ApiEnvelope<Product>>(`/admin/products/${id}`, payload)
     return res.data.data
   },
   async updateStatus(id: string, status: string) {
-    const res = await httpClient.patch<ApiEnvelope<Product>>(`/api/admin/products/${id}/status`, {
+    const res = await httpClient.patch<ApiEnvelope<Product>>(`/admin/products/${id}/status`, {
       status,
     })
     return res.data.data
   },
   async remove(id: string) {
-    await httpClient.delete(`/api/admin/products/${id}`)
+    await httpClient.delete(`/admin/products/${id}`)
   },
   async createVariant(productId: string, payload: ProductVariant) {
     const res = await httpClient.post<ApiEnvelope<ProductVariant>>(
-      `/api/admin/products/${productId}/variants`,
+      `/admin/products/${productId}/variants`,
       payload,
     )
     return res.data.data
   },
   async updateVariant(productId: string, variantId: string, payload: ProductVariant) {
     const res = await httpClient.put<ApiEnvelope<ProductVariant>>(
-      `/api/admin/products/${productId}/variants/${variantId}`,
+      `/admin/products/${productId}/variants/${variantId}`,
       payload,
     )
     return res.data.data
   },
   async removeVariant(productId: string, variantId: string) {
-    await httpClient.delete(`/api/admin/products/${productId}/variants/${variantId}`)
+    await httpClient.delete(`/admin/products/${productId}/variants/${variantId}`)
   },
   async createSku(productId: string, payload: ProductSku) {
     const res = await httpClient.post<ApiEnvelope<ProductSku>>(
-      `/api/admin/products/${productId}/skus`,
+      `/admin/products/${productId}/skus`,
       payload,
     )
     return res.data.data
   },
   async updateSku(productId: string, skuId: string, payload: ProductSku) {
     const res = await httpClient.put<ApiEnvelope<ProductSku>>(
-      `/api/admin/products/${productId}/skus/${skuId}`,
+      `/admin/products/${productId}/skus/${skuId}`,
       payload,
     )
     return res.data.data
   },
   async removeSku(productId: string, skuId: string) {
-    await httpClient.delete(`/api/admin/products/${productId}/skus/${skuId}`)
+    await httpClient.delete(`/admin/products/${productId}/skus/${skuId}`)
   },
 }

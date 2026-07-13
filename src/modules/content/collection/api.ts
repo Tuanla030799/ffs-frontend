@@ -5,7 +5,7 @@ import type { Collection, CollectionDetail, CollectionListQuery, CollectionPaylo
 
 export const collectionApi = {
   async list(params?: CollectionListQuery) {
-    const res = await httpClient.get<ApiEnvelope<unknown>>('/api/collections', { params })
+    const res = await httpClient.get<ApiEnvelope<unknown>>('/collections', { params })
     return unwrapList<Collection>(
       res.data.data,
       params?.page,
@@ -13,13 +13,13 @@ export const collectionApi = {
     ) as Paginated<Collection>
   },
   async detail(slug: string, params?: CollectionListQuery) {
-    const res = await httpClient.get<ApiEnvelope<CollectionDetail>>(`/api/collections/${slug}`, {
+    const res = await httpClient.get<ApiEnvelope<CollectionDetail>>(`/collections/${slug}`, {
       params,
     })
     return res.data.data
   },
   async adminList(params?: CollectionListQuery) {
-    const res = await httpClient.get<ApiEnvelope<unknown>>('/api/admin/collections', { params })
+    const res = await httpClient.get<ApiEnvelope<unknown>>('/admin/collections', { params })
     return unwrapList<Collection>(
       res.data.data,
       params?.page,
@@ -27,21 +27,21 @@ export const collectionApi = {
     ) as Paginated<Collection>
   },
   async adminDetail(id: string) {
-    const res = await httpClient.get<ApiEnvelope<Collection>>(`/api/admin/collections/${id}`)
+    const res = await httpClient.get<ApiEnvelope<Collection>>(`/admin/collections/${id}`)
     return res.data.data
   },
   async create(payload: CollectionPayload) {
-    const res = await httpClient.post<ApiEnvelope<Collection>>('/api/admin/collections', payload)
+    const res = await httpClient.post<ApiEnvelope<Collection>>('/admin/collections', payload)
     return res.data.data
   },
   async update(id: string, payload: CollectionPayload) {
     const res = await httpClient.put<ApiEnvelope<Collection>>(
-      `/api/admin/collections/${id}`,
+      `/admin/collections/${id}`,
       payload,
     )
     return res.data.data
   },
   async remove(id: string) {
-    await httpClient.delete(`/api/admin/collections/${id}`)
+    await httpClient.delete(`/admin/collections/${id}`)
   },
 }

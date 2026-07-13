@@ -70,7 +70,7 @@ Admin:
 
 ## Ghi chú tích hợp backend
 
-Axios `baseURL` là `NUXT_PUBLIC_API_BASE_URL`. Khi deploy production nên dùng cùng domain qua reverse proxy, ví dụ `/api`; khi backend chạy ở domain riêng thì đặt thành URL đầy đủ của backend.
+Axios `baseURL` là `NUXT_PUBLIC_API_BASE_URL` và phải bao gồm API root. Khi deploy production nên dùng cùng domain qua reverse proxy, ví dụ `/api`; khi backend chạy ở domain riêng thì đặt URL đầy đủ, ví dụ `https://api.example.com/api`. Các service chỉ khai báo đường dẫn tài nguyên như `/products` hoặc `/admin/products`, không lặp lại `/api`.
 
 ## Deploy bằng Docker
 

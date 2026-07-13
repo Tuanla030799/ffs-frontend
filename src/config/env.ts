@@ -31,7 +31,7 @@ function readString(
 
 export const env = {
   get apiBaseUrl() {
-    return readString('apiBaseUrl', 'NUXT_PUBLIC_API_BASE_URL', '/api')
+    return readString('apiBaseUrl', 'NUXT_PUBLIC_API_BASE_URL', '/api') || '/api'
   },
   get apiTimeout() {
     const value = readString('apiTimeout', 'NUXT_PUBLIC_API_TIMEOUT', '15000')

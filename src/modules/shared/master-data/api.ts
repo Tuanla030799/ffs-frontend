@@ -38,7 +38,7 @@ async function fetchMasterData(scope: 'public' | 'admin', force = false) {
     if (publicCache && !force) return publicCache
     if (!publicPromise || force) {
       publicPromise = httpClient
-        .get<ApiEnvelope<MasterData>>('/api/master-data')
+        .get<ApiEnvelope<MasterData>>('/master-data')
         .then((res) => {
           publicCache = normalize(res.data.data)
           return publicCache
@@ -53,7 +53,7 @@ async function fetchMasterData(scope: 'public' | 'admin', force = false) {
   if (adminCache && !force) return adminCache
   if (!adminPromise || force) {
     adminPromise = httpClient
-      .get<ApiEnvelope<MasterData>>('/api/admin/master-data')
+      .get<ApiEnvelope<MasterData>>('/admin/master-data')
       .then((res) => {
         adminCache = normalize(res.data.data)
         return adminCache

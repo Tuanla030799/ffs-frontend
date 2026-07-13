@@ -5,7 +5,7 @@ import type { ProductColor, ProductColorPayload } from './types'
 
 export const colorApi = {
   async adminList(params?: ListQuery) {
-    const res = await httpClient.get<ApiEnvelope<unknown>>('/api/admin/colors', { params })
+    const res = await httpClient.get<ApiEnvelope<unknown>>('/admin/colors', { params })
     return unwrapList<ProductColor>(
       res.data.data,
       params?.page,
@@ -13,18 +13,18 @@ export const colorApi = {
     ) as Paginated<ProductColor>
   },
   async adminDetail(id: string) {
-    const res = await httpClient.get<ApiEnvelope<ProductColor>>(`/api/admin/colors/${id}`)
+    const res = await httpClient.get<ApiEnvelope<ProductColor>>(`/admin/colors/${id}`)
     return res.data.data
   },
   async create(payload: ProductColorPayload) {
-    const res = await httpClient.post<ApiEnvelope<ProductColor>>('/api/admin/colors', payload)
+    const res = await httpClient.post<ApiEnvelope<ProductColor>>('/admin/colors', payload)
     return res.data.data
   },
   async update(id: string, payload: ProductColorPayload) {
-    const res = await httpClient.put<ApiEnvelope<ProductColor>>(`/api/admin/colors/${id}`, payload)
+    const res = await httpClient.put<ApiEnvelope<ProductColor>>(`/admin/colors/${id}`, payload)
     return res.data.data
   },
   async remove(id: string) {
-    await httpClient.delete(`/api/admin/colors/${id}`)
+    await httpClient.delete(`/admin/colors/${id}`)
   },
 }

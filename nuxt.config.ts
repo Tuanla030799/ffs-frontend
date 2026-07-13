@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 
-const apiBaseUrl = process.env.NUXT_PUBLIC_API_BASE_URL || ''
+const apiBaseUrl = process.env.NUXT_PUBLIC_API_BASE_URL || '/api'
 const apiTimeout = process.env.NUXT_PUBLIC_API_TIMEOUT || '15000'
 const fileBaseUrl = process.env.NUXT_PUBLIC_FILE_BASE_URL || ''
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
