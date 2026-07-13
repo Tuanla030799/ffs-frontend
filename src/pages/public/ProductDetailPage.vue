@@ -5,10 +5,7 @@
       :items="[{ label: 'Cửa hàng', to: '/products' }, { label: product?.name || 'Chi tiết' }]"
     />
 
-    <div v-if="error" class="border border-red-200 bg-red-50 p-4 text-red-700">
-      {{ error }}
-    </div>
-    <div v-else-if="loading" class="space-y-12">
+    <div v-if="loading && !product" class="space-y-12">
       <section class="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
         <div class="grid min-w-0 gap-4 md:grid-cols-[64px_minmax(0,1fr)]">
           <div
@@ -34,6 +31,9 @@
       <section class="border-t border-black/10 pt-8 md:pt-10">
         <UiSkeleton class="max-w-3xl" :rows="5" />
       </section>
+    </div>
+    <div v-else-if="error && !product" class="border border-red-200 bg-red-50 p-4 text-red-700">
+      {{ error }}
     </div>
     <div v-else-if="product" class="space-y-12">
       <section class="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
@@ -117,9 +117,9 @@
                 {{ product.brandName || product.categoryName }}
               </p>
               <div class="mt-4 flex items-end gap-3">
-                <strong class="text-lg font-bold text-black">{{ money(currentPrice) }}</strong>
+                <strong class="text-lg font-bold text-black">Từ {{ money(currentPrice) }}</strong>
                 <span v-if="currentOriginalPrice" class="text-sm text-black/35 line-through">
-                  {{ money(currentOriginalPrice) }}
+                  Từ {{ money(currentOriginalPrice) }}
                 </span>
               </div>
             </div>
@@ -269,8 +269,8 @@ const {
   error: productError,
   refresh: refreshProduct,
 } = await useAsyncData(
-  () => `product-detail-${slug.value}`,
-  () => productApi.detail(slug.value),
+  () => `product-detail-${slug.value || 'pending'}`,
+  () => (slug.value ? productApi.detail(slug.value) : Promise.resolve(null)),
   {
     deep: false,
     dedupe: 'defer',
@@ -409,7 +409,7 @@ watch(
 )
 
 onMounted(() => {
-  if (!product.value || productError.value) void refreshProduct()
+  void refreshProduct()
 })
 
 useSeoMeta({

@@ -1,7 +1,7 @@
 <template>
   <div class="min-w-0 space-y-4">
     <div
-      class="flex max-w-full items-end justify-start gap-1 overflow-x-auto border-b border-[var(--ui-border)]"
+      class="flex max-w-full items-end justify-start gap-1 overflow-x-auto overflow-y-hidden border-b border-[var(--ui-border)]"
     >
       <button
         v-for="item in items"

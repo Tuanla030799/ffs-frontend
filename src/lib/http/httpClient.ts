@@ -9,7 +9,7 @@ import { env } from '@/config/env'
 import { useAppStore } from '@/stores/app'
 import { ApiError } from '@/types/http'
 import { adminAuthService } from '@/services/admin/auth.service'
-import { navigateTo } from '#imports'
+import { navigateTo, useRequestURL } from '#imports'
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
@@ -37,6 +37,20 @@ function normalizeAxiosError(error: unknown) {
 }
 
 let refreshPromise: Promise<string> | null = null
+
+function resolveBaseURL(baseURL?: string) {
+  const value = (baseURL || env.apiBaseUrl || '/api').trim()
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(value)) return value
+
+  const relativeBaseURL = value.startsWith('/') ? value : `/${value}`
+  if (!import.meta.server) return relativeBaseURL
+
+  try {
+    return `${useRequestURL().origin}${relativeBaseURL}`
+  } catch {
+    return relativeBaseURL
+  }
+}
 
 async function refreshAccessToken() {
   const appStore = useAppStore()
@@ -102,7 +116,7 @@ function handleUnauthorized() {
 
 function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
   const client = axios.create({
-    baseURL: env.apiBaseUrl,
+    baseURL: resolveBaseURL(config?.baseURL),
     timeout: env.apiTimeout,
     headers: {
       'Content-Type': 'application/json',
@@ -127,6 +141,7 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
 
       return {
         ...requestConfig,
+        baseURL: resolveBaseURL(requestConfig.baseURL),
         headers: {
           ...(requestConfig.headers || {}),
           ...authHeaders,

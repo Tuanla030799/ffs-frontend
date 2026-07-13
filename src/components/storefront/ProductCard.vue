@@ -30,9 +30,9 @@
         {{ product.name }}
       </h2>
 
-      <p class="mb-3 line-clamp-2 min-h-9 text-[13px] leading-[1.4] text-[#52525B]">
+      <!-- <p class="mb-3 line-clamp-2 min-h-9 text-[13px] leading-[1.4] text-[#52525B]">
         {{ product.shortDescription }}
-      </p>
+      </p> -->
 
       <div class="mb-[15px] flex flex-wrap gap-1.5">
         <UiTag v-if="product.categoryName" variant="soft">{{ product.categoryName }}</UiTag>
@@ -46,7 +46,16 @@
           <span v-if="originalPrice" class="mb-0.5 text-[13px] text-[#A1A1AA] line-through">
             {{ money(originalPrice) }}
           </span>
-          <span class="text-xl font-bold text-[#18181B]">{{ money(displayPrice) }}</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xl font-bold text-[#18181B]">{{ money(displayPrice) }}</span>
+            <span
+              v-if="discountPercentage"
+              class="rounded-md bg-[#FEE2E2] px-1.5 py-0.5 text-xs font-bold text-[#DC2626]"
+              :aria-label="`Giảm ${discountPercentage} phần trăm`"
+            >
+              -{{ discountPercentage }}%
+            </span>
+          </div>
         </div>
 
         <!-- <UiButton
@@ -104,6 +113,21 @@ const props = defineProps<{ product: Product | ProductFeatured }>()
 
 const displayPrice = computed(() => productPrice(props.product))
 const originalPrice = computed(() => productOriginalPrice(props.product))
+const discountPercentage = computed(() => {
+  const current = Number(displayPrice.value)
+  const original = Number(originalPrice.value)
+
+  if (
+    !Number.isFinite(current) ||
+    !Number.isFinite(original) ||
+    original <= 0 ||
+    current >= original
+  ) {
+    return 0
+  }
+
+  return Math.round(((original - current) / original) * 100)
+})
 const inStock = computed(() => productStock(props.product) > 0)
 // const reviewCount = computed(() => seededReviewCount(props.product.id || props.product.slug))
 

@@ -89,7 +89,7 @@
         v-else-if="products.length"
         tag="div"
         name="product-card"
-        class="grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
+        class="grid grid-cols-2 gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
       >
         <ProductCard v-for="product in sortedProducts" :key="product.id" :product="product" />
       </TransitionGroup>
