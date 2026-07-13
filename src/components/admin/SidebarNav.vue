@@ -41,6 +41,7 @@ const items = [
   { label: 'Landing banners', to: '/admin/banners' },
   { label: 'Customers', to: '/admin/customers' },
   { label: 'Admin users', to: '/admin/users' },
+  { label: 'Backend logs', to: '/logs' },
   { label: 'Storefront', to: '/' },
 ]
 

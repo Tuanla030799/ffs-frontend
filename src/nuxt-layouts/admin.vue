@@ -62,6 +62,7 @@ const quickLinks = [
   { label: 'Collections', to: '/admin/collections' },
   { label: 'Blogs', to: '/admin/blogs' },
   { label: 'Orders', to: '/admin/orders' },
+  { label: 'Logs', to: '/logs' },
   { label: 'Store', to: '/' },
 ]
 
