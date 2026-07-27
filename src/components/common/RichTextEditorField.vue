@@ -170,6 +170,10 @@ const editorInit = computed(() => ({
   paste_data_images: false,
   automatic_uploads: true,
   images_upload_credentials: true,
+  // Keep uploaded same-origin URLs absolute. TinyMCE otherwise rewrites them
+  // relative to the current admin route (for example, ../../../files/...).
+  relative_urls: false,
+  remove_script_host: false,
   file_picker_types: 'image',
   invalid_elements: 'script,style,iframe,object,embed',
 
