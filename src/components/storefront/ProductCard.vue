@@ -152,10 +152,10 @@ function productOriginalPrice(product: Product | ProductFeatured) {
   return product.salePrice ? product.price : undefined
 }
 
-function productStock(product: Product | ProductFeatured) {
-  if ('totalStock' in product) return product.totalStock || 0
-  return product.stock || 0
-}
+// function productStock(product: Product | ProductFeatured) {
+//   if ('totalStock' in product) return product.totalStock || 0
+//   return product.stock || 0
+// }
 
 // function seededReviewCount(seed: string) {
 //   let hash = 0
