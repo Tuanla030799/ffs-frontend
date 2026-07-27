@@ -2,7 +2,7 @@
   <div
     class="overflow-hidden rounded-[var(--ui-radius-md)] border border-slate-200 bg-white shadow-sm"
   >
-    <div class="overflow-x-auto">
+    <div class="ui-table-scroll overflow-x-auto">
       <table
         class="min-w-full border-separate border-spacing-0 bg-white"
         :class="minWidth"
@@ -16,7 +16,7 @@
         <thead class="bg-slate-50" :class="stickyHeader && 'sticky top-0 z-10'">
           <tr>
             <th
-              v-for="(column, columnIndex) in columns"
+              v-for="(column, columnIndex) in displayedColumns"
               :key="column.key"
               :class="headerCellClass(column, columnIndex)"
               :style="columnStyle(column)"
@@ -27,7 +27,7 @@
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td :colspan="columns.length" :class="emptyCellClass">
+            <td :colspan="displayedColumns.length" :class="emptyCellClass">
               <slot name="loading">
                 <div
                   class="flex items-center justify-center gap-2 text-sm font-semibold text-slate-500"
@@ -41,7 +41,7 @@
             </td>
           </tr>
           <tr v-else-if="!rows.length">
-            <td :colspan="columns.length" :class="emptyCellClass">
+            <td :colspan="displayedColumns.length" :class="emptyCellClass">
               <slot name="empty">
                 <div class="text-sm text-slate-500">
                   {{ emptyText }}
@@ -55,7 +55,7 @@
             :class="bodyRowClass(row, rowIndex)"
           >
             <td
-              v-for="(column, columnIndex) in columns"
+              v-for="(column, columnIndex) in displayedColumns"
               :key="column.key"
               :class="bodyCellClass(column, row, rowIndex, columnIndex)"
               :style="columnStyle(column)"
@@ -136,6 +136,16 @@ const emptyCellClass = computed(() =>
   cn(cellPaddingClass.value, props.density === 'lg' ? 'py-8' : 'py-6'),
 )
 
+const displayedColumns = computed<readonly TableColumn<T>[]>(() => {
+  const regularColumns = props.columns.filter((column) => !isActionsColumn(column))
+  const actionsColumns = props.columns.filter(isActionsColumn)
+  return actionsColumns.length ? [...regularColumns, ...actionsColumns] : props.columns
+})
+
+function isActionsColumn(column: TableColumn<T>) {
+  return column.key === 'actions'
+}
+
 function alignClass(align?: 'left' | 'center' | 'right') {
   if (align === 'center') return 'text-center'
   if (align === 'right') return 'text-right'
@@ -156,13 +166,13 @@ function columnStyle(column: TableColumn<T>) {
 
 function defaultBodyAlignClass(index: number) {
   if (index === 0) return 'text-left'
-  if (index === props.columns.length - 1) return 'text-right'
+  if (index === displayedColumns.value.length - 1) return 'text-right'
   return 'text-center'
 }
 
 function defaultHeaderAlignClass(index: number) {
   if (index === 0) return 'text-left'
-  if (index === props.columns.length - 1) return 'text-right'
+  if (index === displayedColumns.value.length - 1) return 'text-right'
   return 'text-center'
 }
 
@@ -173,12 +183,14 @@ function headerCellClass(column: TableColumn<T>, columnIndex: number) {
     column.align ? alignClass(column.align) : defaultHeaderAlignClass(columnIndex),
     column.widthClass,
     column.headerClass,
+    isActionsColumn(column) &&
+      'sticky right-0 z-20 border-l border-slate-200 bg-slate-50 shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.45)]',
   )
 }
 
 function bodyRowClass(row: T, index: number) {
   return cn(
-    'align-middle hover:bg-[var(--ui-surface-muted)]/70',
+    'group align-middle hover:bg-[var(--ui-surface-muted)]/70',
     'transition-colors hover:bg-slate-50',
     props.striped && index % 2 === 1 && 'bg-slate-50/50',
     resolveDynamicClass(props.rowClass, row, index),
@@ -195,6 +207,17 @@ function bodyCellClass(column: TableColumn<T>, row: T, index: number, columnInde
     column.widthClass,
     resolveDynamicClass(column.class, row, index),
     resolveDynamicClass(column.cellClass, row, index),
+    isActionsColumn(column) &&
+      'sticky right-0 z-[5] border-l border-slate-200 bg-white shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.45)] group-hover:bg-slate-50',
+    isActionsColumn(column) && props.striped && index % 2 === 1 && 'bg-slate-50',
   )
 }
 </script>
+
+<style scoped>
+.ui-table-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+</style>
