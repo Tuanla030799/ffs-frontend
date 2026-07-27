@@ -131,7 +131,7 @@ const discountPercentage = computed(() => {
 
   return Math.round(((original - current) / original) * 100)
 })
-const inStock = computed(() => productStock(props.product) > 0)
+// const inStock = computed(() => productStock(props.product) > 0)
 // const reviewCount = computed(() => seededReviewCount(props.product.id || props.product.slug))
 
 function primaryImageUrl(product: Product | ProductFeatured) {
