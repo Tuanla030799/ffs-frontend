@@ -203,7 +203,11 @@ import { isEditorJsContent, normalizeRichTextInput } from '@/lib/richText'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
 import { formatLocalDateTime } from '@/lib/dateTime'
 import { slugify, syncAutoSlug } from '@/lib/slug'
-import type { Collection, CollectionPayload } from '@/modules/content/collection/types'
+import type {
+  Collection,
+  CollectionDetail,
+  CollectionPayload,
+} from '@/modules/content/collection/types'
 import type { Product } from '@/modules/catalog/product/types'
 import type { UploadedFile } from '@/services/file.service'
 import ImagePreview from '@/components/common/ImagePreview.vue'
@@ -286,7 +290,7 @@ function rememberSelectedProduct(option: AsyncSelectOption) {
   const product = option.raw as Product | undefined
   if (product?.id) selectedProducts.value[product.id] = product
 }
-function fill(row?: Collection) {
+function fill(row?: CollectionDetail) {
   selectedProducts.value = {}
   const collectionProducts = row?.products || []
   collectionProducts.forEach((product) => {

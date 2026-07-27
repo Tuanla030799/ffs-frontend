@@ -236,12 +236,6 @@ async function connect() {
   errorMessage.value = ''
   logFile.value = ''
   lastHeartbeat.value = ''
-  let openingTimedOut = false
-  const openingTimeoutId = window.setTimeout(() => {
-    if (ownConnectionId !== connectionId || unmounted || status.value !== 'connecting') return
-    openingTimedOut = true
-    nextController.abort()
-  }, env.apiTimeout)
 
   try {
     const apiBaseUrl = env.apiBaseUrl.replace(/\/+$/, '')
@@ -255,7 +249,6 @@ async function connect() {
       cache: 'no-store',
     })
 
-    window.clearTimeout(openingTimeoutId)
     if (!response.ok) throw new Error(`SSE failed: ${response.status}`)
     const contentType = response.headers.get('content-type') || ''
     if (!contentType.toLowerCase().includes('text/event-stream')) {
@@ -286,17 +279,10 @@ async function connect() {
     if (ownConnectionId === connectionId && !unmounted) status.value = 'disconnected'
   } catch (error) {
     if (ownConnectionId !== connectionId || unmounted) return
-    if (openingTimedOut) {
-      status.value = 'error'
-      errorMessage.value =
-        'Quá thời gian chờ SSE. Proxy hoặc Cloudflare chưa chuyển response stream xuống trình duyệt.'
-      return
-    }
     if (nextController.signal.aborted) return
     status.value = 'error'
     errorMessage.value = error instanceof Error ? error.message : 'Không thể kết nối SSE.'
   } finally {
-    window.clearTimeout(openingTimeoutId)
     if (ownConnectionId === connectionId) controller = null
   }
 }

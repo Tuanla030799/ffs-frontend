@@ -43,7 +43,10 @@
         class="mb-3 flex items-center justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start"
       >
         <div class="flex flex-col">
-          <span v-if="originalPrice" class="mb-0.5 text-[13px] text-[#A1A1AA] line-through">
+          <span
+            v-if="originalPrice && discountPercentage"
+            class="mb-0.5 text-[13px] text-[#A1A1AA] line-through"
+          >
             {{ money(originalPrice) }}
           </span>
           <div class="flex flex-wrap items-center gap-2">
@@ -73,9 +76,9 @@
         </UiButton> -->
       </div>
 
-      <div class="flex items-center justify-between border-t border-[#F4F4F5] pt-3">
+      <!-- <div class="flex items-center justify-between border-t border-[#F4F4F5] pt-3">
         <div class="flex items-center gap-0.5">
-          <!-- <svg
+          <svg
             v-for="index in 5"
             :key="index"
             class="h-4 w-4"
@@ -88,7 +91,7 @@
               points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
             />
           </svg>
-          <span class="ml-1.5 text-[11px] text-[#71717A]">{{ reviewCount }} Reviews</span> -->
+          <span class="ml-1.5 text-[11px] text-[#71717A]">{{ reviewCount }} Reviews</span>
         </div>
         <div
           class="text-[11px] font-semibold"
@@ -96,7 +99,7 @@
         >
           {{ inStock ? 'In Stock' : 'Out of Stock' }}
         </div>
-      </div>
+      </div> -->
     </div>
   </StorefrontCard>
 </template>
