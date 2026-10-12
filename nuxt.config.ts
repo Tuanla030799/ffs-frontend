@@ -9,12 +9,21 @@ const publicSiteUrl = siteUrl.includes('localhost')
   ? siteUrl.replace(/\/+$/, '')
   : siteUrl.replace(/^http:\/\//, 'https://').replace(/\/+$/, '')
 const defaultOgImage = `${publicSiteUrl}/thepocketshoes-og.jpg`
-const publicDetailCache = {
-  swr: 300,
-  headers: {
-    'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
-  },
+// `npm run build:cf` đặt NITRO_PRESET=cloudflare_module; build Docker/Node giữ nguyên preset mặc định.
+const isCloudflareBuild = /^cloudflare/.test(process.env.NITRO_PRESET || '')
+if (isCloudflareBuild && !/^https:\/\//i.test(apiBaseUrl)) {
+  console.warn(
+    '[cloudflare] NUXT_PUBLIC_API_BASE_URL nên là URL HTTPS đầy đủ của BE (Worker không proxy /api).',
+  )
 }
+const publicCacheHeaders = {
+  'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
+}
+// Trên Workers, cache `swr` của Nitro mặc định nằm trong memory của từng isolate: không bền,
+// không chia sẻ giữa isolate/PoP. Chỉ bật `swr` cho build Node (Docker); Workers chỉ giữ header.
+const publicDetailCache = isCloudflareBuild
+  ? { headers: publicCacheHeaders }
+  : { swr: 300, headers: publicCacheHeaders }
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-05-11',
@@ -79,6 +88,14 @@ export default defineNuxtConfig({
     '/order-success': {
       ssr: false,
       headers: { 'x-robots-tag': 'noindex, nofollow' },
+    },
+  },
+  nitro: {
+    // Chỉ có tác dụng khi build với preset Cloudflare; build Node bỏ qua khối này.
+    cloudflare: {
+      // Dùng wrangler.jsonc ở root làm cấu hình deploy duy nhất.
+      deployConfig: false,
+      nodeCompat: true,
     },
   },
   vite: {

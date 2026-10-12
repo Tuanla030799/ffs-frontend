@@ -48,6 +48,8 @@ NUXT_PUBLIC_SITE_URL=http://thepocketshoes.store
 FRONTEND_HTTP_PORT=80
 ```
 
+Ý nghĩa từng biến xem trong `.env.example`.
+
 ## Routes chính
 
 Public:
@@ -93,3 +95,16 @@ Network `thepocketshoes_net` là Docker network dùng chung bên ngoài Compose.
 ```bash
 docker network inspect thepocketshoes_net >/dev/null 2>&1 || docker network create thepocketshoes_net
 ```
+
+## Deploy lên Cloudflare Workers (thử nghiệm)
+
+Build riêng với preset `cloudflare_module`, giữ SSR cho trang public; BE vẫn chạy ở server riêng và
+FE gọi URL HTTPS đầy đủ của BE qua `NUXT_PUBLIC_API_BASE_URL`.
+
+```bash
+npm run build:cf    # build Worker vào .output/
+npm run preview:cf  # chạy trên runtime workerd local, đọc biến từ .dev.vars
+```
+
+Deploy chỉ chạy thủ công qua workflow `Deploy Cloudflare`. Chi tiết env, CORS, cache, hạn mức và các
+bước gắn domain: [docs/cloudflare-workers.md](docs/cloudflare-workers.md).
