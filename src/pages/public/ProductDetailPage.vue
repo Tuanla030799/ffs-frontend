@@ -244,6 +244,7 @@ import { UiButton, UiModal, UiSkeleton, UiTabs, UiTag } from '@/components/ui'
 import { addToCart } from '@/composables/useCart'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
+import { useNotFoundStatus } from '@/composables/useNotFoundStatus'
 import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import { productApi } from '@/modules/catalog/product/api'
 import { getErrorMessage } from '@/modules/shared/hooks'
@@ -277,6 +278,7 @@ const {
     watch: [slug],
   },
 )
+useNotFoundStatus(product, productError)
 const error = computed(() => (productError.value ? getErrorMessage(productError.value) : ''))
 const images = computed(() => asArray(product.value?.images))
 const galleryImages = computed(() =>
@@ -413,10 +415,13 @@ onMounted(() => {
 })
 
 useSeoMeta({
-  title: () => (product.value ? `${product.value.name} - Thepocketshoes` : 'Chi tiet san pham'),
-  description: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
-  ogTitle: () => product.value?.name || 'Thepocketshoes',
-  ogDescription: () => product.value?.shortDescription || 'Chi tiet san pham tai Thepocketshoes.',
+  title: () =>
+    product.value
+      ? `${product.value.name} - The Pocket Shoes`
+      : 'Chi tiết sản phẩm - The Pocket Shoes',
+  description: () => product.value?.shortDescription || 'Chi tiết sản phẩm tại The Pocket Shoes.',
+  ogTitle: () => product.value?.name || 'The Pocket Shoes',
+  ogDescription: () => product.value?.shortDescription || 'Chi tiết sản phẩm tại The Pocket Shoes.',
   ogImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
   twitterImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
 })

@@ -8,9 +8,9 @@ import ProductDetailPage from '@/pages/public/ProductDetailPage.vue'
 definePageMeta({ layout: 'public', name: 'product-detail' })
 
 useSeoMeta({
-  title: 'Chi tiet san pham - Fresh Shoes',
-  description: 'Thong tin chi tiet san pham tai Fresh Shoes.',
-  ogTitle: 'Chi tiet san pham - Fresh Shoes',
-  ogDescription: 'Thong tin chi tiet san pham tai Fresh Shoes.',
+  title: 'Chi tiết sản phẩm - The Pocket Shoes',
+  description: 'Thông tin chi tiết sản phẩm tại The Pocket Shoes.',
+  ogTitle: 'Chi tiết sản phẩm - The Pocket Shoes',
+  ogDescription: 'Thông tin chi tiết sản phẩm tại The Pocket Shoes.',
 })
 </script>

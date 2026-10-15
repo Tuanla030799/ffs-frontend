@@ -6,6 +6,13 @@ type PublicRuntimeEnv = {
   fileBaseUrl?: string
 }
 
+// Giá trị NUXT_PUBLIC_* lúc build (nuxt.config.ts → vite.define). Dùng khi SSR không đọc được
+// runtime config (ngoài ngữ cảnh Nuxt, ví dụ trong interceptor Axios) và môi trường chạy cũng
+// không có biến, để không rơi về mặc định `/api` (Worker không proxy /api).
+declare const __BUILD_PUBLIC_ENV__: PublicRuntimeEnv | undefined
+const buildPublicEnv: PublicRuntimeEnv =
+  typeof __BUILD_PUBLIC_ENV__ === 'undefined' ? {} : __BUILD_PUBLIC_ENV__
+
 function processEnv(name: string) {
   if (typeof process === 'undefined') return undefined
   return process.env[name]
@@ -19,13 +26,10 @@ function runtimePublicEnv(): PublicRuntimeEnv {
   }
 }
 
-function readString(
-  runtimeKey: keyof PublicRuntimeEnv,
-  nuxtKey: string,
-  fallback = '',
-) {
+function readString(runtimeKey: keyof PublicRuntimeEnv, nuxtKey: string, fallback = '') {
   const publicEnv = runtimePublicEnv()
-  const value = publicEnv[runtimeKey] ?? processEnv(nuxtKey) ?? fallback
+  const value =
+    publicEnv[runtimeKey] ?? processEnv(nuxtKey) ?? buildPublicEnv[runtimeKey] ?? fallback
   return String(value).trim()
 }
 

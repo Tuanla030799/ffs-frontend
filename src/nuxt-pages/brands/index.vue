@@ -8,9 +8,9 @@ import BrandListPage from '@/pages/public/BrandListPage.vue'
 definePageMeta({ layout: 'public', name: 'brands' })
 
 useSeoMeta({
-  title: 'Thepocketshoes',
-  description: 'Danh sach thuong hieu giay dang co tai Thepocketshoes.',
-  ogTitle: 'Thepocketshoes',
-  ogDescription: 'Kham pha cac thuong hieu giay va sneaker noi bat.',
+  title: 'Thương hiệu - The Pocket Shoes',
+  description: 'Danh sách thương hiệu giày đang có tại The Pocket Shoes.',
+  ogTitle: 'Thương hiệu - The Pocket Shoes',
+  ogDescription: 'Khám phá các thương hiệu giày và sneaker nổi bật.',
 })
 </script>

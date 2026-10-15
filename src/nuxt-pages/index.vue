@@ -12,11 +12,11 @@ definePageMeta({ layout: 'public', name: 'home' })
 const runtimeConfig = useRuntimeConfig()
 const siteUrl = publicSiteUrl(String(runtimeConfig.public.siteUrl || ''))
 const homeUrl = `${siteUrl}/`
-const title = 'The Pocket Shoes - Giay sneaker va thoi trang'
+const title = 'The Pocket Shoes - Giày sneaker và thời trang'
 const description =
-  'The Pocket Shoes mang den cac mau giay sneaker, bo suu tap va bai viet thoi trang moi.'
+  'The Pocket Shoes mang đến các mẫu giày sneaker, bộ sưu tập và bài viết thời trang mới.'
 const ogTitle = 'The Pocket Shoes'
-const ogDescription = 'Kham pha giay sneaker, bo suu tap noi bat va cam hung phoi do moi.'
+const ogDescription = 'Khám phá giày sneaker, bộ sưu tập nổi bật và cảm hứng phối đồ mới.'
 const ogImage = defaultOgImage(siteUrl)
 
 useHead({

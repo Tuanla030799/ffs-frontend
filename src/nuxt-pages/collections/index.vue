@@ -8,10 +8,10 @@ import CollectionListPage from '@/pages/public/CollectionListPage.vue'
 definePageMeta({ layout: 'public', name: 'collections' })
 
 useSeoMeta({
-  title: 'Thepocketshoes',
+  title: 'Bộ sưu tập - The Pocket Shoes',
   description:
-    'Kham pha cac bo suu tap giay duoc Thepocketshoes chon loc theo phong cach va nhu cau.',
-  ogTitle: 'Thepocketshoes',
-  ogDescription: 'Cac bo suu tap sneaker va giay thoi trang noi bat.',
+    'Khám phá các bộ sưu tập giày được The Pocket Shoes chọn lọc theo phong cách và nhu cầu.',
+  ogTitle: 'Bộ sưu tập - The Pocket Shoes',
+  ogDescription: 'Các bộ sưu tập sneaker và giày thời trang nổi bật.',
 })
 </script>

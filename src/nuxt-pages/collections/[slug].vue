@@ -8,9 +8,9 @@ import CollectionDetailPage from '@/pages/public/CollectionDetailPage.vue'
 definePageMeta({ layout: 'public', name: 'collection-detail' })
 
 useSeoMeta({
-  title: 'Bo suu tap - Fresh Shoes',
-  description: 'Kham pha cac bo suu tap giay duoc chon loc tai Fresh Shoes.',
-  ogTitle: 'Bo suu tap - Fresh Shoes',
-  ogDescription: 'Kham pha cac bo suu tap giay duoc chon loc tai Fresh Shoes.',
+  title: 'Bộ sưu tập - The Pocket Shoes',
+  description: 'Khám phá các bộ sưu tập giày được chọn lọc tại The Pocket Shoes.',
+  ogTitle: 'Bộ sưu tập - The Pocket Shoes',
+  ogDescription: 'Khám phá các bộ sưu tập giày được chọn lọc tại The Pocket Shoes.',
 })
 </script>

@@ -21,7 +21,7 @@
 
     <div class="p-5">
       <div class="mb-[5px] text-[11px] font-semibold tracking-[1px] text-[#71717A] uppercase">
-        {{ product.brandName || 'Thepocketshoes' }}
+        {{ product.brandName || 'The Pocket Shoes' }}
       </div>
 
       <h2

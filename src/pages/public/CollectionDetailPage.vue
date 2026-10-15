@@ -79,16 +79,21 @@ import { UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
+import { useNotFoundStatus } from '@/composables/useNotFoundStatus'
 import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { CollectionDetail } from '@/modules/content/collection/types'
 
 const route = useRoute()
 const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
-const { data: collection, pending: loading } = await useAsyncData(
-  `collection-detail-${String(route.params.slug)}`,
-  () => collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 }),
+const {
+  data: collection,
+  pending: loading,
+  error: collectionError,
+} = await useAsyncData(`collection-detail-${String(route.params.slug)}`, () =>
+  collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 }),
 )
+useNotFoundStatus(collection, collectionError)
 const products = computed<ProductFeatured[]>(() => collection.value?.products || [])
 const collectionDescriptionHtml = computed(() =>
   normalizeRichTextInput(collection.value?.descriptionHtml || collection.value?.descriptionJson),
@@ -99,12 +104,15 @@ function coverUrl(row: CollectionDetail) {
 }
 
 useSeoMeta({
-  title: () => (collection.value ? `${collection.value.name} - Thepocketshoes` : 'Bo suu tap'),
+  title: () =>
+    collection.value
+      ? `${collection.value.name} - The Pocket Shoes`
+      : 'Bộ sưu tập - The Pocket Shoes',
   description: () =>
-    collection.value?.excerpt || 'Kham pha bo suu tap giay duoc chon loc tai Thepocketshoes.',
-  ogTitle: () => collection.value?.name || 'Bo suu tap Thepocketshoes',
+    collection.value?.excerpt || 'Khám phá bộ sưu tập giày được chọn lọc tại The Pocket Shoes.',
+  ogTitle: () => collection.value?.name || 'Bộ sưu tập The Pocket Shoes',
   ogDescription: () =>
-    collection.value?.excerpt || 'Kham pha bo suu tap giay duoc chon loc tai Thepocketshoes.',
+    collection.value?.excerpt || 'Khám phá bộ sưu tập giày được chọn lọc tại The Pocket Shoes.',
   ogImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
   twitterImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
 })

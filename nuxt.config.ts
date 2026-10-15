@@ -107,6 +107,10 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    // Giá trị build-time cho src/config/env.ts khi không đọc được runtime config.
+    define: {
+      __BUILD_PUBLIC_ENV__: JSON.stringify({ apiBaseUrl, apiTimeout, fileBaseUrl }),
+    },
   },
   typescript: {
     typeCheck: true,

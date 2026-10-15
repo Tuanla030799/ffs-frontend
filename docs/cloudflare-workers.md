@@ -65,10 +65,10 @@ Cách giá trị đến Worker:
 
 Workflow `deploy-cloudflare.yml` dùng cùng một nguồn (GitHub Environment variables) cho cả hai bước.
 
-Lưu ý: lúc SSR, `src/config/env.ts` đọc Worker vars qua `process.env` khi không lấy được runtime
-config trong ngữ cảnh Nuxt. Vì vậy Worker **luôn phải có** các biến `NUXT_PUBLIC_*` (workflow truyền
-bằng `--var`). Nếu deploy bằng `npm run deploy:cf` mà không có `--var`, Wrangler xoá vars hiện có và
-SSR sẽ gọi nhầm `/api` tương đối.
+Lưu ý: lúc SSR, `src/config/env.ts` đọc theo thứ tự: runtime config → Worker vars (`process.env`) →
+giá trị lúc build (`vite.define`, `__BUILD_PUBLIC_ENV__`). Vì vậy nếu Worker lỡ mất vars (ví dụ
+chạy `wrangler deploy` không kèm `--var`), SSR vẫn dùng URL BE lúc build. Vẫn nên deploy qua workflow
+để vars trên dashboard khớp với build.
 
 Preview local: tạo `.dev.vars` (đã gitignore) cùng format `.env`:
 
