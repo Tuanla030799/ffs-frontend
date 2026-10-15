@@ -4,7 +4,7 @@
       <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <BreadcrumbNav :items="[{ label: 'About Us' }]" />
         <p class="mt-10 text-xs font-black tracking-[0.2em] uppercase md:text-sm">
-          About The Pocket Shoes
+          About The Pocket Shoes · Since {{ FOUNDING_YEAR }}
         </p>
         <h1
           class="mt-5 max-w-4xl text-4xl leading-[0.96] font-black tracking-tight sm:text-5xl lg:text-7xl"
@@ -45,9 +45,10 @@
           rất khó hình dung đôi giày sẽ hợp với mình đến đâu khi chỉ nhìn qua màn hình.
         </p>
         <p>
-          The Pocket Shoes ra đời để rút ngắn quãng đường đó. Mỗi sản phẩm trên cửa hàng được tuyển
-          chọn theo kiểu dáng, chất liệu và khả năng phối đồ, sắp xếp theo thương hiệu và bộ sưu tập
-          để bạn tìm nhanh hơn, kèm bài viết trên blog để bạn hiểu rõ hơn về thứ mình mang.
+          The Pocket Shoes ra đời năm {{ FOUNDING_YEAR }} để rút ngắn quãng đường đó. Mỗi sản phẩm
+          trên cửa hàng được tuyển chọn theo kiểu dáng, chất liệu và khả năng phối đồ, sắp xếp theo
+          thương hiệu và bộ sưu tập để bạn tìm nhanh hơn, kèm bài viết trên blog để bạn hiểu rõ hơn
+          về thứ mình mang.
         </p>
         <p>
           Bước tiếp theo của chúng tôi là đưa trí tuệ nhân tạo vào trải nghiệm mua sắm, để việc tìm
@@ -150,7 +151,39 @@
             {{ member.role }}
           </p>
           <p v-if="member.bio" class="mt-4 text-sm leading-6 text-black/65">{{ member.bio }}</p>
+          <div v-if="member.links?.length" class="mt-4 flex flex-wrap gap-4">
+            <a
+              v-for="link in member.links"
+              :key="link.url"
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs font-black tracking-wide text-black uppercase underline underline-offset-4 hover:opacity-60"
+            >
+              {{ link.label }}
+            </a>
+          </div>
         </article>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        class="flex flex-col gap-4 border-y border-black/10 py-8 md:flex-row md:items-center md:justify-between"
+      >
+        <h2 class="text-xl font-black tracking-tight">Theo dõi The Pocket Shoes</h2>
+        <div class="flex flex-wrap gap-3">
+          <a
+            v-for="link in SOCIAL_LINKS"
+            :key="link.url"
+            :href="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex border border-black px-5 py-3 text-xs font-black tracking-wide text-black uppercase no-underline transition hover:bg-black hover:text-white"
+          >
+            {{ link.label }}
+          </a>
+        </div>
       </div>
     </section>
 
@@ -189,8 +222,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
-
-type TeamMember = { name: string; role: string; bio?: string }
+import { FOUNDING_YEAR, SOCIAL_LINKS, TEAM } from '@/config/brand'
 
 const values = [
   {
@@ -273,6 +305,5 @@ const aiPrinciples = [
   },
 ]
 
-// Điền thông tin thật của founder/đội ngũ; mục "Đội ngũ" chỉ hiển thị khi danh sách không rỗng.
-const team: TeamMember[] = []
+const team = TEAM
 </script>

@@ -6,6 +6,7 @@
 import { useHead, useRuntimeConfig } from '#imports'
 import AboutPage from '@/pages/public/AboutPage.vue'
 import { defaultOgImage, publicSiteUrl } from '@/lib/seo'
+import { FOUNDING_YEAR, SOCIAL_LINKS, TEAM } from '@/config/brand'
 
 definePageMeta({ layout: 'public', name: 'about' })
 
@@ -35,6 +36,14 @@ useHead({
           url: `${siteUrl}/`,
           logo: `${siteUrl}/logo.svg`,
           slogan: "Shoes you didn't know you need.",
+          foundingDate: String(FOUNDING_YEAR),
+          sameAs: SOCIAL_LINKS.map((link) => link.url),
+          founder: TEAM.map((member) => ({
+            '@type': 'Person',
+            name: member.name,
+            jobTitle: member.role,
+            ...(member.links?.length ? { sameAs: member.links.map((link) => link.url) } : {}),
+          })),
         },
       }),
     },
