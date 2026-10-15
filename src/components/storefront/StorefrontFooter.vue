@@ -14,6 +14,9 @@
           <RouterLink class="text-black/60 no-underline hover:text-black" to="/collections">
             Bộ sưu tập
           </RouterLink>
+          <RouterLink class="text-black/60 no-underline hover:text-black" to="/about">
+            Về chúng tôi
+          </RouterLink>
           <RouterLink class="text-black/60 no-underline hover:text-black" to="/contact">
             Liên hệ
           </RouterLink>

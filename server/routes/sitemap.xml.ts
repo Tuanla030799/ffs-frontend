@@ -1,4 +1,4 @@
-const STATIC_ROUTES = ['/', '/products', '/collections', '/brands', '/blogs']
+const STATIC_ROUTES = ['/', '/products', '/collections', '/brands', '/blogs', '/about']
 
 export default defineEventHandler((event) => {
   const config = useRuntimeConfig(event)

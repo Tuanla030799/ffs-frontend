@@ -33,7 +33,7 @@
               {{ hero?.subtitle || 'We curate shoes you didn’t know you needed.' }}
             </p>
             <RouterLink
-              :to="hero?.linkUrl || '/products'"
+              :to="hero?.linkUrl || '/about'"
               class="mt-7 inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:mt-8 md:px-7 md:py-4"
             >
               About us
