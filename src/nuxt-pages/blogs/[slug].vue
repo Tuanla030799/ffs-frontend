@@ -8,9 +8,9 @@ import BlogDetailPage from '@/pages/public/BlogDetailPage.vue'
 definePageMeta({ layout: 'public', name: 'blog-detail' })
 
 useSeoMeta({
-  title: 'Blog Fresh Shoes',
-  description: 'Bai viet va cam hung thoi trang tu Fresh Shoes.',
-  ogTitle: 'Blog Fresh Shoes',
-  ogDescription: 'Bai viet va cam hung thoi trang tu Fresh Shoes.',
+  title: 'Blog - The Pocket Shoes',
+  description: 'Bài viết và cảm hứng thời trang từ The Pocket Shoes.',
+  ogTitle: 'Blog - The Pocket Shoes',
+  ogDescription: 'Bài viết và cảm hứng thời trang từ The Pocket Shoes.',
 })
 </script>

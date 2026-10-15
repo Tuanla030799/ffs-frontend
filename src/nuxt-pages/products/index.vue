@@ -8,9 +8,9 @@ import ProductListPage from '@/pages/public/ProductListPage.vue'
 definePageMeta({ layout: 'public', name: 'products' })
 
 useSeoMeta({
-  title: 'Thepocketshoes',
-  description: 'Danh sach san pham giay sneaker, loc theo thuong hieu, danh muc, size va mau sac.',
-  ogTitle: 'Thepocketshoes',
-  ogDescription: 'Tim doi giay phu hop voi phong cach cua ban tai Thepocketshoes.',
+  title: 'Sản phẩm - The Pocket Shoes',
+  description: 'Danh sách sản phẩm giày sneaker, lọc theo thương hiệu, danh mục, size và màu sắc.',
+  ogTitle: 'Sản phẩm - The Pocket Shoes',
+  ogDescription: 'Tìm đôi giày phù hợp với phong cách của bạn tại The Pocket Shoes.',
 })
 </script>

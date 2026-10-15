@@ -44,15 +44,20 @@ import { blogApi } from '@/modules/content/blog/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
 import { formatLocalDateTime } from '@/lib/dateTime'
+import { useNotFoundStatus } from '@/composables/useNotFoundStatus'
 import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import type { Blog } from '@/modules/content/blog/types'
 
 const route = useRoute()
 const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
-const { data: blog, pending: loading } = await useAsyncData(
-  `blog-detail-${String(route.params.slug)}`,
-  () => blogApi.detail(String(route.params.slug)),
+const {
+  data: blog,
+  pending: loading,
+  error: blogError,
+} = await useAsyncData(`blog-detail-${String(route.params.slug)}`, () =>
+  blogApi.detail(String(route.params.slug)),
 )
+useNotFoundStatus(blog, blogError)
 const blogContentHtml = computed(() =>
   normalizeRichTextInput(blog.value?.contentHtml || blog.value?.contentJson),
 )
@@ -62,10 +67,11 @@ function coverUrl(row: Blog) {
 }
 
 useSeoMeta({
-  title: () => (blog.value ? `${blog.value.title} - Thepocketshoes Blog` : 'Blog Thepocketshoes'),
-  description: () => blog.value?.excerpt || 'Bai viet tu Thepocketshoes.',
-  ogTitle: () => blog.value?.title || 'Thepocketshoes Blog',
-  ogDescription: () => blog.value?.excerpt || 'Bai viet tu Thepocketshoes.',
+  title: () =>
+    blog.value ? `${blog.value.title} - The Pocket Shoes Blog` : 'Blog - The Pocket Shoes',
+  description: () => blog.value?.excerpt || 'Bài viết từ The Pocket Shoes.',
+  ogTitle: () => blog.value?.title || 'The Pocket Shoes Blog',
+  ogDescription: () => blog.value?.excerpt || 'Bài viết từ The Pocket Shoes.',
   ogImage: () => ogImageOrDefault(blog.value ? coverUrl(blog.value) : '', siteUrl),
   twitterImage: () => ogImageOrDefault(blog.value ? coverUrl(blog.value) : '', siteUrl),
 })
