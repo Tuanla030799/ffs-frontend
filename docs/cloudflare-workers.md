@@ -65,6 +65,11 @@ Cách giá trị đến Worker:
 
 Workflow `deploy-cloudflare.yml` dùng cùng một nguồn (GitHub Environment variables) cho cả hai bước.
 
+Lưu ý: lúc SSR, `src/config/env.ts` đọc Worker vars qua `process.env` khi không lấy được runtime
+config trong ngữ cảnh Nuxt. Vì vậy Worker **luôn phải có** các biến `NUXT_PUBLIC_*` (workflow truyền
+bằng `--var`). Nếu deploy bằng `npm run deploy:cf` mà không có `--var`, Wrangler xoá vars hiện có và
+SSR sẽ gọi nhầm `/api` tương đối.
+
 Preview local: tạo `.dev.vars` (đã gitignore) cùng format `.env`:
 
 ```env
@@ -102,9 +107,21 @@ Khi FE và BE khác origin, trình duyệt gửi preflight. BE cần (chỉnh �
   cho `/products/**`, `/blogs/**`, `/collections/**`, `/brands/**`. Bản Docker vẫn bật `swr` như cũ.
 - Không dùng KV làm cache: gói Free giới hạn 1.000 lượt ghi/ngày, mỗi URL (kể cả biến thể query
   `/products?...`) sẽ ghi lại mỗi 5 phút nên vượt hạn mức nhanh.
-- Response do Worker sinh ra **không** tự được CDN Cloudflare cache theo `s-maxage`. Nếu cần cache
-  HTML ở edge sau này, cân nhắc Cache API trong Worker hoặc Cache Rules và chỉ áp dụng cho route
-  public ở trên. Không cache `/admin/**`, `/checkout`, `/order-success`.
+- **Edge cache HTML** (`server/plugins/edge-cache.ts`): trên Workers, HTML SSR của `/`, `/products`,
+  `/products/<slug>`, `/collections[/<slug>]`, `/brands[/<slug>]`, `/blogs[/<slug>]` được lưu vào
+  Cache API (`caches.default`) của từng data center trong **5 phút** để giảm CPU (render SSR đo được
+  P50 ~67 ms, vượt 10 ms của gói Free). Header `x-edge-cache: HIT|MISS` cho biết trạng thái.
+  - Không cache: URL có query (bộ lọc, phân trang), request có `Authorization`, response khác 200,
+    response có `set-cookie`, và trang có lỗi khi lấy dữ liệu SSR (đánh dấu bởi
+    `src/nuxt-plugins/edge-cache-guard.server.ts`), để lỗi BE tạm thời không bị giữ 5 phút.
+  - Không áp dụng cho `/admin/**`, `/checkout`, `/order-success` (client-only).
+  - Cache API không hoạt động trên `*.workers.dev`, chỉ có tác dụng trên `thepocketshoes.store`.
+  - Hệ quả: sửa sản phẩm/bài viết trong admin có thể hiện chậm tối đa 5 phút. Giá và tồn kho ở trang
+    chi tiết vẫn cập nhật vì trang gọi lại API sau khi tải.
+  - Đổi thời gian: `EDGE_CACHE_TTL_SECONDS`. Tắt: xoá plugin hoặc để `CACHEABLE_PATHS` rỗng.
+- **`/about` render sẵn lúc build** (chỉ bản Cloudflare, `routeRules['/about'].prerender`): phục vụ
+  như static asset, không gọi Worker. Biến `NUXT_PUBLIC_*` của trang này lấy từ lúc build, nên build
+  phải có đủ biến thật (workflow deploy đã làm vậy).
 - SSR không mang dữ liệu cá nhân: token admin chỉ nằm ở `localStorage` và được nạp ở plugin client;
   Pinia được Nuxt tạo theo từng request. Biến module-level `refreshPromise` chỉ dùng khi có refresh
   token (client). `useToast` dùng `ref` module-level nhưng chỉ được gọi ở trang client-only (checkout).
