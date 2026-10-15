@@ -1,0 +1,21 @@
+// Cloudflare Workers config cho Nuxt SSR (Nitro preset `cloudflare_module`).
+// Build trước bằng `npm run build:cf`; file này trỏ vào output trong `.output/`.
+// Không ghi secrets vào file này. Biến NUXT_PUBLIC_* là giá trị public, được truyền
+// lúc build (bake vào runtimeConfig) và lúc deploy (`--var`), xem docs/cloudflare-workers.md.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "thepocketshoes-frontend",
+  "main": "./.output/server/index.mjs",
+  "compatibility_date": "2026-05-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./.output/public/",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  // Giữ URL *.workers.dev để kiểm thử trước khi gắn custom domain.
+  "workers_dev": true,
+  "preview_urls": true,
+}

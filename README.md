@@ -48,6 +48,8 @@ NUXT_PUBLIC_SITE_URL=http://thepocketshoes.store
 FRONTEND_HTTP_PORT=80
 ```
 
+Ý nghĩa từng biến xem trong `.env.example`.
+
 ## Routes chính
 
 Public:
@@ -72,7 +74,9 @@ Admin:
 
 Axios `baseURL` là `NUXT_PUBLIC_API_BASE_URL` và phải bao gồm API root. Khi deploy production nên dùng cùng domain qua reverse proxy, ví dụ `/api`; khi backend chạy ở domain riêng thì đặt URL đầy đủ, ví dụ `https://api.example.com/api`. Các service chỉ khai báo đường dẫn tài nguyên như `/products` hoặc `/admin/products`, không lặp lại `/api`.
 
-## Deploy bằng Docker
+## Deploy bằng Docker (VM, hiện ngừng dùng)
+
+Giữ lại để có thể quay về VM. Workflow `deploy.yml` chỉ còn chạy tay.
 
 ```bash
 cp .env.example .env
@@ -93,3 +97,18 @@ Network `thepocketshoes_net` là Docker network dùng chung bên ngoài Compose.
 ```bash
 docker network inspect thepocketshoes_net >/dev/null 2>&1 || docker network create thepocketshoes_net
 ```
+
+## Deploy lên Cloudflare Workers (production)
+
+Production chạy trên Cloudflare Workers (`thepocketshoes.store`), BE chạy trên Heroku. Build riêng
+với preset `cloudflare_module`, giữ SSR cho trang public; FE gọi URL HTTPS đầy đủ của BE qua
+`NUXT_PUBLIC_API_BASE_URL`.
+
+```bash
+npm run build:cf    # build Worker vào .output/
+npm run preview:cf  # chạy trên runtime workerd local, đọc biến từ .dev.vars
+```
+
+Phát hành: merge `dev` vào `dev_deploy_cloudflare`, sau đó deploy thủ công (local bằng Wrangler hoặc
+workflow `Deploy Cloudflare`). Chi tiết env, CORS, cache, hạn mức và các
+bước gắn domain: [docs/cloudflare-workers.md](docs/cloudflare-workers.md).

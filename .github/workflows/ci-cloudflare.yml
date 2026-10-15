@@ -1,0 +1,47 @@
+name: CI Cloudflare
+
+# Kiểm tra build Cloudflare Workers, tách riêng khỏi workflow "CI" (build Node/Docker).
+on:
+  pull_request:
+  push:
+    branches:
+      - dev
+      - dev_deploy_cloudflare
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cloudflare-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-worker:
+    name: Build Cloudflare Worker
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Không deploy, không cần credentials. NUXT_PUBLIC_* chỉ là placeholder để build;
+      # giá trị thật nằm ở GitHub Environment của deploy-cloudflare.yml.
+      - name: Build Nuxt (cloudflare_module)
+        env:
+          NUXT_PUBLIC_API_BASE_URL: https://api.example.invalid/api
+          NUXT_PUBLIC_SITE_URL: https://thepocketshoes.store
+        run: npm run build:cf
+
+      - name: Validate Worker bundle (wrangler dry-run)
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: npx wrangler deploy --dry-run --outdir .wrangler/dry-run

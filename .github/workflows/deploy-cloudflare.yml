@@ -1,0 +1,99 @@
+name: Deploy Cloudflare
+
+# Chỉ chạy thủ công: Actions → Deploy Cloudflare → Run workflow, chọn nhánh dev_deploy_cloudflare
+# (nhánh release). `production` thay bản đang chạy ở thepocketshoes.store.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'preview = upload version + preview URL (không đổi bản live); production = wrangler deploy'
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Workers (${{ inputs.target }})
+    runs-on: ubuntu-22.04
+    # Tạo 2 GitHub Environment: cloudflare-preview và cloudflare-production
+    # (nên bật required reviewers cho production). Mỗi environment cần:
+    #   secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+    #   vars:    NUXT_PUBLIC_API_BASE_URL, NUXT_PUBLIC_API_TIMEOUT,
+    #            NUXT_PUBLIC_FILE_BASE_URL, NUXT_PUBLIC_SITE_URL
+    environment: cloudflare-${{ inputs.target }}
+
+    env:
+      NUXT_PUBLIC_API_BASE_URL: ${{ vars.NUXT_PUBLIC_API_BASE_URL }}
+      NUXT_PUBLIC_API_TIMEOUT: ${{ vars.NUXT_PUBLIC_API_TIMEOUT || '15000' }}
+      NUXT_PUBLIC_FILE_BASE_URL: ${{ vars.NUXT_PUBLIC_FILE_BASE_URL }}
+      NUXT_PUBLIC_SITE_URL: ${{ vars.NUXT_PUBLIC_SITE_URL }}
+      WRANGLER_SEND_METRICS: 'false'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validate public config
+        run: |
+          set -euo pipefail
+          case "$NUXT_PUBLIC_API_BASE_URL" in
+            https://*) ;;
+            *) echo "NUXT_PUBLIC_API_BASE_URL phải là URL HTTPS đầy đủ của BE" >&2; exit 1 ;;
+          esac
+          case "$NUXT_PUBLIC_SITE_URL" in
+            https://*) ;;
+            *) echo "NUXT_PUBLIC_SITE_URL phải là URL HTTPS của FE" >&2; exit 1 ;;
+          esac
+
+      - name: Install dependencies
+        run: npm ci
+
+      # NUXT_PUBLIC_* được bake vào runtimeConfig/app.head lúc build và cũng truyền
+      # bằng --var để Worker vars trên dashboard khớp với build.
+      - name: Build Nuxt (cloudflare_module)
+        run: npm run build:cf
+
+      - name: Upload preview version
+        if: inputs.target == 'preview'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx wrangler versions upload \
+            --message "preview ${GITHUB_SHA::7}" \
+            --tag "${GITHUB_SHA::7}" \
+            --var "NUXT_PUBLIC_API_BASE_URL:$NUXT_PUBLIC_API_BASE_URL" \
+            --var "NUXT_PUBLIC_API_TIMEOUT:$NUXT_PUBLIC_API_TIMEOUT" \
+            --var "NUXT_PUBLIC_FILE_BASE_URL:$NUXT_PUBLIC_FILE_BASE_URL" \
+            --var "NUXT_PUBLIC_SITE_URL:$NUXT_PUBLIC_SITE_URL"
+
+      - name: Deploy production
+        if: inputs.target == 'production'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx wrangler deploy \
+            --message "deploy ${GITHUB_SHA::7}" \
+            --var "NUXT_PUBLIC_API_BASE_URL:$NUXT_PUBLIC_API_BASE_URL" \
+            --var "NUXT_PUBLIC_API_TIMEOUT:$NUXT_PUBLIC_API_TIMEOUT" \
+            --var "NUXT_PUBLIC_FILE_BASE_URL:$NUXT_PUBLIC_FILE_BASE_URL" \
+            --var "NUXT_PUBLIC_SITE_URL:$NUXT_PUBLIC_SITE_URL"

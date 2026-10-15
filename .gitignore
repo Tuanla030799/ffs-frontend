@@ -46,3 +46,8 @@ nginx/ssl/*
 
 .codex
 .yarn
+
+# Cloudflare Wrangler
+.wrangler
+.dev.vars
+.dev.vars.*

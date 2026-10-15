@@ -115,9 +115,9 @@ function handleUnauthorized() {
 }
 
 function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
+  // baseURL/timeout không chốt lúc import module: runtime config (Workers vars) được đọc
+  // ở từng request trong interceptor bên dưới.
   const client = axios.create({
-    baseURL: resolveBaseURL(config?.baseURL),
-    timeout: env.apiTimeout,
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -142,6 +142,7 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
       return {
         ...requestConfig,
         baseURL: resolveBaseURL(requestConfig.baseURL),
+        timeout: requestConfig.timeout || env.apiTimeout,
         headers: {
           ...(requestConfig.headers || {}),
           ...authHeaders,

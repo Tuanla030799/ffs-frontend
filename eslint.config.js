@@ -6,7 +6,7 @@ import globals from 'globals'
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', '.nuxt/**', '.output/**'],
+    ignores: ['dist/**', 'node_modules/**', '.nuxt/**', '.output/**', '.wrangler/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
