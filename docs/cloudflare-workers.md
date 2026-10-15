@@ -1,11 +1,22 @@
 # Deploy FE lên Cloudflare Workers
 
-Tài liệu cho nhánh chuẩn bị chuyển FE (Nuxt SSR) sang Cloudflare Workers. BE, database và
-xử lý ảnh vẫn chạy ở server riêng; Worker chỉ render HTML và phục vụ static assets.
+FE (Nuxt SSR) chạy trên Cloudflare Workers. BE, database và xử lý ảnh chạy riêng trên Heroku;
+Worker chỉ render HTML và phục vụ static assets.
+
+## Hạ tầng production hiện tại
+
+| Thành phần         | Cấu hình                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| FE                 | Worker `thepocketshoes-frontend`, Custom Domain `thepocketshoes.store`                            |
+| URL test           | `https://thepocketshoes-frontend.thepocketshoes.workers.dev`                                      |
+| `www`              | DNS `A www 192.0.2.1` (Proxied) + Redirect Rule 301 sang `https://thepocketshoes.store`, giữ path |
+| BE                 | Heroku, FE gọi qua `NUXT_PUBLIC_API_BASE_URL`                                                     |
+| VM `34.126.106.86` | Ngừng dùng. `deploy.yml` chỉ còn chạy tay, giữ lại để có thể quay về VM                           |
+| Nhánh              | `dev`: phát triển. `dev_deploy_cloudflare`: nhánh release, deploy Cloudflare từ nhánh này         |
 
 ## Kiến trúc
 
-| Thành phần                                 | Docker/VM (hiện tại)            | Cloudflare Workers                                            |
+| Thành phần                                 | Docker/VM (cũ, dự phòng)        | Cloudflare Workers                                            |
 | ------------------------------------------ | ------------------------------- | ------------------------------------------------------------- |
 | Nitro preset                               | `node-server` (`npm run build`) | `cloudflare_module` (`npm run build:cf`)                      |
 | Trang public                               | SSR                             | SSR                                                           |
@@ -27,7 +38,7 @@ File liên quan:
 ```bash
 npm run build:cf    # NITRO_PRESET=cloudflare_module nuxt build
 npm run preview:cf  # wrangler dev: chạy bản build trên runtime workerd local
-npm run deploy:cf   # wrangler deploy (cần đăng nhập/CLOUDFLARE_API_TOKEN). Không chạy tay khi chưa sẵn sàng.
+npm run deploy:cf   # wrangler deploy (cần đăng nhập/CLOUDFLARE_API_TOKEN), thay bản đang chạy production
 ```
 
 Phát triển hằng ngày vẫn dùng `npm run dev`.
@@ -37,12 +48,12 @@ Phát triển hằng ngày vẫn dùng `npm run dev`.
 Tất cả đều là giá trị **public** (được gửi xuống trình duyệt qua runtime config). Không đưa
 secrets vào `NUXT_PUBLIC_*`.
 
-| Biến                        | Ví dụ production                       | Ghi chú                                                                                                                                                                        |
-| --------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `NUXT_PUBLIC_API_BASE_URL`  | `https://api.thepocketshoes.store/api` | Bắt buộc là URL HTTPS đầy đủ, gồm API root. Service chỉ khai báo `/products`, `/admin/...`.                                                                                    |
-| `NUXT_PUBLIC_API_TIMEOUT`   | `15000`                                | Timeout Axios (ms).                                                                                                                                                            |
-| `NUXT_PUBLIC_FILE_BASE_URL` | `https://api.thepocketshoes.store`     | Origin phục vụ `/files/...`. Để trống thì dùng origin của `NUXT_PUBLIC_API_BASE_URL`. Không thêm `/files` (nếu lỡ thêm, `resolveFileUrl` vẫn không ghép trùng `/files/files`). |
-| `NUXT_PUBLIC_SITE_URL`      | `https://thepocketshoes.store`         | Domain FE cho canonical, `og:url`, `og:image`, `robots.txt`, `sitemap.xml`.                                                                                                    |
+| Biến                        | Ví dụ production                  | Ghi chú                                                                                                                                                                        |
+| --------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NUXT_PUBLIC_API_BASE_URL`  | `https://<app>.herokuapp.com/api` | Bắt buộc là URL HTTPS đầy đủ, gồm API root. Service chỉ khai báo `/products`, `/admin/...`.                                                                                    |
+| `NUXT_PUBLIC_API_TIMEOUT`   | `15000`                           | Timeout Axios (ms).                                                                                                                                                            |
+| `NUXT_PUBLIC_FILE_BASE_URL` | để trống hoặc origin kho ảnh      | Origin phục vụ `/files/...`. Để trống thì dùng origin của `NUXT_PUBLIC_API_BASE_URL`. Không thêm `/files` (nếu lỡ thêm, `resolveFileUrl` vẫn không ghép trùng `/files/files`). |
+| `NUXT_PUBLIC_SITE_URL`      | `https://thepocketshoes.store`    | Domain FE cho canonical, `og:url`, `og:image`, `robots.txt`, `sitemap.xml`.                                                                                                    |
 
 Cách giá trị đến Worker:
 
@@ -57,7 +68,7 @@ Workflow `deploy-cloudflare.yml` dùng cùng một nguồn (GitHub Environment v
 Preview local: tạo `.dev.vars` (đã gitignore) cùng format `.env`:
 
 ```env
-NUXT_PUBLIC_API_BASE_URL=https://api.thepocketshoes.store/api
+NUXT_PUBLIC_API_BASE_URL=https://<app>.herokuapp.com/api
 NUXT_PUBLIC_API_TIMEOUT=15000
 NUXT_PUBLIC_FILE_BASE_URL=
 NUXT_PUBLIC_SITE_URL=https://thepocketshoes.store
@@ -67,10 +78,10 @@ NUXT_PUBLIC_SITE_URL=https://thepocketshoes.store
 
 Khi FE và BE khác origin, trình duyệt gửi preflight. BE cần (chỉnh ở repo BE, không thuộc repo này):
 
-- `Access-Control-Allow-Origin`: liệt kê chính xác domain FE, ví dụ `https://thepocketshoes.store`,
-  `https://www.thepocketshoes.store`, domain preview `https://<worker>.<subdomain>.workers.dev` và các
-  preview URL dạng `https://<version-prefix>-<worker>.<subdomain>.workers.dev` nếu dùng để test admin.
-  Không dùng `*` cho route admin.
+- `Access-Control-Allow-Origin`: liệt kê chính xác domain FE: `https://thepocketshoes.store`,
+  `https://thepocketshoes-frontend.thepocketshoes.workers.dev` và các preview URL dạng
+  `https://<version-prefix>-thepocketshoes-frontend.thepocketshoes.workers.dev` nếu dùng để test admin.
+  `www` luôn redirect về apex nên không cần, nhưng thêm cũng không sao. Không dùng `*` cho route admin.
 - `Access-Control-Allow-Methods`: `GET, POST, PUT, PATCH, DELETE, OPTIONS`.
 - `Access-Control-Allow-Headers`: `Authorization, Content-Type, Accept, X-Requested-With`.
 - Trả `204/200` cho `OPTIONS` (gồm `/api/admin/auth/login`, `/api/admin/auth/refresh`,
@@ -79,9 +90,9 @@ Khi FE và BE khác origin, trình duyệt gửi preflight. BE cần (chỉnh �
   không dùng cookie (`withCredentials` không bật).
 - `Vary: Origin` nếu BE trả origin động.
 - `/files/*` phục vụ qua `<img>` nên không cần CORS, trừ khi sau này đọc ảnh bằng `fetch`/canvas.
-- Log stream (`/api/admin/logs/stream`, SSE qua `fetch`) cần BE tắt buffering như cấu hình Nginx
-  hiện tại (`proxy_buffering off`, timeout dài) ở reverse proxy phía BE.
-- Upload: giới hạn body ở reverse proxy phía BE (hiện Nginx đặt `client_max_body_size 20m`).
+- Log stream (`/api/admin/logs/stream`, SSE qua `fetch`): trên Heroku, router cắt kết nối nếu không có
+  dữ liệu trong 55 giây, nên BE cần gửi heartbeat định kỳ.
+- Upload: giới hạn kích thước body cấu hình ở BE (Nginx cũ đặt `client_max_body_size 20m`).
 
 ## Cache và SSR
 
@@ -111,16 +122,14 @@ Khi FE và BE khác origin, trình duyệt gửi preflight. BE cần (chỉnh �
 - Đường dẫn tương đối (`/files/...`) được ghép với `NUXT_PUBLIC_FILE_BASE_URL`, nếu trống thì với
   origin của `NUXT_PUBLIC_API_BASE_URL` (khi là URL tuyệt đối). Docker với `/api` giữ hành vi cũ.
 
-Rủi ro dữ liệu cũ: nội dung rich text (blog, mô tả sản phẩm) được TinyMCE lưu với URL ảnh tuyệt đối
-theo domain lúc upload (`relative_urls: false`, `remove_script_host: false`). Nếu DB đang chứa
-`https://thepocketshoes.store/files/...`, sau khi domain chính trỏ vào Worker các ảnh này sẽ 404 vì
-Worker không phục vụ `/files`. Cần kiểm tra DB trước khi chuyển domain. Phương án (cần kiểm chứng
-trên dashboard):
+Rủi ro cần xử lý ở BE:
 
-- Gắn Worker bằng **Workers Routes** (`thepocketshoes.store/*`) thay vì Custom Domain, và thêm route
-  cụ thể hơn `thepocketshoes.store/files/*` không gắn Worker để request đi về origin (VM/BE hiện tại).
-- Hoặc Redirect Rule `/files/*` sang domain BE.
-- Hoặc migrate URL trong DB (thuộc phạm vi BE).
+- **Ổ đĩa dyno Heroku là tạm thời**: file upload lưu trên dyno mất khi dyno khởi động lại (ít nhất
+  mỗi ngày và mỗi lần deploy). Ảnh cần nằm ở object storage (R2, S3, Cloudinary...).
+- **URL ảnh cũ trong rich text**: TinyMCE lưu URL ảnh tuyệt đối theo domain lúc upload
+  (`relative_urls: false`, `remove_script_host: false`). Nội dung chứa
+  `https://thepocketshoes.store/files/...` sẽ 404 vì domain giờ trỏ vào Worker, Worker không phục vụ
+  `/files`. Xử lý bằng cách migrate URL trong DB, hoặc Redirect Rule `/files/*` sang nơi lưu ảnh mới.
 
 ## Hạn mức Workers Free (theo tài liệu Cloudflare hiện hành)
 
@@ -134,18 +143,21 @@ trên dashboard):
 | Startup time       | 1 s                                                      | Chưa đo                                                                      |
 | Static assets      | 20.000 file/version, 25 MiB/file                         | 96 file                                                                      |
 
-Tài liệu Cloudflare ghi SSR thường tốn 10-20 ms CPU, tức có thể vượt 10 ms của gói Free. Sau khi
-deploy preview, đo CPU time trong Workers Logs (`observability.enabled = true` trong `wrangler.jsonc`)
-cho `/`, `/products`, `/products/<slug>`, `/blogs/<slug>` trước khi chuyển domain. Nếu vượt, lỗi trả về
-là 1102 (`exceededCpu`); khi đó cần gói Workers Paid hoặc giảm SSR.
+Tài liệu Cloudflare ghi SSR thường tốn 10-20 ms CPU, tức có thể vượt 10 ms của gói Free. Theo dõi
+CPU time trong Workers Logs (`observability.enabled = true` trong `wrangler.jsonc`) cho `/`, `/products`,
+`/products/<slug>`, `/blogs/<slug>`. Nếu vượt, lỗi trả về là 1102 (`exceededCpu`); khi đó cần gói
+Workers Paid hoặc giảm SSR. Dyno Heroku Eco ngủ sau 30 phút không có request; thời gian chờ BE thức
+không tính vào CPU của Worker nhưng có thể chạm timeout 15 giây của Axios.
 
 ## GitHub Actions
 
-- `ci.yml` và `deploy.yml` (deploy VM sau khi "CI" thành công trên `dev`) **không đổi**.
-- `ci-cloudflare.yml`: workflow riêng chạy `npm run build:cf` và `wrangler deploy --dry-run` trên PR và
-  push `dev`. Tách riêng để lỗi build Cloudflare không chặn deploy VM.
-- `deploy-cloudflare.yml`: **chỉ `workflow_dispatch`**, input `target`:
-  - `preview`: `wrangler versions upload` (tạo version + preview URL, không đổi bản đang live).
+- `ci.yml`: lint, typecheck, build Node và Docker trên PR và push `dev`.
+- `ci-cloudflare.yml`: `npm run build:cf` và `wrangler deploy --dry-run` trên PR và push `dev`,
+  `dev_deploy_cloudflare`. Không cần credentials.
+- `deploy.yml`: deploy VM, **chỉ chạy tay** (đã bỏ trigger tự động sau khi ngừng dùng VM).
+- `deploy-cloudflare.yml`: **chỉ chạy tay** (_Actions → Deploy Cloudflare → Run workflow_, chọn nhánh
+  `dev_deploy_cloudflare`), input `target`:
+  - `preview`: `wrangler versions upload` (tạo version + preview URL, không đổi bản đang chạy).
   - `production`: `wrangler deploy`.
 
 Cấu hình cần tạo trong GitHub (Settings → Environments), không ghi token vào repo:
@@ -153,47 +165,44 @@ Cấu hình cần tạo trong GitHub (Settings → Environments), không ghi tok
 | Environment             | Secrets                                         | Variables                                                                                                  |
 | ----------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `cloudflare-preview`    | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | `NUXT_PUBLIC_API_BASE_URL`, `NUXT_PUBLIC_API_TIMEOUT`, `NUXT_PUBLIC_FILE_BASE_URL`, `NUXT_PUBLIC_SITE_URL` |
-| `cloudflare-production` | như trên (nên bật Required reviewers)           | như trên, với domain production                                                                            |
+| `cloudflare-production` | như trên (nên bật Required reviewers)           | như trên                                                                                                   |
 
 API token tối thiểu (Cloudflare → My Profile → API Tokens → Custom token):
 
 - Account → **Workers Scripts → Edit**, giới hạn đúng account.
-- Chỉ khi Wrangler quản lý route/custom domain trong `wrangler.jsonc`: thêm Zone → **Workers Routes → Edit**
-  cho zone `thepocketshoes.store`. Nếu gắn domain trên dashboard thì không cần quyền zone.
+- Không cần quyền zone vì Custom Domain được gắn trên dashboard, không khai báo trong `wrangler.jsonc`.
 
-## Các bước deploy
+## Quy trình phát hành
 
-### 1. Preview trên `*.workers.dev`
+1. Phát triển trên `dev` (PR vào `dev`, CI kiểm tra cả build Node lẫn build Cloudflare).
+2. Phát hành: merge `dev` vào `dev_deploy_cloudflare` rồi push.
+3. Deploy, chọn một cách:
+   - Máy local (đã `npx wrangler login`):
 
-1. BE: bật CORS cho domain workers.dev theo mục CORS.
-2. Tạo GitHub Environments, secrets, variables như trên.
-3. Lần đầu: chạy workflow **Deploy Cloudflare** với `target = production` khi Worker chưa gắn domain
-   nào; bản này chỉ public ở `https://thepocketshoes-frontend.<subdomain>.workers.dev`.
-   (`wrangler versions upload` yêu cầu Worker đã tồn tại, cần kiểm chứng lần đầu.)
-4. Các lần sau dùng `target = preview` để lấy preview URL cho từng version.
-5. Kiểm tra trên URL workers.dev: trang chủ, `/products`, `/products/<slug>`, refresh trực tiếp URL
-   lồng nhau, ảnh, `/robots.txt`, `/sitemap.xml`, `/admin/login`, refresh token, upload, log stream,
-   checkout với dữ liệu thử (không tạo đơn thật trên BE production).
-6. Đo CPU time trong Workers Logs.
+     ```bash
+     git checkout dev_deploy_cloudflare && git pull && npm ci
+     export NUXT_PUBLIC_API_BASE_URL=https://<app>.herokuapp.com/api
+     export NUXT_PUBLIC_API_TIMEOUT=15000
+     export NUXT_PUBLIC_FILE_BASE_URL=
+     export NUXT_PUBLIC_SITE_URL=https://thepocketshoes.store
+     npm run build:cf
+     npx wrangler deploy \
+       --var NUXT_PUBLIC_API_BASE_URL:$NUXT_PUBLIC_API_BASE_URL \
+       --var NUXT_PUBLIC_API_TIMEOUT:$NUXT_PUBLIC_API_TIMEOUT \
+       --var NUXT_PUBLIC_FILE_BASE_URL:$NUXT_PUBLIC_FILE_BASE_URL \
+       --var NUXT_PUBLIC_SITE_URL:$NUXT_PUBLIC_SITE_URL
+     ```
 
-### 2. Gắn domain production
+   - GitHub Actions: _Deploy Cloudflare → Run workflow_, nhánh `dev_deploy_cloudflare`. Có thể chạy
+     `preview` trước để kiểm tra trên preview URL rồi mới chạy `production`.
 
-1. Kiểm tra DB về URL ảnh tuyệt đối theo domain FE (mục Ảnh).
-2. Đặt `NUXT_PUBLIC_SITE_URL=https://thepocketshoes.store` và URL BE thật trong `cloudflare-production`.
-3. Chọn cách gắn:
-   - **Custom Domain** (Workers → Settings → Domains & Routes): Cloudflare tự tạo DNS record và cert;
-     phải xóa DNS record hiện có (A/CNAME) của hostname trước. Toàn bộ path đi vào Worker.
-   - **Workers Routes** `thepocketshoes.store/*` trên DNS record proxied hiện có: giữ được origin VM
-     cho các path loại trừ (ví dụ `/files/*`).
-     Làm tương tự cho `www` hoặc tạo Redirect Rule `www` → apex.
-4. Theo dõi lỗi và CPU; rollback bằng cách gỡ custom domain/route (DNS về VM) hoặc
-   `wrangler rollback` về version trước.
+4. Kiểm tra `https://thepocketshoes.store`: trang chủ, `/products/<slug>` (xem source có nội dung và
+   metadata), ảnh, `/robots.txt`, `/sitemap.xml`, admin login, upload. Theo dõi Workers Logs.
 
-### 3. Khi chính thức chuyển hosting
+## Rollback
 
-Để tránh một lần push deploy cả hai nơi:
-
-1. Tắt trigger `workflow_run` trong `deploy.yml` (giữ `workflow_dispatch` một thời gian để rollback).
-2. Nếu muốn tự động deploy Cloudflare, thêm trigger cho `deploy-cloudflare.yml` (ví dụ `workflow_run`
-   sau "CI Cloudflare" trên `dev`) trong cùng PR đó.
-3. Sau giai đoạn ổn định mới xóa Docker/Nginx khỏi luồng production.
+- Lỗi code: `npx wrangler deployments list` rồi `npx wrangler rollback <version-id>`, hoặc chọn version
+  cũ trong dashboard (Worker → _Deployments_).
+- Quay về VM: dựng VM, cập nhật secrets `VM_*`, chạy tay `deploy.yml`, gỡ Custom Domain của Worker và
+  tạo lại bản ghi DNS `A thepocketshoes.store` trỏ về VM (Proxied). Khi quay lại, thay `ssh-keyscan`
+  trong `deploy.yml` bằng host key cố định lưu trong secret.

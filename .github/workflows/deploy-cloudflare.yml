@@ -1,7 +1,7 @@
 name: Deploy Cloudflare
 
-# Chỉ chạy thủ công trong giai đoạn thử nghiệm. Không có trigger push/workflow_run nên
-# một lần push lên dev chỉ kích hoạt deploy VM (deploy.yml) như trước.
+# Chỉ chạy thủ công: Actions → Deploy Cloudflare → Run workflow, chọn nhánh dev_deploy_cloudflare
+# (nhánh release). `production` thay bản đang chạy ở thepocketshoes.store.
 on:
   workflow_dispatch:
     inputs:

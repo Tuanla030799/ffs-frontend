@@ -1,7 +1,6 @@
 name: CI Cloudflare
 
-# Workflow riêng (không nằm trong "CI") để kết quả build Cloudflare không ảnh hưởng
-# tới deploy.yml, vốn chỉ chạy khi workflow "CI" thành công trên nhánh dev.
+# Kiểm tra build Cloudflare Workers, tách riêng khỏi workflow "CI" (build Node/Docker).
 on:
   pull_request:
   push:
