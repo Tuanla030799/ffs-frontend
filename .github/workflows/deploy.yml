@@ -1,12 +1,10 @@
 name: Deploy
 
+# Tạm dừng deploy tự động: VM production đã ngừng dùng (FE chạy trên Cloudflare Workers,
+# BE trên Heroku). Giữ workflow để có thể quay lại VM bằng cách chạy tay; khi đó cập nhật
+# secrets VM_* rồi thêm lại trigger workflow_run (sau workflow "CI" trên nhánh dev) nếu cần.
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
 
 permissions:
   contents: read
