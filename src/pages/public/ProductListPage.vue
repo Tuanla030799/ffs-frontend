@@ -136,7 +136,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref, shallowRef, watch } from 'vue'
-import { useAsyncData, useRoute } from '#imports'
+import { useAsyncData, useHead, useRoute, useRuntimeConfig } from '#imports'
 import type { LocationQuery } from 'vue-router'
 import DropdownSelect from '@/components/common/DropdownSelect.vue'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
@@ -148,6 +148,7 @@ import { usePageQuery } from '@/composables/usePageQuery'
 import { productApi } from '@/modules/catalog/product/api'
 import { productListPrice } from '@/modules/catalog/product/helpers'
 import type { Product, PublicProductListQuery } from '@/modules/catalog/product/types'
+import { listingCanonicalUrl, publicSiteUrl } from '@/lib/seo'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { masterDataApi } from '@/modules/shared/master-data/api'
 import type { Paginated } from '@/modules/shared/types'
@@ -327,6 +328,17 @@ const sortedProducts = computed(() => {
   }
 
   return items
+})
+
+// Canonical bỏ tham số lọc/sắp xếp, chỉ giữ số trang; tiêu đề riêng theo danh mục và trang.
+const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
+useHead({
+  link: () => [{ rel: 'canonical', href: listingCanonicalUrl(siteUrl, '/products', page.value) }],
+})
+useSeoMeta({
+  title: () =>
+    `${currentCategory.value?.name || 'Sản phẩm'}${page.value > 1 ? ` - Trang ${page.value}` : ''} - The Pocket Shoes`,
+  ogTitle: () => `${currentCategory.value?.name || 'Sản phẩm'} - The Pocket Shoes`,
 })
 
 const selectedSortLabel = computed(

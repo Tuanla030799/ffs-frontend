@@ -134,7 +134,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
-import { useAsyncData } from '#imports'
+import { useAsyncData, useHead, useRuntimeConfig } from '#imports'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
@@ -142,6 +142,7 @@ import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiSkeleton } from '@/components/ui'
 import { brandApi } from '@/modules/content/brand/api'
 import type { Brand } from '@/modules/content/brand/types'
+import { listingCanonicalUrl, publicSiteUrl } from '@/lib/seo'
 import { getErrorMessage } from '@/modules/shared/hooks'
 
 // Danh sách đầy đủ được lấy ngay khi SSR; tìm kiếm sau đó tải phía client.
@@ -153,6 +154,9 @@ const {
   lazy: true,
   deep: false,
 })
+
+const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
+useHead({ link: [{ rel: 'canonical', href: listingCanonicalUrl(siteUrl, '/brands') }] })
 
 const localRows = shallowRef<Brand[] | null>(null)
 const rows = computed(() => localRows.value ?? initialRows.value ?? [])

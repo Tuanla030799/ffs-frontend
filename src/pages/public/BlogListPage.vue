@@ -52,13 +52,14 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, shallowRef } from 'vue'
-import { useAsyncData } from '#imports'
+import { useAsyncData, useHead, useRuntimeConfig } from '#imports'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import BlogCard from '@/components/storefront/BlogCard.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
 import { UiPagination, UiSkeleton } from '@/components/ui'
 import { usePageQuery } from '@/composables/usePageQuery'
 import { blogApi } from '@/modules/content/blog/api'
+import { listingCanonicalUrl, publicSiteUrl } from '@/lib/seo'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import type { Paginated } from '@/modules/shared/types'
 import type { Blog } from '@/modules/content/blog/types'
@@ -88,6 +89,10 @@ const rows = computed(() => result.value?.items ?? [])
 const total = computed(() => result.value?.total ?? 0)
 const totalPages = computed(() => result.value?.totalPages ?? 0)
 const page = computed(() => Number(query.page || 1))
+const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
+useHead({
+  link: () => [{ rel: 'canonical', href: listingCanonicalUrl(siteUrl, '/blogs', page.value) }],
+})
 const showSkeleton = computed(() => loading.value || (initialPending.value && !result.value))
 const error = computed(
   () =>

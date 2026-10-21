@@ -268,9 +268,23 @@ import { useToast } from '@/composables/useToast'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
 import { isNotFoundError, useNotFoundStatus } from '@/composables/useNotFoundStatus'
-import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
+import {
+  DEFAULT_OG_IMAGE_PATH,
+  SITE_NAME,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  htmlToPlainText,
+  jsonLdScript,
+  metaDescription,
+  ogImageOrDefault,
+  publicSiteUrl,
+} from '@/lib/seo'
 import { productApi } from '@/modules/catalog/product/api'
-import { productGenderLabel } from '@/modules/catalog/product/helpers'
+import {
+  isSellableStatus,
+  productGenderLabel,
+  skuEffectivePrice,
+} from '@/modules/catalog/product/helpers'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
 import type { ProductSku, ProductVariant } from '@/modules/catalog/product/types'
@@ -460,8 +474,87 @@ onMounted(() => {
 })
 
 const canonicalUrl = computed(() => `${siteUrl}/products/${encodeURIComponent(slug.value)}`)
+// Phần lớn sản phẩm chưa có shortDescription: lấy đoạn đầu của mô tả, nếu trống thì tự ghép từ
+// thương hiệu/danh mục/giá để mỗi trang có meta description riêng.
+const seoDescription = computed(() => {
+  const current = product.value
+  if (!current) return 'Chi tiết sản phẩm tại The Pocket Shoes.'
+
+  const prices = asArray(current.skus)
+    .filter((sku) => isSellableStatus(sku.status))
+    .map(skuEffectivePrice)
+  const facts = [
+    current.brandName && `thương hiệu ${current.brandName}`,
+    current.categoryName && `dòng ${current.categoryName}`,
+    prices.length && `giá từ ${money(Math.min(...prices))}`,
+  ].filter(Boolean)
+  // Các phiên bản màu thường dùng chung mô tả: mở đầu bằng tên sản phẩm (có màu) để mỗi trang
+  // vẫn có description khác nhau.
+  const descriptionText = htmlToPlainText(current.descriptionHtml)
+  return metaDescription(
+    current.shortDescription,
+    descriptionText && `${current.name}: ${descriptionText}`,
+    `${current.name} chính hãng tại ${SITE_NAME}${facts.length ? `, ${facts.join(', ')}` : ''}.`,
+  )
+})
+const productJsonLd = computed(() => {
+  const current = product.value
+  if (!current) return null
+
+  const sellableSkus = asArray(current.skus).filter((sku) => isSellableStatus(sku.status))
+  const prices = sellableSkus.map(skuEffectivePrice)
+  const inStock = sellableSkus.some((sku) => sku.stock > 0)
+  const availability = `https://schema.org/${inStock ? 'InStock' : 'OutOfStock'}`
+  const offers = prices.length
+    ? sellableSkus.length === 1
+      ? {
+          '@type': 'Offer',
+          url: canonicalUrl.value,
+          priceCurrency: 'VND',
+          price: prices[0],
+          availability,
+          itemCondition: 'https://schema.org/NewCondition',
+          seller: { '@type': 'Organization', name: SITE_NAME },
+        }
+      : {
+          '@type': 'AggregateOffer',
+          url: canonicalUrl.value,
+          priceCurrency: 'VND',
+          lowPrice: Math.min(...prices),
+          highPrice: Math.max(...prices),
+          offerCount: sellableSkus.length,
+          availability,
+        }
+    : undefined
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: current.name,
+    description: seoDescription.value,
+    url: canonicalUrl.value,
+    image: galleryImages.value.map((image) => absoluteUrl(image.url, siteUrl)).slice(0, 10),
+    sku: sellableSkus[0]?.skuCode || undefined,
+    category: current.categoryName || undefined,
+    brand: current.brandName ? { '@type': 'Brand', name: current.brandName } : undefined,
+    offers,
+  }
+})
+
 useHead({
   link: () => (product.value ? [{ rel: 'canonical', href: canonicalUrl.value }] : []),
+  script: () =>
+    product.value && productJsonLd.value
+      ? [
+          jsonLdScript(productJsonLd.value),
+          jsonLdScript(
+            breadcrumbJsonLd(siteUrl, [
+              { name: 'Cửa hàng', path: '/products' },
+              { name: product.value.name, path: `/products/${encodeURIComponent(slug.value)}` },
+            ]),
+          ),
+        ]
+      : [],
 })
 
 useSeoMeta({
@@ -471,11 +564,13 @@ useSeoMeta({
       : notFound.value
         ? 'Không tìm thấy sản phẩm - The Pocket Shoes'
         : 'Chi tiết sản phẩm - The Pocket Shoes',
-  description: () => product.value?.shortDescription || 'Chi tiết sản phẩm tại The Pocket Shoes.',
+  description: () => seoDescription.value,
   ogTitle: () => product.value?.name || 'The Pocket Shoes',
-  ogDescription: () => product.value?.shortDescription || 'Chi tiết sản phẩm tại The Pocket Shoes.',
+  ogDescription: () => seoDescription.value,
   ogUrl: () => (product.value ? canonicalUrl.value : undefined),
   ogImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
+  twitterTitle: () => product.value?.name || 'The Pocket Shoes',
+  twitterDescription: () => seoDescription.value,
   twitterImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
   robots: () => (notFound.value ? 'noindex, follow' : undefined),
 })
