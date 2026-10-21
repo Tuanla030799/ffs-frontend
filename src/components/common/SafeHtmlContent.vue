@@ -7,7 +7,9 @@ import { computed } from 'vue'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
 
 const props = defineProps<{ html?: string }>()
-const safeHtml = computed(() => sanitizeHtml(props.html))
+// Trang đã có <h1> (tên sản phẩm/bài viết): hạ <h1> trong nội dung rich text xuống <h2> để mỗi
+// trang chỉ có một <h1>. Output của sanitizeHtml luôn là HTML đã chuẩn hoá nên thay thẻ an toàn.
+const safeHtml = computed(() => sanitizeHtml(props.html).replace(/<(\/?)h1(?=[\s>])/gi, '<$1h2'))
 </script>
 
 <style scoped>
