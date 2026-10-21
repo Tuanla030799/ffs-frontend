@@ -2,6 +2,7 @@
   <label :class="wrapperClasses">
     <span v-if="label" class="mb-1.5 block text-sm font-semibold text-[var(--ui-text)]">
       {{ label }}
+      <span v-if="required" class="text-[var(--ui-danger)]" aria-hidden="true"> * </span>
     </span>
     <textarea
       :value="modelValue"
@@ -9,6 +10,7 @@
       :placeholder="placeholder"
       :maxlength="maxlength"
       :disabled="disabled"
+      :aria-required="required || undefined"
       :class="classes"
       v-bind="$attrs"
       @input="onInput"
@@ -30,6 +32,7 @@ const props = withDefaults(
     placeholder?: string
     maxlength?: number
     disabled?: boolean
+    required?: boolean
     class?: string
   }>(),
   {
@@ -39,6 +42,7 @@ const props = withDefaults(
     placeholder: '',
     maxlength: undefined,
     disabled: false,
+    required: false,
     class: '',
   },
 )

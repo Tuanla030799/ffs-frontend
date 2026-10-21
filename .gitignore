@@ -51,3 +51,6 @@ nginx/ssl/*
 .wrangler
 .dev.vars
 .dev.vars.*
+
+# Playwright MCP (snapshot/console log khi kiểm thử giao diện)
+.playwright-mcp/

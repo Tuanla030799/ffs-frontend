@@ -1,6 +1,7 @@
 <template>
   <img
     v-if="displaySrc"
+    ref="imageRef"
     v-bind="imageAttrs"
     :src="displaySrc"
     :alt="alt"
@@ -13,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs, watch } from 'vue'
+import { computed, onMounted, ref, useAttrs, watch } from 'vue'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { DEFAULT_OG_IMAGE_PATH } from '@/lib/seo'
 
@@ -39,6 +40,7 @@ const props = withDefaults(
 )
 
 const attrs = useAttrs()
+const imageRef = ref<HTMLImageElement | null>(null)
 const sourceFailed = ref(false)
 const fallbackFailed = ref(false)
 
@@ -47,8 +49,14 @@ const imageAttrs = computed(() => {
   delete rest.class
   return rest
 })
-const sourceSrc = computed(() => resolveFileUrl(props.src || ''))
-const fallbackSrc = computed(() => resolveFileUrl(props.fallbackSrc || ''))
+// Ảnh mặc định là asset tĩnh của FE (thư mục public), không được ghép với domain file của BE.
+function resolveImageUrl(url?: string | null) {
+  if (!url) return ''
+  return url === DEFAULT_OG_IMAGE_PATH ? url : resolveFileUrl(url)
+}
+
+const sourceSrc = computed(() => resolveImageUrl(props.src))
+const fallbackSrc = computed(() => resolveImageUrl(props.fallbackSrc))
 const displaySrc = computed(() => {
   if (sourceFailed.value) return fallbackFailed.value ? '' : fallbackSrc.value
   return sourceSrc.value || fallbackSrc.value
@@ -67,6 +75,13 @@ const fitClass = computed(
 watch([sourceSrc, fallbackSrc], () => {
   sourceFailed.value = false
   fallbackFailed.value = false
+})
+
+// Ảnh có thể đã lỗi khi trình duyệt tải HTML SSR, trước lúc Vue gắn @error: kiểm tra lại
+// sau khi mount để vẫn chuyển sang ảnh dự phòng.
+onMounted(() => {
+  const image = imageRef.value
+  if (image?.complete && image.naturalWidth === 0) handleError()
 })
 
 function handleError() {

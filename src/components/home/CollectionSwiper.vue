@@ -135,6 +135,45 @@ const breakpoints = {
   background: #000;
 }
 
+/* Trước khi Swiper khởi tạo (HTML SSR), mô phỏng slidesPerView/spaceBetween để không giật layout. */
+.home-swiper:not(.swiper-initialized) :deep(.swiper-wrapper) {
+  gap: 16px;
+}
+
+.home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
+  width: calc((100% - 0px) / 1);
+}
+
+@media (min-width: 640px) {
+  .home-swiper:not(.swiper-initialized) :deep(.swiper-wrapper) {
+    gap: 20px;
+  }
+
+  .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
+    width: calc((100% - 20px) / 2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-swiper:not(.swiper-initialized) :deep(.swiper-wrapper) {
+    gap: 20px;
+  }
+
+  .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
+    width: calc((100% - 40px) / 3);
+  }
+}
+
+@media (min-width: 1280px) {
+  .home-swiper:not(.swiper-initialized) :deep(.swiper-wrapper) {
+    gap: 24px;
+  }
+
+  .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
+    width: calc((100% - 72px) / 4);
+  }
+}
+
 @media (min-width: 768px) {
   .swiper-nav-button {
     display: grid;

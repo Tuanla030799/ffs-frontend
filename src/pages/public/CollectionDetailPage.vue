@@ -64,23 +64,57 @@
         </div>
       </section>
     </div>
+    <div
+      v-else-if="errorMessage"
+      class="border border-red-200 bg-red-50 p-6 text-red-700"
+      role="alert"
+    >
+      <p class="font-semibold">Không tải được bộ sưu tập.</p>
+      <p class="mt-1 text-sm">{{ errorMessage }}</p>
+      <UiButton class="mt-4" variant="secondary" size="sm" @click="refreshCollection()"
+        >Thử lại</UiButton
+      >
+    </div>
+    <div
+      v-else
+      class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
+    >
+      <h1 class="text-lg font-black text-black">Không tìm thấy bộ sưu tập.</h1>
+      <p class="mt-2 text-sm">Nội dung có thể đã bị gỡ hoặc đường dẫn không đúng.</p>
+      <NuxtLink
+        to="/collections"
+        class="mt-5 inline-flex bg-black px-5 py-3 text-sm font-bold text-white no-underline transition hover:bg-black/80"
+      >
+        Xem bộ sưu tập khác
+      </NuxtLink>
+    </div>
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRuntimeConfig } from '#imports'
+import { useHead, useRuntimeConfig } from '#imports'
 import { useRoute } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
-import { UiSkeleton } from '@/components/ui'
+import { UiButton, UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
-import { useNotFoundStatus } from '@/composables/useNotFoundStatus'
-import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
+import { isNotFoundError, useNotFoundStatus } from '@/composables/useNotFoundStatus'
+import { getErrorMessage } from '@/modules/shared/hooks'
+import {
+  DEFAULT_OG_IMAGE_PATH,
+  SITE_NAME,
+  breadcrumbJsonLd,
+  htmlToPlainText,
+  jsonLdScript,
+  metaDescription,
+  ogImageOrDefault,
+  publicSiteUrl,
+} from '@/lib/seo'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { CollectionDetail } from '@/modules/content/collection/types'
 
@@ -90,10 +124,19 @@ const {
   data: collection,
   pending: loading,
   error: collectionError,
+  refresh: refreshCollection,
 } = await useAsyncData(`collection-detail-${String(route.params.slug)}`, () =>
   collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 }),
 )
 useNotFoundStatus(collection, collectionError)
+const notFound = computed(
+  () => !collection.value && (!collectionError.value || isNotFoundError(collectionError.value)),
+)
+const errorMessage = computed(() =>
+  collectionError.value && !isNotFoundError(collectionError.value)
+    ? getErrorMessage(collectionError.value)
+    : '',
+)
 const products = computed<ProductFeatured[]>(() => collection.value?.products || [])
 const collectionDescriptionHtml = computed(() =>
   normalizeRichTextInput(collection.value?.descriptionHtml || collection.value?.descriptionJson),
@@ -103,17 +146,80 @@ function coverUrl(row: CollectionDetail) {
   return resolveFileUrl(row.coverUrl || row.imageUrl || '') || DEFAULT_OG_IMAGE_PATH
 }
 
+const canonicalUrl = computed(
+  () => `${siteUrl}/collections/${encodeURIComponent(String(route.params.slug))}`,
+)
+// excerpt/description của bộ sưu tập thường trống: ghép mô tả từ tên và vài sản phẩm tiêu biểu.
+const seoDescription = computed(() => {
+  const current = collection.value
+  if (!current) return 'Khám phá bộ sưu tập giày được chọn lọc tại The Pocket Shoes.'
+  const sampleNames = products.value
+    .slice(0, 3)
+    .map((product) => product.name)
+    .join(', ')
+  return metaDescription(
+    current.excerpt,
+    htmlToPlainText(collectionDescriptionHtml.value),
+    `Bộ sưu tập ${current.name} gồm ${products.value.length} mẫu giày tuyển chọn tại ${SITE_NAME}${
+      sampleNames ? `: ${sampleNames}` : ''
+    }.`,
+  )
+})
+const seoImage = computed(() =>
+  ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
+)
+
+useHead({
+  link: () => (collection.value ? [{ rel: 'canonical', href: canonicalUrl.value }] : []),
+  script: () =>
+    collection.value
+      ? [
+          jsonLdScript({
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: collection.value.name,
+            description: seoDescription.value,
+            url: canonicalUrl.value,
+            inLanguage: 'vi-VN',
+            mainEntity: {
+              '@type': 'ItemList',
+              numberOfItems: products.value.length,
+              itemListElement: products.value.slice(0, 40).map((product, index) => ({
+                '@type': 'ListItem',
+                position: index + 1,
+                url: `${siteUrl}/products/${encodeURIComponent(product.slug)}`,
+                name: product.name,
+              })),
+            },
+          }),
+          jsonLdScript(
+            breadcrumbJsonLd(siteUrl, [
+              { name: 'Bộ sưu tập', path: '/collections' },
+              {
+                name: collection.value.name,
+                path: `/collections/${encodeURIComponent(collection.value.slug)}`,
+              },
+            ]),
+          ),
+        ]
+      : [],
+})
+
 useSeoMeta({
   title: () =>
     collection.value
       ? `${collection.value.name} - The Pocket Shoes`
-      : 'Bộ sưu tập - The Pocket Shoes',
-  description: () =>
-    collection.value?.excerpt || 'Khám phá bộ sưu tập giày được chọn lọc tại The Pocket Shoes.',
+      : notFound.value
+        ? 'Không tìm thấy bộ sưu tập - The Pocket Shoes'
+        : 'Bộ sưu tập - The Pocket Shoes',
+  description: () => seoDescription.value,
   ogTitle: () => collection.value?.name || 'Bộ sưu tập The Pocket Shoes',
-  ogDescription: () =>
-    collection.value?.excerpt || 'Khám phá bộ sưu tập giày được chọn lọc tại The Pocket Shoes.',
-  ogImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
-  twitterImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
+  ogDescription: () => seoDescription.value,
+  ogUrl: () => (collection.value ? canonicalUrl.value : undefined),
+  ogImage: () => seoImage.value,
+  twitterTitle: () => collection.value?.name || 'Bộ sưu tập The Pocket Shoes',
+  twitterDescription: () => seoDescription.value,
+  twitterImage: () => seoImage.value,
+  robots: () => (notFound.value && !loading.value ? 'noindex, follow' : undefined),
 })
 </script>

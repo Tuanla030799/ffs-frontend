@@ -3,7 +3,7 @@
     <NuxtPage />
   </NuxtLayout>
   <GlobalLoading />
-  <UiToast :items="toasts" @close="remove" />
+  <UiToast :items="toasts" @remove="remove" />
 </template>
 
 <script setup lang="ts">

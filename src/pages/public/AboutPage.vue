@@ -167,11 +167,11 @@
       </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section id="lien-he" class="mx-auto max-w-7xl scroll-mt-24 px-4 sm:px-6 lg:px-8">
       <div
         class="flex flex-col gap-4 border-y border-black/10 py-8 md:flex-row md:items-center md:justify-between"
       >
-        <h2 class="text-xl font-black tracking-tight">Theo dõi The Pocket Shoes</h2>
+        <h2 class="text-xl font-black tracking-tight">Liên hệ & theo dõi The Pocket Shoes</h2>
         <div class="flex flex-wrap gap-3">
           <a
             v-for="link in SOCIAL_LINKS"

@@ -590,8 +590,13 @@ async function save() {
 }
 
 onMounted(async () => {
-  await loadMasterData()
-  if (isEdit.value) reset(await productApi.adminDetail(String(route.params.id)))
-  else reset()
+  try {
+    // Luôn lấy master data mới: danh mục/thương hiệu/màu vừa tạo ở trang khác phải có ngay.
+    await loadMasterData(true)
+    if (isEdit.value) reset(await productApi.adminDetail(String(route.params.id)))
+    else reset()
+  } catch (err) {
+    error.value = getErrorMessage(err)
+  }
 })
 </script>

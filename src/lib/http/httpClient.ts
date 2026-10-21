@@ -11,7 +11,8 @@ import { ApiError } from '@/types/http'
 import { adminAuthService } from '@/services/admin/auth.service'
 import { navigateTo, useRequestURL } from '#imports'
 
-type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean }
+type RequestKind = 'query' | 'mutation'
+type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean; _requestKind?: RequestKind }
 
 function normalizeAxiosError(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -114,6 +115,17 @@ function handleUnauthorized() {
   redirectToAdminLogin()
 }
 
+function requestKind(method?: string): RequestKind {
+  const normalized = (method || 'get').toLowerCase()
+  return normalized === 'get' || normalized === 'head' ? 'query' : 'mutation'
+}
+
+function finishTrackedRequest(config?: RetryableConfig) {
+  if (!import.meta.client || !config?._requestKind) return
+  useAppStore().finishRequest(config._requestKind)
+  config._requestKind = undefined
+}
+
 function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
   // baseURL/timeout không chốt lúc import module: runtime config (Workers vars) được đọc
   // ở từng request trong interceptor bên dưới.
@@ -132,41 +144,45 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
           buildSearchParams(params as any).toString()
       }
 
-      const appStore = useAppStore()
-      appStore.startRequest()
-
-      const authHeaders = appStore.accessToken
-        ? { Authorization: `Bearer ${appStore.accessToken}` }
-        : {}
-
-      return {
+      const nextConfig: RetryableConfig = {
         ...requestConfig,
         baseURL: resolveBaseURL(requestConfig.baseURL),
         timeout: requestConfig.timeout || env.apiTimeout,
         headers: {
           ...(requestConfig.headers || {}),
-          ...authHeaders,
           'X-Requested-With': 'XMLHttpRequest',
         },
       }
+
+      // Store (token, bộ đếm loading) chỉ dùng ở client: trên server, interceptor response chạy
+      // ngoài setup nên `useAppStore()` sẽ lấy activePinia toàn cục, có thể thuộc request khác.
+      if (import.meta.client) {
+        const appStore = useAppStore()
+        if (appStore.accessToken) {
+          nextConfig.headers.Authorization = `Bearer ${appStore.accessToken}`
+        }
+        nextConfig._requestKind = requestKind(nextConfig.method)
+        appStore.startRequest(nextConfig._requestKind)
+      }
+
+      return nextConfig
     },
-    (error: AxiosError) => {
-      const appStore = useAppStore()
-      appStore.finishRequest()
-      return Promise.reject(normalizeAxiosError(error))
-    },
+    (error: AxiosError) => Promise.reject(normalizeAxiosError(error)),
+    // Chạy đồng bộ ngay trong lời gọi API: khi SSR, lời gọi nằm trong setup/useAsyncData nên
+    // `useRequestURL()`/`useRuntimeConfig()` còn Nuxt context (interceptor bất đồng bộ thì mất).
+    { synchronous: true },
   )
 
   client.interceptors.response.use(
     (response) => {
-      const appStore = useAppStore()
-      appStore.finishRequest()
+      finishTrackedRequest(response.config as RetryableConfig)
       return response
     },
     async (error: AxiosError) => {
-      const appStore = useAppStore()
-      appStore.finishRequest()
+      finishTrackedRequest(error.config as RetryableConfig | undefined)
+      if (!import.meta.client) return Promise.reject(normalizeAxiosError(error))
 
+      const appStore = useAppStore()
       const originalRequest = error.config as RetryableConfig | undefined
       if (
         error.response?.status === 401 &&
@@ -201,4 +217,4 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
 }
 
 export const httpClient = createHttpClient()
-export { createHttpClient, normalizeAxiosError }
+export { createHttpClient, normalizeAxiosError, refreshAccessToken }

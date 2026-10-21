@@ -298,8 +298,17 @@ async function load() {
   }
 }
 
+// BE giới hạn limit tối đa 100 (gửi 1000 bị trả 400): lấy lần lượt từng trang để có đủ danh mục.
+const CATEGORY_OPTIONS_PAGE_SIZE = 100
+
 async function loadCategoryOptions() {
-  allCategoryRows.value = (await categoryApi.adminList({ limit: 1000 })).items
+  const firstPage = await categoryApi.adminList({ page: 1, limit: CATEGORY_OPTIONS_PAGE_SIZE })
+  const restPages = await Promise.all(
+    Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) =>
+      categoryApi.adminList({ page: index + 2, limit: CATEGORY_OPTIONS_PAGE_SIZE }),
+    ),
+  )
+  allCategoryRows.value = [firstPage, ...restPages].flatMap((page) => page.items)
 }
 
 function search() {

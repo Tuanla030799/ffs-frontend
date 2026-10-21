@@ -1,0 +1,15 @@
+{
+  "name": "The Pocket Shoes",
+  "short_name": "Pocket Shoes",
+  "description": "Giày sneaker và thời trang được tuyển chọn tại The Pocket Shoes.",
+  "lang": "vi",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

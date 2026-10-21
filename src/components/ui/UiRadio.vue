@@ -1,9 +1,13 @@
 <template>
   <div class="space-y-2">
-    <div v-if="label" class="text-sm font-medium text-[var(--ui-text-muted)]">
+    <div v-if="label" :id="labelId" class="text-sm font-medium text-[var(--ui-text-muted)]">
       {{ label }}
     </div>
-    <div :class="stacked ? 'space-y-2' : 'flex flex-wrap gap-2'">
+    <div
+      :class="stacked ? 'space-y-2' : 'flex flex-wrap gap-2'"
+      role="radiogroup"
+      :aria-labelledby="label ? labelId : undefined"
+    >
       <label
         v-for="option in options"
         :key="String(option.value)"
@@ -13,8 +17,8 @@
           :checked="modelValue === option.value"
           :disabled="disabled"
           type="radio"
-          class="sr-only"
-          :name="name"
+          class="peer sr-only"
+          :name="name || generatedName"
           @change="emit('update:modelValue', option.value)"
         />
         <span :class="dotClasses(option.value)">
@@ -29,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+import { useId } from 'vue'
 import { cn } from '@/utils/cn'
 
 type Option = { label: string; value: string | number }
@@ -47,7 +52,7 @@ const props = withDefaults(
     options: () => [],
     disabled: false,
     label: '',
-    name: 'ui-radio',
+    name: '',
     stacked: false,
   },
 )
@@ -55,6 +60,10 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:modelValue': [value: string | number]
 }>()
+
+// Mỗi nhóm radio cần name riêng, nếu dùng chung name thì các nhóm trên cùng trang sẽ "tranh" nhau.
+const generatedName = useId()
+const labelId = useId()
 
 function itemClasses(value: string | number) {
   return cn(
@@ -68,7 +77,7 @@ function itemClasses(value: string | number) {
 
 function dotClasses(value: string | number) {
   return cn(
-    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition',
+    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition peer-focus-visible:ring-4 peer-focus-visible:ring-[var(--ui-primary-ring)]',
     props.modelValue === value
       ? 'border-[var(--ui-primary)] text-[var(--ui-primary)]'
       : 'border-[var(--ui-border-strong)] text-transparent',

@@ -1,6 +1,9 @@
+import { publicSiteUrl } from '../../src/lib/seo'
+
 export default defineEventHandler((event) => {
   const config = useRuntimeConfig(event)
-  const siteUrl = String(config.public.siteUrl || getRequestURL(event).origin).replace(/\/+$/, '')
+  // Cùng quy tắc với canonical (ép https trừ localhost) để robots, sitemap và canonical khớp nhau.
+  const siteUrl = publicSiteUrl(String(config.public.siteUrl || getRequestURL(event).origin))
 
   setHeader(event, 'content-type', 'text/plain; charset=utf-8')
 
@@ -9,10 +12,6 @@ export default defineEventHandler((event) => {
     'Disallow: /admin',
     'Disallow: /checkout',
     'Disallow: /order-success',
-    'Disallow: /login',
-    'Disallow: /register',
-    'Disallow: /account',
-    'Disallow: /profile',
     `Sitemap: ${siteUrl}/sitemap.xml`,
     '',
   ].join('\n')

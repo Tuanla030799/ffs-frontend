@@ -1,5 +1,11 @@
 <template>
-  <button :type="nativeType" :disabled="disabled || loading" :class="classes" v-bind="$attrs">
+  <button
+    :type="nativeType"
+    :disabled="disabled || loading"
+    :aria-busy="loading || undefined"
+    :class="classes"
+    v-bind="$attrs"
+  >
     <span
       v-if="loading"
       class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
@@ -72,7 +78,7 @@ const classes = computed(() => {
     'group inline-flex items-center justify-center gap-2 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ui-primary-ring)] disabled:cursor-not-allowed disabled:opacity-50',
     variants[props.variant],
     sizes[props.size],
-    'relative overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.1)] before:absolute before:inset-y-0 before:-left-full before:w-full before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:transition-all before:duration-500 hover:-translate-y-0.5 hover:shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:before:left-full',
+    'relative overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.1)] before:absolute before:inset-y-0 before:-left-full before:w-full before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:transition-all before:duration-500 enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_5px_15px_rgba(0,0,0,0.15)] enabled:hover:before:left-full',
     props.block && 'w-full',
   )
 })

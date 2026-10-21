@@ -6,7 +6,7 @@
     />
 
     <section class="border border-black/10 bg-[#f7f7f5] p-6 text-center md:p-12">
-      <p class="text-sm font-bold tracking-[0.18em] text-black/45 uppercase">Order received</p>
+      <p class="text-sm font-bold tracking-[0.18em] text-black/45 uppercase">Đã nhận đơn hàng</p>
       <h1 class="mt-3 text-3xl leading-tight font-black text-black md:text-5xl">Cảm ơn bạn</h1>
       <p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-black/60">
         Shop đã nhận thông tin và sẽ liên hệ xác nhận đơn trong thời gian sớm nhất.

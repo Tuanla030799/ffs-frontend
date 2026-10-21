@@ -63,8 +63,7 @@
           :key="line.id"
           class="m-0 min-w-max font-mono whitespace-pre"
           :class="logLineClass(line.level)"
-          >{{ line.text || ' ' }}</pre
-        >
+          >{{ line.text || ' ' }}</pre>
       </div>
     </section>
 
@@ -79,6 +78,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { UiBadge, UiButton } from '@/components/ui'
 import { env } from '@/config/env'
+import { refreshAccessToken } from '@/lib/http/httpClient'
 import { useAppStore } from '@/stores/app'
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
@@ -227,6 +227,19 @@ function abortCurrentConnection(setDisconnected = true) {
   if (setDisconnected && !unmounted) status.value = 'disconnected'
 }
 
+async function openStream(signal: AbortSignal) {
+  const apiBaseUrl = env.apiBaseUrl.replace(/\/+$/, '')
+  return fetch(`${apiBaseUrl}${STREAM_PATH}?lines=${initialLines.value}`, {
+    method: 'GET',
+    signal,
+    headers: {
+      Authorization: `Bearer ${appStore.accessToken}`,
+      Accept: 'text/event-stream',
+    },
+    cache: 'no-store',
+  })
+}
+
 async function connect() {
   abortCurrentConnection(false)
   const ownConnectionId = connectionId
@@ -238,16 +251,13 @@ async function connect() {
   lastHeartbeat.value = ''
 
   try {
-    const apiBaseUrl = env.apiBaseUrl.replace(/\/+$/, '')
-    const response = await fetch(`${apiBaseUrl}${STREAM_PATH}?lines=${initialLines.value}`, {
-      method: 'GET',
-      signal: nextController.signal,
-      headers: {
-        Authorization: `Bearer ${appStore.accessToken}`,
-        Accept: 'text/event-stream',
-      },
-      cache: 'no-store',
-    })
+    let response = await openStream(nextController.signal)
+    // fetch không đi qua interceptor của axios: tự làm mới access token khi hết hạn.
+    if (response.status === 401 && appStore.refreshToken) {
+      await refreshAccessToken()
+      if (ownConnectionId !== connectionId || unmounted) return
+      response = await openStream(nextController.signal)
+    }
 
     if (!response.ok) throw new Error(`SSE failed: ${response.status}`)
     const contentType = response.headers.get('content-type') || ''

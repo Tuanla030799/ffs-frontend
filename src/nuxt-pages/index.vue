@@ -5,7 +5,8 @@
 <script setup lang="ts">
 import { useHead, useRuntimeConfig } from '#imports'
 import HomePage from '@/pages/public/HomePage.vue'
-import { defaultOgImage, publicSiteUrl } from '@/lib/seo'
+import { SOCIAL_LINKS } from '@/config/brand'
+import { SITE_NAME, defaultOgImage, jsonLdScript, publicSiteUrl } from '@/lib/seo'
 
 definePageMeta({ layout: 'public', name: 'home' })
 
@@ -21,6 +22,37 @@ const ogImage = defaultOgImage(siteUrl)
 
 useHead({
   link: [{ rel: 'canonical', href: homeUrl }],
+  script: [
+    jsonLdScript({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': `${homeUrl}#organization`,
+          name: SITE_NAME,
+          url: homeUrl,
+          logo: `${siteUrl}/logo.svg`,
+          sameAs: SOCIAL_LINKS.map((link) => link.url),
+        },
+        {
+          '@type': 'WebSite',
+          '@id': `${homeUrl}#website`,
+          name: SITE_NAME,
+          url: homeUrl,
+          inLanguage: 'vi-VN',
+          publisher: { '@id': `${homeUrl}#organization` },
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: {
+              '@type': 'EntryPoint',
+              urlTemplate: `${siteUrl}/products?keyword={search_term_string}`,
+            },
+            'query-input': 'required name=search_term_string',
+          },
+        },
+      ],
+    }),
+  ],
 })
 
 useSeoMeta({

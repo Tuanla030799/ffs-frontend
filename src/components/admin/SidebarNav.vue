@@ -13,7 +13,12 @@
         :to="item.to"
         custom
       >
-        <a :href="href" :class="navClass(isActive)" @click="navigate">
+        <a
+          :href="href"
+          :class="navClass(isActive)"
+          :aria-current="isActive ? 'page' : undefined"
+          @click="navigate"
+        >
           <span
             v-if="isActive"
             class="absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full bg-white"
@@ -26,24 +31,8 @@
 </template>
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { adminNavItems as items } from '@/config/adminNav'
 import { cn } from '@/utils/cn'
-const items = [
-  { label: 'Dashboard', to: '/admin/dashboard' },
-  { label: 'Categories', to: '/admin/categories' },
-  { label: 'Sizes', to: '/admin/sizes' },
-  { label: 'Colors', to: '/admin/colors' },
-  { label: 'Brands', to: '/admin/brands' },
-  { label: 'Products', to: '/admin/products' },
-  { label: 'Collections', to: '/admin/collections' },
-  { label: 'Blogs', to: '/admin/blogs' },
-  { label: 'Orders', to: '/admin/orders' },
-  { label: 'Coupons', to: '/admin/coupons' },
-  { label: 'Landing banners', to: '/admin/banners' },
-  { label: 'Customers', to: '/admin/customers' },
-  { label: 'Admin users', to: '/admin/users' },
-  { label: 'Backend logs', to: '/admin/logs' },
-  { label: 'Storefront', to: '/' },
-]
 
 function navClass(isActive: boolean) {
   return cn(
