@@ -37,9 +37,11 @@ export const useAppStore = defineStore('app', () => {
   const refreshToken = ref('')
   const adminProfile = ref<AdminProfile | null>(null)
   const requestCount = ref(0)
+  const mutationCount = ref(0)
   const refreshingToken = ref(false)
 
   const isLoading = computed(() => requestCount.value > 0)
+  const isMutating = computed(() => mutationCount.value > 0)
   const isAuthenticated = computed(() => Boolean(accessToken.value))
   const adminDisplayName = computed(
     () => adminProfile.value?.fullName || adminProfile.value?.email || 'Admin',
@@ -116,12 +118,14 @@ export const useAppStore = defineStore('app', () => {
     refreshingToken.value = false
   }
 
-  function startRequest() {
+  function startRequest(kind: 'query' | 'mutation' = 'query') {
     requestCount.value += 1
+    if (kind === 'mutation') mutationCount.value += 1
   }
 
-  function finishRequest() {
+  function finishRequest(kind: 'query' | 'mutation' = 'query') {
     requestCount.value = Math.max(0, requestCount.value - 1)
+    if (kind === 'mutation') mutationCount.value = Math.max(0, mutationCount.value - 1)
   }
 
   return {
@@ -135,6 +139,8 @@ export const useAppStore = defineStore('app', () => {
     initialized,
     isAuthenticated,
     isLoading,
+    isMutating,
+    mutationCount,
     refreshingToken,
     refreshToken,
     requestCount,

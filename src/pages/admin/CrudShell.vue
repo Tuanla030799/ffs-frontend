@@ -52,10 +52,17 @@
       class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/40 p-4"
       @mousedown.self="$emit('close')"
     >
-      <div class="mt-8 w-full max-w-5xl rounded-3xl bg-white shadow-2xl">
+      <div
+        ref="modalRef"
+        class="mt-8 w-full max-w-5xl rounded-3xl bg-white shadow-2xl outline-none"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="modalTitleId"
+        tabindex="-1"
+      >
         <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <h3 class="text-lg font-black text-slate-950">
+            <h3 :id="modalTitleId" class="text-lg font-black text-slate-950">
               {{ modalTitle }}
             </h3>
             <p v-if="modalDescription" class="mt-1 text-sm text-slate-500">
@@ -76,11 +83,19 @@
       v-if="confirmOpen"
       class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 p-4"
     >
-      <div class="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
-        <h3 class="text-lg font-black text-slate-950">
+      <div
+        ref="confirmRef"
+        class="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl outline-none"
+        role="alertdialog"
+        aria-modal="true"
+        :aria-labelledby="confirmTitleId"
+        :aria-describedby="confirmTextId"
+        tabindex="-1"
+      >
+        <h3 :id="confirmTitleId" class="text-lg font-black text-slate-950">
           {{ confirmTitle }}
         </h3>
-        <p class="mt-2 text-sm text-slate-600">
+        <p :id="confirmTextId" class="mt-2 text-sm text-slate-600">
           {{ confirmText }}
         </p>
         <div class="mt-5 flex justify-end gap-2">
@@ -107,9 +122,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots } from 'vue'
+import { computed, ref, useId, useSlots } from 'vue'
 import FilterForm from '@/components/common/FilterForm.vue'
 import { UiAlert, UiButton } from '@/components/ui'
+import { useDialog } from '@/composables/useDialog'
 const props = withDefaults(
   defineProps<{
     title: string
@@ -154,8 +170,13 @@ const props = withDefaults(
 
 const slots = useSlots()
 const showFilters = computed(() => props.searchable || props.statusFilter || Boolean(slots.filters))
+const modalRef = ref<HTMLElement | null>(null)
+const confirmRef = ref<HTMLElement | null>(null)
+const modalTitleId = useId()
+const confirmTitleId = useId()
+const confirmTextId = useId()
 
-defineEmits<{
+const emit = defineEmits<{
   create: []
   reload: []
   search: []
@@ -165,4 +186,11 @@ defineEmits<{
   'confirm-delete': []
   'cancel-delete': []
 }>()
+
+useDialog({ open: () => props.showModal, panel: modalRef, onClose: () => emit('close') })
+useDialog({
+  open: () => props.confirmOpen,
+  panel: confirmRef,
+  onClose: () => emit('cancel-delete'),
+})
 </script>

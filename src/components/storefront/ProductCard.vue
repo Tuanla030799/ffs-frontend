@@ -4,7 +4,7 @@
       v-if="product.isFeatured"
       class="absolute top-2.5 right-2.5 z-10 rounded-[10px] bg-gradient-to-r from-[#a90329] via-[#c44848] to-[#aa2238] px-2.5 py-1 text-[11px] font-semibold tracking-[1px] text-white uppercase shadow-[0_3px_10px_rgba(0,0,0,0.2)]"
     >
-      Hot Sale
+      Nổi bật
     </div>
 
     <template #media>
@@ -36,7 +36,7 @@
 
       <div class="mb-[15px] flex flex-wrap gap-1.5">
         <UiTag v-if="product.categoryName" variant="soft">{{ product.categoryName }}</UiTag>
-        <UiTag v-if="product.gender" variant="soft">{{ product.gender }}</UiTag>
+        <UiTag v-if="product.gender" variant="soft">{{ productGenderLabel(product.gender) }}</UiTag>
       </div>
 
       <div
@@ -109,6 +109,7 @@ import { computed } from 'vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiTag } from '@/components/ui'
+import { productGenderLabel } from '@/modules/catalog/product/helpers'
 import type { Product, ProductFeatured } from '@/modules/catalog/product/types'
 import { money } from '@/modules/shared/types'
 

@@ -2,7 +2,9 @@
   <label :class="wrapperClasses">
     <span v-if="label" class="mb-1.5 block text-sm font-semibold text-[var(--ui-text)]">
       {{ label }}
-      <span v-if="required" class="text-[var(--text-error,var(--ui-danger))]"> * </span>
+      <span v-if="required" class="text-[var(--text-error,var(--ui-danger))]" aria-hidden="true">
+        *
+      </span>
     </span>
     <input
       :value="displayValue"
@@ -12,6 +14,7 @@
       :min="min"
       :max="max"
       :disabled="disabled"
+      :aria-required="required || undefined"
       :inputmode="type === 'currency' ? 'numeric' : undefined"
       :class="classes"
       v-bind="$attrs"
@@ -21,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick } from 'vue'
 import { cn } from '@/utils/cn'
 
 defineOptions({ inheritAttrs: false })
@@ -94,11 +97,31 @@ function wrapperOnlyClass(value?: string) {
     .join(' ')
 }
 
+// Đồng bộ lại ô nhập sau khi định dạng tiền: bỏ ký tự không phải số còn sót trên DOM (khi giá
+// trị không đổi Vue sẽ không render lại) và giữ con trỏ đứng sau đúng chữ số đang gõ.
+function syncCurrencyInput(input: HTMLInputElement, digitsBeforeCaret: number) {
+  const formatted = String(displayValue.value ?? '')
+  if (input.value !== formatted) input.value = formatted
+  if (document.activeElement !== input) return
+
+  let position = 0
+  let digits = 0
+  while (position < formatted.length && digits < digitsBeforeCaret) {
+    if (/\d/.test(formatted[position]!)) digits += 1
+    position += 1
+  }
+  input.setSelectionRange(position, position)
+}
+
 function onInput(event: Event) {
-  const value = (event.target as HTMLInputElement).value
+  const input = event.target as HTMLInputElement
+  const value = input.value
   if (props.type === 'currency') {
+    const caret = input.selectionStart ?? value.length
+    const digitsBeforeCaret = value.slice(0, caret).replace(/\D/g, '').length
     const numericText = value.replace(/\D/g, '')
     emit('update:modelValue', numericText ? Number(numericText) : null)
+    void nextTick(() => syncCurrencyInput(input, digitsBeforeCaret))
     return
   }
 

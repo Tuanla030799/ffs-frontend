@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { navigateTo, useRoute } from '#imports'
 
 const route = useRoute()
-const router = useRouter()
 
-onMounted(() => {
-  void router.replace({ path: '/products', query: { brand: String(route.params.slug) } })
-})
+// Trang thương hiệu dùng chung danh sách sản phẩm có lọc theo brand. Chuyển hướng ngay từ
+// server (301) thay vì trả 200 rồi mới chuyển ở client.
+await navigateTo(
+  { path: '/products', query: { brand: String(route.params.slug || '') } },
+  { redirectCode: 301, replace: true },
+)
 </script>
 
 <template>

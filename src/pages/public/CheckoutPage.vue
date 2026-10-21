@@ -2,22 +2,29 @@
   <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
     <BreadcrumbNav
       class="mb-5"
-      :items="[{ label: 'Cửa hàng', to: '/products' }, { label: 'Checkout' }]"
+      :items="[{ label: 'Cửa hàng', to: '/products' }, { label: 'Đặt hàng' }]"
     />
 
     <div class="mb-8">
-      <p class="text-sm font-bold tracking-[0.18em] text-black/45 uppercase">Checkout</p>
+      <p class="text-sm font-bold tracking-[0.18em] text-black/45 uppercase">Đặt hàng</p>
       <h1 class="mt-2 text-3xl leading-tight font-black text-black md:text-5xl">
         Xác nhận thông tin
       </h1>
     </div>
 
-    <UiAlert v-if="pageError" class="mb-5" variant="error">{{ pageError }}</UiAlert>
+    <UiAlert v-if="pageError" class="mb-5" variant="error">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <span>{{ pageError }}</span>
+        <UiButton variant="secondary" size="sm" @click="loadProducts({ force: true })">
+          Thử lại
+        </UiButton>
+      </div>
+    </UiAlert>
 
     <UiEmpty
-      v-if="!loading && !cartItems.length"
+      v-if="cartReady && !cartItems.length"
       title="Giỏ hàng đang trống"
-      description="Chọn một đôi giày trước rồi quay lại đây để gửi thông tin liên hệ."
+      description="Chọn một đôi giày trước rồi quay lại đây để gửi thông tin đặt hàng."
     >
       <template #action>
         <UiButton variant="dark" @click="goShopping">Quay lại mua hàng</UiButton>
@@ -26,9 +33,9 @@
 
     <div v-else class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
       <section class="space-y-5">
-        <div v-if="loading" class="grid gap-3">
+        <div v-if="showSkeleton" class="grid gap-3">
           <div
-            v-for="i in 3"
+            v-for="i in Math.min(Math.max(items.length, 1), 3)"
             :key="i"
             class="grid gap-4 border border-black/10 bg-white p-4 sm:grid-cols-[112px_minmax(0,1fr)] sm:p-5"
           >
@@ -47,44 +54,43 @@
               v-for="item in cartItems"
               :key="item.cart.id"
               class="grid gap-4 p-4 sm:grid-cols-[112px_minmax(0,1fr)] sm:p-5"
+              :class="item.issue && 'bg-red-50/60'"
             >
-              <RouterLink
+              <NuxtLink
                 class="block aspect-square overflow-hidden bg-[#f3f3f1]"
-                :to="{ name: 'product-detail', params: { slug: item.cart.slug } }"
+                :to="`/products/${item.cart.slug}`"
+                :aria-label="item.product?.name || item.cart.name"
               >
                 <StorefrontImage
                   :src="item.imageUrl"
                   :fallback-src="null"
                   fit="contain"
-                  :alt="item.product?.name || item.cart.name"
+                  alt=""
                   class="h-full w-full object-contain p-4"
                 >
                   <template #fallback>
                     <div class="grid h-full place-items-center text-xs font-bold text-black/35">
-                      No image
+                      Chưa có ảnh
                     </div>
                   </template>
                 </StorefrontImage>
-              </RouterLink>
+              </NuxtLink>
 
               <div class="grid min-w-0 gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
                 <div class="min-w-0">
-                  <RouterLink
+                  <NuxtLink
                     class="text-base font-black text-black no-underline transition hover:opacity-60"
-                    :to="{ name: 'product-detail', params: { slug: item.cart.slug } }"
+                    :to="`/products/${item.cart.slug}`"
                   >
                     {{ item.product?.name || item.cart.name }}
-                  </RouterLink>
-                  <p class="mt-1 text-sm text-black/55">
+                  </NuxtLink>
+                  <p v-if="item.variantLabel || item.sizeLabel" class="mt-1 text-sm text-black/55">
                     <span v-if="item.variantLabel">{{ item.variantLabel }}</span>
                     <span v-if="item.variantLabel && item.sizeLabel"> / </span>
                     <span v-if="item.sizeLabel">Size {{ item.sizeLabel }}</span>
-                    <span v-if="!item.variantLabel && !item.sizeLabel"
-                      >SKU {{ item.cart.skuId }}</span
-                    >
                   </p>
-                  <p v-if="!item.cart.skuId" class="mt-2 text-sm font-semibold text-red-600">
-                    Sản phẩm này thiếu SKU, vui lòng chọn lại size.
+                  <p v-if="item.issue" class="mt-2 text-sm font-semibold text-red-600" role="alert">
+                    {{ item.issue }}
                   </p>
                   <button
                     type="button"
@@ -101,21 +107,26 @@
                     <div class="mt-1 inline-flex overflow-hidden border border-black/15">
                       <button
                         type="button"
-                        class="h-9 w-9 font-black transition hover:bg-black hover:text-white"
-                        @click="setQuantity(item.cart.id, item.cart.quantity - 1)"
+                        class="h-9 w-9 font-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-black"
+                        :disabled="item.quantity <= 1"
+                        aria-label="Giảm số lượng"
+                        @click="changeQuantity(item, item.quantity - 1)"
                       >
                         -
                       </button>
                       <input
-                        :value="item.cart.quantity"
-                        class="h-9 w-12 border-x border-black/15 text-center font-bold outline-none"
+                        :value="item.quantity"
+                        class="h-9 w-12 border-x border-black/15 text-center font-bold outline-none focus-visible:bg-black/5"
                         inputmode="numeric"
-                        @change="onQuantityChange(item.cart.id, $event)"
+                        aria-label="Số lượng"
+                        @change="onQuantityChange(item, $event)"
                       />
                       <button
                         type="button"
-                        class="h-9 w-9 font-black transition hover:bg-black hover:text-white"
-                        @click="setQuantity(item.cart.id, item.cart.quantity + 1)"
+                        class="h-9 w-9 font-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-black"
+                        :disabled="item.stock > 0 && item.quantity >= item.stock"
+                        aria-label="Tăng số lượng"
+                        @click="changeQuantity(item, item.quantity + 1)"
                       >
                         +
                       </button>
@@ -123,11 +134,15 @@
                   </div>
                   <div>
                     <p class="text-black/45">Đơn giá</p>
-                    <p class="mt-1 font-bold text-black">{{ money(item.unitPrice) }}</p>
+                    <p class="mt-1 font-bold text-black">
+                      {{ item.sku ? money(item.unitPrice) : '—' }}
+                    </p>
                   </div>
                   <div>
                     <p class="text-black/45">Thành tiền</p>
-                    <p class="mt-1 font-black text-black">{{ money(item.subtotal) }}</p>
+                    <p class="mt-1 font-black text-black">
+                      {{ item.sku ? money(item.subtotal) : '—' }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -138,7 +153,8 @@
         <UiForm
           as="form"
           class="border border-black/10 bg-white p-4 sm:p-5"
-          @submit.prevent="submitContact"
+          novalidate
+          @submit.prevent="submitOrder"
         >
           <div>
             <h2 class="text-base font-black text-black">Thông tin liên hệ / giao hàng</h2>
@@ -154,7 +170,10 @@
                 name="fullName"
                 label="Họ tên"
                 placeholder="Nguyễn Văn A"
+                autocomplete="name"
                 required
+                :aria-invalid="Boolean(errors.fullName) || undefined"
+                @input="clearError('fullName')"
               />
               <p v-if="errors.fullName" class="mt-1 text-sm font-semibold text-red-600">
                 {{ errors.fullName }}
@@ -164,9 +183,13 @@
               <UiInput
                 v-model="form.phone"
                 name="phone"
+                type="tel"
                 label="Số điện thoại"
                 placeholder="0901234567"
+                autocomplete="tel"
                 required
+                :aria-invalid="Boolean(errors.phone) || undefined"
+                @input="clearError('phone')"
               />
               <p v-if="errors.phone" class="mt-1 text-sm font-semibold text-red-600">
                 {{ errors.phone }}
@@ -181,6 +204,9 @@
               type="email"
               label="Email"
               placeholder="you@example.com"
+              autocomplete="email"
+              :aria-invalid="Boolean(errors.email) || undefined"
+              @input="clearError('email')"
             />
             <p v-if="errors.email" class="mt-1 text-sm font-semibold text-red-600">
               {{ errors.email }}
@@ -193,6 +219,10 @@
               name="address"
               label="Địa chỉ giao hàng"
               placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+              autocomplete="street-address"
+              required
+              :aria-invalid="Boolean(errors.address) || undefined"
+              @input="clearError('address')"
             />
             <p v-if="errors.address" class="mt-1 text-sm font-semibold text-red-600">
               {{ errors.address }}
@@ -218,7 +248,9 @@
               <span class="font-bold text-black">{{ money(subtotal) }}</span>
             </div>
             <div class="flex justify-between gap-3">
-              <span class="text-black/55">Giảm giá</span>
+              <span class="text-black/55">
+                Giảm giá<span v-if="coupon?.code" class="text-black/40"> ({{ coupon.code }})</span>
+              </span>
               <span class="font-bold text-black">-{{ money(discountAmount) }}</span>
             </div>
             <div class="flex justify-between gap-3">
@@ -234,13 +266,21 @@
             </div>
           </div>
 
-          <div class="mt-5 grid gap-3 sm:grid-cols-[1fr_auto] lg:grid-cols-1">
-            <UiInput v-model="couponCode" placeholder="Mã giảm giá" label="Coupon" />
-            <UiButton variant="outline" :loading="checkingCoupon" @click="applyCoupon">
-              Áp dụng
+          <form
+            class="mt-5 grid items-end gap-3 sm:grid-cols-[1fr_auto] lg:grid-cols-1"
+            @submit.prevent="applyCoupon"
+          >
+            <UiInput v-model="couponCode" name="coupon" placeholder="Nhập mã" label="Mã giảm giá" />
+            <UiButton native-type="submit" variant="outline" :loading="checkingCoupon">
+              {{ couponCode.trim() || !coupon ? 'Áp dụng' : 'Bỏ mã' }}
             </UiButton>
-          </div>
-          <p v-if="couponMessage" class="mt-2 text-sm font-semibold" :class="couponMessageClass">
+          </form>
+          <p
+            v-if="couponMessage"
+            class="mt-2 text-sm font-semibold"
+            :class="couponMessageClass"
+            role="status"
+          >
             {{ couponMessage }}
           </p>
 
@@ -253,10 +293,13 @@
             block
             :loading="submitting"
             :disabled="submitDisabled"
-            @click="submitContact"
+            @click="submitOrder"
           >
-            Liên hệ
+            Đặt hàng
           </UiButton>
+          <p class="mt-3 text-xs leading-5 text-black/45">
+            Thanh toán khi nhận hàng (COD). Shop sẽ gọi xác nhận trước khi giao.
+          </p>
         </section>
       </aside>
     </div>
@@ -264,8 +307,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import {
@@ -278,9 +321,16 @@ import {
   UiTextarea,
 } from '@/components/ui'
 import { useCart, type CartItem } from '@/composables/useCart'
+import { isNotFoundError } from '@/composables/useNotFoundStatus'
 import { useToast } from '@/composables/useToast'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { productApi } from '@/modules/catalog/product/api'
+import {
+  isDefaultSize,
+  isSellableStatus,
+  skuEffectivePrice,
+  skuSizeLabel,
+} from '@/modules/catalog/product/helpers'
 import type {
   Product,
   ProductImage,
@@ -298,19 +348,28 @@ type EnrichedCartItem = {
   sku: ProductSku | null
   variant: ProductVariant | null
   imageUrl: string
+  quantity: number
+  stock: number
   unitPrice: number
   subtotal: number
   sizeLabel: string
   variantLabel: string
+  issue: string
 }
 
-type CheckoutErrors = Partial<Record<'fullName' | 'phone' | 'email' | 'address', string>>
+type CheckoutField = 'fullName' | 'phone' | 'email' | 'address'
+type CheckoutErrors = Partial<Record<CheckoutField, string>>
+
+const UNAVAILABLE_PRODUCT_MESSAGE = 'Sản phẩm không còn được bán, vui lòng xóa khỏi giỏ hàng.'
+const COUPON_REVALIDATE_DELAY_MS = 400
 
 const router = useRouter()
 const toast = useToast()
-const { items, coupon, refresh, setQuantity, removeItem, setCoupon, clearCart } = useCart()
+const { items, coupon, setQuantity, removeItem, setCoupon, clearCart } = useCart()
 
-const loading = ref(false)
+const cartReady = ref(false)
+const initialLoaded = ref(false)
+const loadingCount = ref(0)
 const pageError = ref('')
 const submitError = ref('')
 const submitting = ref(false)
@@ -319,6 +378,10 @@ const couponCode = ref('')
 const couponMessage = ref('')
 const couponMessageType = ref<'ok' | 'error'>('ok')
 const productsBySlug = ref<Record<string, Product>>({})
+const unavailableSlugs = ref<Record<string, string>>({})
+const inflightSlugs = new Set<string>()
+let couponCheckToken = 0
+let couponTimer: ReturnType<typeof setTimeout> | undefined
 
 const form = reactive({
   fullName: '',
@@ -329,15 +392,25 @@ const form = reactive({
 })
 const errors = reactive<CheckoutErrors>({})
 
+const loadingProducts = computed(() => loadingCount.value > 0)
+const showSkeleton = computed(
+  () => !initialLoaded.value && (!cartReady.value || items.value.length > 0),
+)
+// Danh sách slug (không phụ thuộc số lượng) để chỉ tải lại khi thêm/bớt sản phẩm.
+const cartSlugs = computed(() =>
+  [...new Set(items.value.map((item) => item.slug).filter(Boolean))].sort(),
+)
+
 const cartItems = computed<EnrichedCartItem[]>(() =>
   items.value.map((cart) => {
     const product = productsBySlug.value[cart.slug] || null
-    const sku = asArray(product?.skus).find((item) => item.id === cart.skuId) || null
+    const sku = cart.skuId
+      ? asArray(product?.skus).find((item) => item.id === cart.skuId) || null
+      : null
     const variant = findVariant(product, sku)
-    const unitPrice = Number(
-      sku?.salePrice || sku?.price || product?.salePrice || product?.price || 0,
-    )
-    const quantity = Math.max(1, Number(cart.quantity || 1))
+    const quantity = Math.max(1, Math.trunc(Number(cart.quantity || 1)))
+    const stock = Math.max(0, Number(sku?.stock || 0))
+    const unitPrice = sku ? skuEffectivePrice(sku) : 0
 
     return {
       cart,
@@ -345,10 +418,13 @@ const cartItems = computed<EnrichedCartItem[]>(() =>
       sku,
       variant,
       imageUrl: resolveItemImage(product, variant),
+      quantity,
+      stock,
       unitPrice,
       subtotal: unitPrice * quantity,
-      sizeLabel: sku?.size || sku?.sizeId || '',
+      sizeLabel: sku && !isDefaultSize(sku) ? skuSizeLabel(sku) : '',
       variantLabel: variant?.colorName || variant?.name || '',
+      issue: itemIssue(cart, product, sku, quantity, stock),
     }
   }),
 )
@@ -361,37 +437,53 @@ const shippingFee = computed(() => 0)
 const totalAmount = computed(() =>
   Math.max(0, subtotal.value - discountAmount.value + shippingFee.value),
 )
-const formValid = computed(() =>
-  Boolean(
-    form.fullName.trim() &&
-    form.phone.trim() &&
-    !validatePhone(form.phone) &&
-    !validateEmail(form.email) &&
-    form.address.trim(),
-  ),
-)
+const hasItemIssues = computed(() => cartItems.value.some((item) => item.issue))
 const submitDisabled = computed(
-  () => submitting.value || !cartItems.value.length || !formValid.value,
+  () => submitting.value || !cartItems.value.length || loadingProducts.value,
 )
 const couponMessageClass = computed(() =>
   couponMessageType.value === 'error' ? 'text-red-600' : 'text-emerald-600',
 )
 
 watch(
-  items,
-  () => {
-    void loadProducts()
-  },
-  { deep: true },
-)
-
-watch(
   coupon,
   (nextCoupon) => {
-    couponCode.value = nextCoupon?.code || couponCode.value
+    if (nextCoupon?.code) couponCode.value = nextCoupon.code
   },
   { immediate: true },
 )
+
+watch(cartSlugs, () => {
+  if (cartReady.value) void loadProducts()
+})
+
+// Số tiền giảm phụ thuộc tạm tính: khi giỏ hàng thay đổi thì kiểm tra lại mã đang áp dụng,
+// tránh hiển thị tổng tiền khác với số BE tính khi tạo đơn.
+watch([subtotal, initialLoaded], () => {
+  if (!initialLoaded.value || !coupon.value?.code) return
+  clearTimeout(couponTimer)
+  couponTimer = setTimeout(() => void revalidateCoupon(), COUPON_REVALIDATE_DELAY_MS)
+})
+
+function itemIssue(
+  cart: CartItem,
+  product: Product | null,
+  sku: ProductSku | null,
+  quantity: number,
+  stock: number,
+) {
+  if (!cart.skuId) return 'Sản phẩm này thiếu thông tin phân loại, vui lòng xóa và chọn lại.'
+  if (unavailableSlugs.value[cart.slug]) return unavailableSlugs.value[cart.slug] || ''
+  if (!product) {
+    return loadingProducts.value || !initialLoaded.value
+      ? ''
+      : 'Chưa tải được thông tin sản phẩm, vui lòng thử lại.'
+  }
+  if (!sku || !isSellableStatus(sku.status)) return 'Phân loại này không còn được bán.'
+  if (stock <= 0) return 'Sản phẩm đã hết hàng.'
+  if (quantity > stock) return `Chỉ còn ${stock} sản phẩm, vui lòng giảm số lượng.`
+  return ''
+}
 
 function findVariant(product: Product | null, sku: ProductSku | null) {
   if (!product || !sku) return null
@@ -418,6 +510,10 @@ function validateEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) ? '' : 'Email không hợp lệ.'
 }
 
+function clearError(field: CheckoutField) {
+  if (errors[field]) errors[field] = ''
+}
+
 function validateForm() {
   errors.fullName = required(form.fullName, 'Họ tên')
   errors.phone = required(form.phone, 'Số điện thoại') || validatePhone(form.phone)
@@ -436,43 +532,106 @@ function validateForm() {
   return true
 }
 
-function focusField(field: keyof CheckoutErrors) {
+function focusField(field: CheckoutField) {
   window.requestAnimationFrame(() => {
     const input = document.querySelector<HTMLElement>(`[name="${field}"]`)
     input?.focus()
   })
 }
 
-function onQuantityChange(itemId: string, event: Event) {
-  setQuantity(itemId, Number((event.target as HTMLInputElement).value))
+function changeQuantity(item: EnrichedCartItem, quantity: number) {
+  const maxQuantity = item.stock > 0 ? item.stock : Number.POSITIVE_INFINITY
+  setQuantity(item.cart.id, Math.min(Math.max(1, quantity), maxQuantity))
 }
 
-async function loadProducts() {
-  if (!items.value.length) {
-    productsBySlug.value = {}
+function onQuantityChange(item: EnrichedCartItem, event: Event) {
+  const input = event.target as HTMLInputElement
+  changeQuantity(item, Math.trunc(Number(input.value)) || 1)
+  // Giá trị bị chặn (nhỏ hơn 1 hoặc vượt tồn kho) có thể trùng giá trị cũ nên ô nhập không
+  // tự cập nhật lại: đồng bộ thủ công với số lượng thật trong giỏ.
+  const current = items.value.find((cartItem) => cartItem.id === item.cart.id)
+  input.value = String(current?.quantity ?? item.quantity)
+}
+
+// Chỉ tải sản phẩm chưa có (hoặc tải lại tất cả khi force); lỗi từng sản phẩm không làm hỏng
+// cả giỏ hàng.
+async function loadProducts(options: { force?: boolean } = {}) {
+  const targets = cartSlugs.value.filter(
+    (slug) =>
+      !inflightSlugs.has(slug) &&
+      (options.force || (!productsBySlug.value[slug] && !unavailableSlugs.value[slug])),
+  )
+  if (!targets.length) {
+    if (!inflightSlugs.size) initialLoaded.value = true
     return
   }
 
-  loading.value = true
+  targets.forEach((slug) => inflightSlugs.add(slug))
+  loadingCount.value += 1
   pageError.value = ''
 
   try {
-    const uniqueSlugs = [...new Set(items.value.map((item) => item.slug).filter(Boolean))]
-    const products = await Promise.all(uniqueSlugs.map((slug) => productApi.detail(slug)))
-    productsBySlug.value = products.reduce<Record<string, Product>>((map, product) => {
-      map[product.slug] = product
-      return map
-    }, {})
-  } catch (error) {
-    pageError.value = getErrorMessage(error)
+    const results = await Promise.allSettled(targets.map((slug) => productApi.detail(slug)))
+    const nextProducts = { ...productsBySlug.value }
+    const nextUnavailable = { ...unavailableSlugs.value }
+    let networkError = ''
+
+    results.forEach((result, index) => {
+      const slug = targets[index]!
+      if (result.status === 'fulfilled' && result.value) {
+        nextProducts[slug] = result.value
+        delete nextUnavailable[slug]
+        return
+      }
+      if (result.status === 'rejected' && !isNotFoundError(result.reason)) {
+        networkError = getErrorMessage(result.reason)
+        return
+      }
+      delete nextProducts[slug]
+      nextUnavailable[slug] = UNAVAILABLE_PRODUCT_MESSAGE
+    })
+
+    productsBySlug.value = nextProducts
+    unavailableSlugs.value = nextUnavailable
+    if (networkError) pageError.value = `Không tải được thông tin sản phẩm: ${networkError}`
   } finally {
-    loading.value = false
+    targets.forEach((slug) => inflightSlugs.delete(slug))
+    loadingCount.value -= 1
+    if (!inflightSlugs.size) initialLoaded.value = true
+  }
+}
+
+async function revalidateCoupon() {
+  const current = coupon.value
+  if (!current?.code || subtotal.value <= 0) return
+
+  const token = ++couponCheckToken
+  try {
+    const data = await couponApi.validate({ code: current.code, subtotalAmount: subtotal.value })
+    if (token !== couponCheckToken) return
+
+    if (!data.valid) {
+      setCoupon(null)
+      couponMessageType.value = 'error'
+      couponMessage.value = `Mã ${current.code} không còn áp dụng: ${data.message || 'không hợp lệ'}.`
+      return
+    }
+
+    const nextDiscount = Number(data.discountAmount || 0)
+    if (nextDiscount !== current.discountAmount) {
+      setCoupon({ code: current.code, discountAmount: nextDiscount })
+      couponMessageType.value = 'ok'
+      couponMessage.value = `Đã cập nhật mức giảm theo giỏ hàng: ${money(nextDiscount)}.`
+    }
+  } catch {
+    // Không kiểm tra lại được thì giữ nguyên; BE vẫn tính lại mã khi tạo đơn.
   }
 }
 
 async function applyCoupon() {
   const code = couponCode.value.trim()
   couponMessage.value = ''
+  couponCheckToken += 1
 
   if (!code) {
     setCoupon(null)
@@ -488,13 +647,13 @@ async function applyCoupon() {
     if (!data.valid) {
       setCoupon(null)
       couponMessageType.value = 'error'
-      couponMessage.value = data.message || 'Coupon không hợp lệ.'
+      couponMessage.value = data.message || 'Mã giảm giá không hợp lệ.'
       return
     }
 
     setCoupon({ code, discountAmount: Number(data.discountAmount || 0) })
     couponMessageType.value = 'ok'
-    couponMessage.value = data.message || `Coupon hợp lệ, giảm ${money(data.discountAmount)}.`
+    couponMessage.value = data.message || `Mã hợp lệ, giảm ${money(data.discountAmount)}.`
   } catch (error) {
     couponMessageType.value = 'error'
     couponMessage.value = getErrorMessage(error)
@@ -503,18 +662,15 @@ async function applyCoupon() {
   }
 }
 
-async function submitContact() {
+async function submitOrder() {
+  if (submitting.value) return
   submitError.value = ''
 
   if (!cartItems.value.length) return
   if (!validateForm()) return
-
-  const orderItems = cartItems.value
-    .filter((item) => item.cart.skuId)
-    .map((item) => ({ skuId: item.cart.skuId || '', quantity: item.cart.quantity }))
-
-  if (orderItems.length !== cartItems.value.length) {
-    submitError.value = 'Một số sản phẩm thiếu SKU. Vui lòng chọn lại size trước khi liên hệ.'
+  if (hasItemIssues.value) {
+    submitError.value =
+      'Vui lòng xử lý các sản phẩm được đánh dấu trong giỏ hàng trước khi đặt hàng.'
     return
   }
 
@@ -530,12 +686,18 @@ async function submitContact() {
       paymentMethod: 'COD',
       shippingMethod: 'STANDARD',
       shippingFee: shippingFee.value,
-      items: orderItems,
+      items: cartItems.value.map((item) => ({
+        skuId: item.cart.skuId || '',
+        quantity: item.quantity,
+      })),
     })
 
     clearCart()
-    toast.push('Shop đã nhận thông tin và sẽ liên hệ xác nhận.', 'success', 'Tạo đơn thành công')
-    await router.push({ name: 'order-success', query: { code: order.code || order.id } })
+    toast.push('Shop đã nhận thông tin và sẽ liên hệ xác nhận.', 'success', 'Đặt hàng thành công')
+    await router.push({
+      name: 'order-success',
+      query: { code: order.orderCode || order.code || order.id },
+    })
   } catch (error) {
     submitError.value = getErrorMessage(error)
   } finally {
@@ -548,7 +710,11 @@ function goShopping() {
 }
 
 onMounted(() => {
-  refresh()
+  cartReady.value = true
   void loadProducts()
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(couponTimer)
 })
 </script>
