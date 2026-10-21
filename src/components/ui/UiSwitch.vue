@@ -10,6 +10,8 @@
     </span>
     <button
       type="button"
+      role="switch"
+      :aria-checked="modelValue"
       :disabled="disabled"
       :class="trackClasses"
       @click="emit('update:modelValue', !modelValue)"

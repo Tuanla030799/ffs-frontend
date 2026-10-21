@@ -64,7 +64,7 @@ const wrapperClasses = computed(() =>
 
 const boxClasses = computed(() =>
   cn(
-    'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-white transition',
+    'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-white transition peer-focus-visible:ring-4 peer-focus-visible:ring-[var(--ui-primary-ring)]',
     props.modelValue
       ? 'border-[var(--ui-primary)] bg-[var(--ui-primary)]'
       : 'border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-transparent',

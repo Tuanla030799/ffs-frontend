@@ -1,13 +1,20 @@
 <template>
   <UiDropdown :items="dropdownItems" :placement="placement" @select="select">
-    <template #trigger>
-      <slot :selected="selected" :selected-label="selectedLabel" :placeholder="placeholder">
+    <template #trigger="{ open }">
+      <slot
+        :selected="selected"
+        :selected-label="selectedLabel"
+        :placeholder="placeholder"
+        :open="open"
+      >
         <button
           type="button"
           class="flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--ui-text)] transition hover:bg-[var(--ui-surface-muted)]"
+          aria-haspopup="menu"
+          :aria-expanded="open"
         >
           <span class="truncate">{{ selectedLabel || placeholder }}</span>
-          <span class="text-[var(--ui-text-soft)]">⌄</span>
+          <span class="text-[var(--ui-text-soft)]" aria-hidden="true">⌄</span>
         </button>
       </slot>
     </template>

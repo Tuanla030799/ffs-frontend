@@ -13,7 +13,7 @@
       <label :class="triggerClasses">
         <input
           ref="inputRef"
-          class="hidden"
+          class="sr-only"
           type="file"
           :accept="accept"
           :multiple="multiple"
@@ -74,7 +74,7 @@ const wrapperClasses = computed(() =>
 
 const triggerClasses = computed(() =>
   cn(
-    'inline-flex w-full cursor-pointer items-center justify-center rounded-[var(--ui-radius-md)] px-4 py-3 text-sm font-semibold transition sm:w-auto',
+    'inline-flex w-full cursor-pointer items-center justify-center rounded-[var(--ui-radius-md)] px-4 py-3 text-sm font-semibold transition focus-within:ring-4 focus-within:ring-[var(--ui-primary-ring)] sm:w-auto',
     props.disabled
       ? 'cursor-not-allowed bg-[var(--ui-surface)] text-[var(--ui-text-soft)]'
       : 'bg-[var(--ui-text)] text-white hover:opacity-90',
