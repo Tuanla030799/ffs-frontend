@@ -94,7 +94,8 @@ Public (SSR, có dữ liệu ngay trong HTML):
 - `/products/:slug`: chi tiết sản phẩm, chọn màu, hướng dẫn chọn size, thêm vào giỏ hàng
 - `/collections`, `/collections/:slug`, `/blogs`, `/blogs/:slug`, `/brands`, `/about`
 - `/brands/:slug`: chuyển hướng 301 sang `/products?brand=:slug`
-- `/robots.txt`, `/sitemap.xml`
+- `/robots.txt`, `/sitemap.xml` (sinh từ API: toàn bộ sản phẩm kèm ảnh, bộ sưu tập, bài blog; cache
+  1 giờ)
 
 Slug không tồn tại trả về HTTP 404 kèm trang "không tìm thấy".
 
@@ -119,6 +120,7 @@ Chỉ chạy phía client (`ssr: false`):
   của API khi API là URL tuyệt đối (`src/lib/fileUrl.ts`).
 - Nội dung HTML từ BE (mô tả sản phẩm, blog, bộ sưu tập) luôn đi qua `sanitizeHtml` trước khi
   render, kể cả khi SSR.
+- Các điểm BE cần sửa và cách FE đang xử lý tạm: [docs/backend-issues.md](docs/backend-issues.md).
 
 ## Deploy bằng Docker (VM, hiện ngừng dùng)
 

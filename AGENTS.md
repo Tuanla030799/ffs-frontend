@@ -37,6 +37,14 @@
     `deploy/docker/nginx.conf`. Nginx proxies `/api` and `/files` to the backend.
   - Cloudflare-only behavior is gated by `isCloudflareBuild` in `nuxt.config.ts` or by
     `event.context.cloudflare` on the server.
+- Local `node_modules` may not match `package-lock.json`: it has been installed with yarn
+  (Nuxt 4.6.x locally vs 4.4.5 locked). With Nuxt 4.6.x, `npm run build:cf` fails while
+  prerendering `/about` (HTTP 500) even on old commits, so do not treat that as a regression and
+  do not upgrade Nuxt until it is investigated. To reproduce CI on macOS:
+  - create a git worktree and run `npx npm@10 ci` there (npm 12 rejects the lockfile);
+  - the lockfile was generated on Linux, so add the missing native binaries with
+    `npm i --no-save lightningcss-darwin-arm64@<v> @tailwindcss/oxide-darwin-arm64@<v> @rollup/rollup-darwin-arm64@<v>`,
+    using the versions of `lightningcss`, `@tailwindcss/oxide` and `rollup` in that worktree.
 - All env vars are public `NUXT_PUBLIC_*` values (see `.env.example`); never put secrets in them.
   App code reads them through `src/config/env.ts` (`env.apiBaseUrl`, `env.fileBaseUrl`, ...),
   not `process.env`.
@@ -45,6 +53,8 @@
   on Node builds, use `swr: 300`.
 - Generated or local-only paths: `.nuxt/`, `.output/`, `.wrangler/`, `.data/`, `node_modules/`,
   `.playwright-mcp/`, `.env`, `.dev.vars`. Do not edit or commit them.
+- Known backend issues, and the FE workaround for each, are tracked in `docs/backend-issues.md`.
+  When the backend fixes one, remove the matching workaround and update that file.
 - Backend API contract (verified against the real API):
   - Responses are `{ success, message, data }`. Lists return
     `data = { items, page, limit, total, totalPages }`: unwrap with `unwrapList`
@@ -108,6 +118,16 @@ Nuxt `srcDir` is `src/` and several Nuxt directories are renamed (`dir` in `nuxt
     incomplete HTML is not cached at the edge.
 - Not-found states: call `useNotFoundStatus(data, error)`, render an `<h1>` with a link back, and
   set `robots: 'noindex, follow'`.
+- SEO for public pages (helpers in `src/lib/seo.ts`):
+  - Set `title` and `description` with `useSeoMeta`. Build descriptions with
+    `metaDescription`/`htmlToPlainText` so every page gets a unique one, even when the backend
+    field is empty.
+  - Add a canonical link. Listings use `listingCanonicalUrl`, which drops filter and sort
+    parameters and keeps only `page`.
+  - Emit structured data with `jsonLdScript` (it escapes `<`); never inline `JSON.stringify` into
+    a script tag.
+  - Each page has exactly one `<h1>`: `SafeHtmlContent` demotes `<h1>` inside rich content.
+  - New public content types must also be added to `server/routes/sitemap.xml.ts`.
 - Rich HTML from the backend renders only through `SafeHtmlContent` / `sanitizeHtml`. The server
   path is a custom tokenizer: keep its allowlist in sync with the DOMPurify config in the same
   file. Never `v-html` raw backend content.
@@ -158,8 +178,10 @@ Nuxt `srcDir` is `src/` and several Nuxt directories are renamed (`dir` in `nuxt
 - Check relevant responsive states (390px and 1440px), keyboard interactions, console errors
   and hydration warnings, failed asset or API requests, and broken images.
 - For SSR changes, also check the raw HTML and HTTP status codes with `curl`. Nitro's SWR cache
-  (`swr: 300` on public detail routes) can serve a stale response for up to 5 minutes, so use
-  fresh URLs when verifying status codes.
+  (`swr: 300` on public listing and detail routes) can serve a stale response for up to 5
+  minutes, so use fresh URLs or a cache-busting query parameter when verifying.
+- When auditing HTML (counting `<h1>`, reading JSON-LD), parse it with a script; line-based
+  `grep` miscounts minified output.
 - Admin pages require login. The user provides credentials per session: never write them to
   files or memory, log out when done, and delete Playwright artifacts (`.playwright-mcp/`) that
   may contain them.
