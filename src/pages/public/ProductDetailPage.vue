@@ -32,8 +32,15 @@
         <UiSkeleton class="max-w-3xl" :rows="5" />
       </section>
     </div>
-    <div v-else-if="error && !product" class="border border-red-200 bg-red-50 p-4 text-red-700">
-      {{ error }}
+    <div
+      v-else-if="error && !product"
+      class="border border-red-200 bg-red-50 p-4 text-red-700"
+      role="alert"
+    >
+      <p>{{ error }}</p>
+      <UiButton class="mt-3" variant="secondary" size="sm" @click="refreshProduct()">
+        Thử lại
+      </UiButton>
     </div>
     <div v-else-if="product" class="space-y-12">
       <section class="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
@@ -47,6 +54,8 @@
               type="button"
               class="h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-[#f3f3f1] transition hover:border-black"
               :class="selectedImage === image.url ? 'border-black' : 'border-transparent'"
+              :aria-label="`Xem ảnh ${galleryImages.indexOf(image) + 1}`"
+              :aria-current="selectedImage === image.url ? 'true' : undefined"
               @click="selectImage(image.url || '')"
             >
               <StorefrontImage
@@ -79,7 +88,7 @@
                     :alt="image.altText || product.name"
                   >
                     <template #fallback>
-                      <div class="grid h-full place-items-center text-black/40">No image</div>
+                      <div class="grid h-full place-items-center text-black/40">Chưa có ảnh</div>
                     </template>
                   </StorefrontImage>
                 </SwiperSlide>
@@ -91,16 +100,18 @@
                 <button
                   class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
                   type="button"
+                  aria-label="Ảnh trước"
                   @click="goImage(-1)"
                 >
-                  ‹
+                  <span aria-hidden="true">‹</span>
                 </button>
                 <button
                   class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-2xl shadow-sm transition hover:bg-black hover:text-white"
                   type="button"
+                  aria-label="Ảnh tiếp theo"
                   @click="goImage(1)"
                 >
-                  ›
+                  <span aria-hidden="true">›</span>
                 </button>
               </div>
             </div>
@@ -125,7 +136,7 @@
             </div>
 
             <div v-if="variants.length">
-              <p class="mb-3 text-sm font-bold">Variants</p>
+              <p class="mb-3 text-sm font-bold">Màu sắc</p>
               <div class="flex flex-wrap gap-3">
                 <button
                   v-for="variant in variants"
@@ -138,6 +149,8 @@
                       : 'border-transparent'
                   "
                   :title="variant.colorName || variant.name"
+                  :aria-label="variant.colorName || variant.name"
+                  :aria-pressed="selectedVariantKey === variantKey(variant)"
                   @click="selectVariant(variant)"
                 >
                   <StorefrontImage
@@ -174,7 +187,9 @@
               <p class="mt-3 text-sm text-black/50">Tồn kho: {{ selectedSku?.stock ?? '-' }}</p>
               <div class="mt-3 flex flex-wrap gap-2">
                 <UiTag v-if="product.categoryName" variant="soft">{{ product.categoryName }}</UiTag>
-                <UiTag v-if="product.gender" variant="soft">{{ product.gender }}</UiTag>
+                <UiTag v-if="product.gender" variant="soft">
+                  {{ productGenderLabel(product.gender) }}
+                </UiTag>
               </div>
             </div>
 
@@ -190,7 +205,7 @@
                 <template #icon>
                   <img :src="addCartIcon" alt="" class="h-5 w-5" aria-hidden="true" />
                 </template>
-                Add to Cart
+                Thêm vào giỏ hàng
               </UiButton>
             </div>
           </section>
@@ -224,14 +239,21 @@
       v-else
       class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
     >
-      Không tìm thấy sản phẩm.
+      <h1 class="text-lg font-black text-black">Không tìm thấy sản phẩm.</h1>
+      <p class="mt-2 text-sm">Sản phẩm có thể đã ngừng bán hoặc đường dẫn không đúng.</p>
+      <NuxtLink
+        to="/products"
+        class="mt-5 inline-flex bg-black px-5 py-3 text-sm font-bold text-white no-underline transition hover:bg-black/80"
+      >
+        Xem sản phẩm khác
+      </NuxtLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useRoute, useRuntimeConfig } from '#imports'
+import { useHead, useNuxtApp, useRoute, useRuntimeConfig } from '#imports'
 import type { Swiper as SwiperInstance } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/css'
@@ -241,17 +263,23 @@ import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import ProductPurchaseShippingInfo from '@/components/storefront/ProductPurchaseShippingInfo.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiButton, UiModal, UiSkeleton, UiTabs, UiTag } from '@/components/ui'
-import { addToCart } from '@/composables/useCart'
+import { addToCart, getCartItemQuantity } from '@/composables/useCart'
+import { useToast } from '@/composables/useToast'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
-import { useNotFoundStatus } from '@/composables/useNotFoundStatus'
+import { isNotFoundError, useNotFoundStatus } from '@/composables/useNotFoundStatus'
 import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import { productApi } from '@/modules/catalog/product/api'
+import { productGenderLabel } from '@/modules/catalog/product/helpers'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
 import type { ProductSku, ProductVariant } from '@/modules/catalog/product/types'
 
 const route = useRoute()
+const toast = useToast()
+// Chỉ làm mới dữ liệu (tồn kho) khi trang được hydrate từ HTML SSR, có thể là bản cache cũ vài
+// phút; điều hướng phía client đã lấy dữ liệu mới qua useAsyncData.
+const hydratedFromServer = import.meta.client && useNuxtApp().isHydrating
 const slug = computed(() => String(route.params.slug || ''))
 const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
 const selectedImage = ref('')
@@ -279,7 +307,15 @@ const {
   },
 )
 useNotFoundStatus(product, productError)
-const error = computed(() => (productError.value ? getErrorMessage(productError.value) : ''))
+const notFound = computed(
+  () => !product.value && (!productError.value || isNotFoundError(productError.value)),
+)
+// BE trả 400 "... not found" cho slug sai: hiển thị trang "không tìm thấy" thay vì lỗi thô.
+const error = computed(() =>
+  productError.value && !isNotFoundError(productError.value)
+    ? getErrorMessage(productError.value)
+    : '',
+)
 const images = computed(() => asArray(product.value?.images))
 const galleryImages = computed(() =>
   images.value
@@ -373,7 +409,7 @@ function selectVariant(
   if (options.updateImage !== false && gallerySlideIndex(variant.imageUrl || '') >= 0) {
     selectImage(variant.imageUrl || selectedImage.value, options)
   }
-  selectedSku.value = variantSkus.value.find((sku) => sku.stock > 0) || variantSkus.value[0] || null
+  selectedSku.value = variantSkus.value.find((sku) => sku.stock > 0) || null
 }
 function goImage(direction: number) {
   if (!gallerySlides.value.length) return
@@ -396,8 +432,17 @@ function goImage(direction: number) {
   swiper.slideTo(nextIndex, isWrapping ? 0 : 300, !isWrapping)
 }
 function handleAddToCart() {
-  if (!product.value || !selectedSku.value) return
-  addToCart(product.value, selectedSku.value)
+  const currentProduct = product.value
+  const sku = selectedSku.value
+  if (!currentProduct || !sku || sku.stock <= 0) return
+
+  if (getCartItemQuantity(currentProduct, sku) >= sku.stock) {
+    toast.push(`Giỏ hàng đã có đủ ${sku.stock} sản phẩm còn lại.`, 'warning', 'Không thể thêm')
+    return
+  }
+
+  addToCart(currentProduct, sku)
+  toast.push(currentProduct.name, 'success', 'Đã thêm vào giỏ hàng')
 }
 
 watch(
@@ -411,19 +456,28 @@ watch(
 )
 
 onMounted(() => {
-  void refreshProduct()
+  if (hydratedFromServer) void refreshProduct()
+})
+
+const canonicalUrl = computed(() => `${siteUrl}/products/${encodeURIComponent(slug.value)}`)
+useHead({
+  link: () => (product.value ? [{ rel: 'canonical', href: canonicalUrl.value }] : []),
 })
 
 useSeoMeta({
   title: () =>
     product.value
       ? `${product.value.name} - The Pocket Shoes`
-      : 'Chi tiết sản phẩm - The Pocket Shoes',
+      : notFound.value
+        ? 'Không tìm thấy sản phẩm - The Pocket Shoes'
+        : 'Chi tiết sản phẩm - The Pocket Shoes',
   description: () => product.value?.shortDescription || 'Chi tiết sản phẩm tại The Pocket Shoes.',
   ogTitle: () => product.value?.name || 'The Pocket Shoes',
   ogDescription: () => product.value?.shortDescription || 'Chi tiết sản phẩm tại The Pocket Shoes.',
+  ogUrl: () => (product.value ? canonicalUrl.value : undefined),
   ogImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
   twitterImage: () => ogImageOrDefault(selectedImage.value, siteUrl),
+  robots: () => (notFound.value ? 'noindex, follow' : undefined),
 })
 </script>
 

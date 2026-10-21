@@ -46,27 +46,47 @@ function readCoupon(): CartCoupon | null {
   }
 }
 
+// localStorage có thể bị chặn/đầy (chế độ riêng tư, hết quota): giỏ hàng vẫn chạy trong phiên.
+function writeStorage(write: () => void) {
+  try {
+    write()
+  } catch {
+    // Bỏ qua: không lưu được thì thôi, không làm hỏng thao tác của người dùng.
+  }
+  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT))
+}
+
 function writeCart(items: CartItem[]) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(CART_KEY, JSON.stringify(items))
-  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT))
+  writeStorage(() => window.localStorage.setItem(CART_KEY, JSON.stringify(items)))
 }
 
 function writeCoupon(coupon: CartCoupon | null) {
   if (typeof window === 'undefined') return
-  if (coupon?.code) {
-    window.localStorage.setItem(CART_COUPON_KEY, JSON.stringify(coupon))
-  } else {
-    window.localStorage.removeItem(CART_COUPON_KEY)
-  }
-  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT))
+  writeStorage(() => {
+    if (coupon?.code) {
+      window.localStorage.setItem(CART_COUPON_KEY, JSON.stringify(coupon))
+    } else {
+      window.localStorage.removeItem(CART_COUPON_KEY)
+    }
+  })
+}
+
+export function cartItemId(product: Product | ProductFeatured, sku?: ProductSku | null) {
+  const productId = product.id || product.slug
+  return sku?.id ? `${productId}:${sku.id}` : productId
+}
+
+export function getCartItemQuantity(product: Product | ProductFeatured, sku?: ProductSku | null) {
+  const id = cartItemId(product, sku)
+  return readCart().find((item) => item.id === id)?.quantity || 0
 }
 
 export function addToCart(product: Product | ProductFeatured, sku?: ProductSku | null) {
   if (typeof window === 'undefined') return
   const productId = product.id || product.slug
   const skuId = sku?.id
-  const id = skuId ? `${productId}:${skuId}` : productId
+  const id = cartItemId(product, sku)
   const items = readCart()
   const existing = items.find((item) => item.id === id)
 

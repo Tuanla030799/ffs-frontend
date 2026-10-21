@@ -64,6 +64,30 @@
         </div>
       </section>
     </div>
+    <div
+      v-else-if="errorMessage"
+      class="border border-red-200 bg-red-50 p-6 text-red-700"
+      role="alert"
+    >
+      <p class="font-semibold">Không tải được bộ sưu tập.</p>
+      <p class="mt-1 text-sm">{{ errorMessage }}</p>
+      <UiButton class="mt-4" variant="secondary" size="sm" @click="refreshCollection()"
+        >Thử lại</UiButton
+      >
+    </div>
+    <div
+      v-else
+      class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
+    >
+      <h1 class="text-lg font-black text-black">Không tìm thấy bộ sưu tập.</h1>
+      <p class="mt-2 text-sm">Nội dung có thể đã bị gỡ hoặc đường dẫn không đúng.</p>
+      <NuxtLink
+        to="/collections"
+        class="mt-5 inline-flex bg-black px-5 py-3 text-sm font-bold text-white no-underline transition hover:bg-black/80"
+      >
+        Xem bộ sưu tập khác
+      </NuxtLink>
+    </div>
   </main>
 </template>
 
@@ -75,11 +99,12 @@ import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
-import { UiSkeleton } from '@/components/ui'
+import { UiButton, UiSkeleton } from '@/components/ui'
 import { collectionApi } from '@/modules/content/collection/api'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { normalizeRichTextInput } from '@/lib/richText'
-import { useNotFoundStatus } from '@/composables/useNotFoundStatus'
+import { isNotFoundError, useNotFoundStatus } from '@/composables/useNotFoundStatus'
+import { getErrorMessage } from '@/modules/shared/hooks'
 import { DEFAULT_OG_IMAGE_PATH, ogImageOrDefault, publicSiteUrl } from '@/lib/seo'
 import type { ProductFeatured } from '@/modules/catalog/product/types'
 import type { CollectionDetail } from '@/modules/content/collection/types'
@@ -90,10 +115,19 @@ const {
   data: collection,
   pending: loading,
   error: collectionError,
+  refresh: refreshCollection,
 } = await useAsyncData(`collection-detail-${String(route.params.slug)}`, () =>
   collectionApi.detail(String(route.params.slug), { page: 1, limit: 40 }),
 )
 useNotFoundStatus(collection, collectionError)
+const notFound = computed(
+  () => !collection.value && (!collectionError.value || isNotFoundError(collectionError.value)),
+)
+const errorMessage = computed(() =>
+  collectionError.value && !isNotFoundError(collectionError.value)
+    ? getErrorMessage(collectionError.value)
+    : '',
+)
 const products = computed<ProductFeatured[]>(() => collection.value?.products || [])
 const collectionDescriptionHtml = computed(() =>
   normalizeRichTextInput(collection.value?.descriptionHtml || collection.value?.descriptionJson),
@@ -115,5 +149,6 @@ useSeoMeta({
     collection.value?.excerpt || 'Khám phá bộ sưu tập giày được chọn lọc tại The Pocket Shoes.',
   ogImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
   twitterImage: () => ogImageOrDefault(collection.value ? coverUrl(collection.value) : '', siteUrl),
+  robots: () => (notFound.value && !loading.value ? 'noindex, follow' : undefined),
 })
 </script>
