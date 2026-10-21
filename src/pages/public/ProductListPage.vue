@@ -3,7 +3,7 @@
     <PublicPageHeader
       sticky
       :title="pageTitle"
-      :subtitle="`${total} sản phẩm`"
+      :subtitle="initialLoading ? 'Đang tải sản phẩm...' : `${total} sản phẩm`"
       :breadcrumb-items="[{ label: pageTitle }]"
       class="pt-6 md:pt-8"
     >
@@ -13,20 +13,29 @@
             class="hidden lg:inline-flex"
             variant="ghost"
             size="sm"
+            :aria-pressed="showFilters"
             @click="showFilters = !showFilters"
           >
-            {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+            {{ showFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc' }}
           </UiButton>
 
           <UiButton class="lg:hidden" variant="outline" size="sm" @click="mobileFiltersOpen = true">
-            Filters
+            Bộ lọc<span v-if="activeFilterCount"> ({{ activeFilterCount }})</span>
           </UiButton>
 
           <DropdownSelect v-model="sortBy" :options="sortOptions">
-            <div class="flex items-center gap-2">
-              <span class="block">Sort By: </span>
-              <span class="block truncate">{{ selectedSortLabel }}</span>
-            </div>
+            <template #default="{ open }">
+              <button
+                type="button"
+                class="flex min-h-9 items-center gap-2 text-sm font-semibold"
+                aria-haspopup="menu"
+                :aria-expanded="open"
+              >
+                <span class="block text-black/55">Sắp xếp:</span>
+                <span class="block truncate">{{ selectedSortLabel }}</span>
+                <span aria-hidden="true">⌄</span>
+              </button>
+            </template>
           </DropdownSelect>
         </div>
       </template>
@@ -35,6 +44,7 @@
     <div
       v-if="error"
       class="mb-5 border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700"
+      role="alert"
     >
       {{ error }}
     </div>
@@ -59,7 +69,7 @@
         />
       </template>
 
-      <UiDrawer :open="mobileFiltersOpen" title="Filters" @close="mobileFiltersOpen = false">
+      <UiDrawer :open="mobileFiltersOpen" title="Bộ lọc" @close="mobileFiltersOpen = false">
         <ProductFilterSidebar
           :category-id="query.categoryId"
           :brand-id="query.brandId"
@@ -80,7 +90,7 @@
 
       <div
         v-if="initialLoading"
-        class="grid gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
+        class="grid grid-cols-2 gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
       >
         <UiSkeleton v-for="i in 12" :key="i" variant="card" media-class="aspect-square" :rows="4" />
       </div>
@@ -90,6 +100,8 @@
         tag="div"
         name="product-card"
         class="grid grid-cols-2 gap-x-3 gap-y-9 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
+        :class="loading && 'opacity-60 transition-opacity'"
+        :aria-busy="loading || undefined"
       >
         <ProductCard v-for="product in sortedProducts" :key="product.id" :product="product" />
       </TransitionGroup>
@@ -98,7 +110,15 @@
         v-else
         class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-sm font-semibold text-black/60"
       >
-        Không tìm thấy sản phẩm.
+        <p>Không tìm thấy sản phẩm.</p>
+        <button
+          v-if="activeFilterCount"
+          type="button"
+          class="mt-4 text-sm font-bold text-black/55 underline-offset-4 hover:text-black hover:underline"
+          @click="clearFilters"
+        >
+          Xóa bộ lọc
+        </button>
       </div>
 
       <UiPagination
@@ -107,7 +127,7 @@
         :page="page"
         :total="total"
         :total-pages="totalPages"
-        :page-size="Number(query.limit || 12)"
+        :page-size="Number(query.limit || PAGE_SIZE)"
         @update:page="changePage"
       />
     </StorefrontListingLayout>
@@ -115,8 +135,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from '#imports'
+import { computed, onBeforeUnmount, reactive, ref, shallowRef, watch } from 'vue'
+import { useAsyncData, useRoute } from '#imports'
+import type { LocationQuery } from 'vue-router'
 import DropdownSelect from '@/components/common/DropdownSelect.vue'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import ProductCard from '@/components/storefront/ProductCard.vue'
@@ -125,33 +146,11 @@ import StorefrontListingLayout from '@/components/storefront/StorefrontListingLa
 import { UiButton, UiDrawer, UiPagination, UiSkeleton } from '@/components/ui'
 import { usePageQuery } from '@/composables/usePageQuery'
 import { productApi } from '@/modules/catalog/product/api'
+import { productListPrice } from '@/modules/catalog/product/helpers'
 import type { Product, PublicProductListQuery } from '@/modules/catalog/product/types'
 import { getErrorMessage } from '@/modules/shared/hooks'
-import { useMasterData } from '@/modules/shared/master-data/hooks'
-
-const route = useRoute()
-const pageQuery = usePageQuery()
-
-const loading = ref(false)
-const error = ref('')
-const products = ref<Product[]>([])
-const total = ref(0)
-const totalPages = ref(0)
-
-const showFilters = ref(true)
-const mobileFiltersOpen = ref(false)
-const sortBy = ref('featured')
-function queryValues(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === 'string' && Boolean(item))
-  }
-
-  return typeof value === 'string' && value ? [value] : []
-}
-
-function queryValue(value: unknown) {
-  return queryValues(value)[0] || ''
-}
+import { masterDataApi } from '@/modules/shared/master-data/api'
+import type { Paginated } from '@/modules/shared/types'
 
 type ProductFilterQuery = Omit<
   PublicProductListQuery,
@@ -164,25 +163,140 @@ type ProductFilterQuery = Omit<
   color: string[]
 }
 
-const query = reactive<ProductFilterQuery>({
-  keyword: String(route.query.keyword || ''),
-  categoryId: queryValues(route.query.categoryId),
-  categorySlug: queryValue(route.query.categorySlug),
-  brandId: queryValues(route.query.brandId),
-  brandSlug: queryValue(route.query.brandSlug) || queryValue(route.query.brand),
-  gender: queryValues(route.query.gender),
-  size: queryValues(route.query.size),
-  color: queryValues(route.query.color),
-  minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
-  maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
-  page: pageQuery.value(),
-  limit: 12,
+const PAGE_SIZE = 12
+const sortOptions = [
+  { label: 'Nổi bật', value: 'featured' },
+  { label: 'Giá: thấp đến cao', value: 'price-asc' },
+  { label: 'Giá: cao đến thấp', value: 'price-desc' },
+  { label: 'Tên A-Z', value: 'name-asc' },
+]
+
+const route = useRoute()
+const pageQuery = usePageQuery()
+
+function queryValues(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && Boolean(item))
+  }
+
+  return typeof value === 'string' && value ? [value] : []
+}
+
+function queryValue(value: unknown) {
+  return queryValues(value)[0] || ''
+}
+
+function queryNumber(value: unknown) {
+  const text = queryValue(value)
+  const number = Number(text)
+  return text && Number.isFinite(number) ? number : undefined
+}
+
+function parseSort(value: unknown) {
+  const sort = queryValue(value)
+  return sortOptions.some((option) => option.value === sort) ? sort : 'featured'
+}
+
+function parseFilters(source: LocationQuery): ProductFilterQuery {
+  const page = Math.trunc(Number(queryValue(source.page) || 1))
+  return {
+    keyword: queryValue(source.keyword),
+    categoryId: queryValues(source.categoryId),
+    categorySlug: queryValue(source.categorySlug),
+    brandId: queryValues(source.brandId),
+    brandSlug: queryValue(source.brandSlug) || queryValue(source.brand),
+    gender: queryValues(source.gender),
+    size: queryValues(source.size),
+    color: queryValues(source.color),
+    minPrice: queryNumber(source.minPrice),
+    maxPrice: queryNumber(source.maxPrice),
+    page: page > 0 ? page : 1,
+    limit: PAGE_SIZE,
+  }
+}
+
+// Chuỗi đại diện để so sánh bộ lọc hiện tại với URL (bỏ qua thứ tự phần tử).
+function filterSignature(source: ProductFilterQuery) {
+  return JSON.stringify([
+    source.keyword || '',
+    [...source.categoryId].sort(),
+    source.categorySlug || '',
+    [...source.brandId].sort(),
+    source.brandSlug || '',
+    [...source.gender].sort(),
+    [...source.size].sort(),
+    [...source.color].sort(),
+    source.minPrice ?? null,
+    source.maxPrice ?? null,
+    Number(source.page || 1),
+  ])
+}
+
+const showFilters = ref(true)
+const mobileFiltersOpen = ref(false)
+const sortBy = ref(parseSort(route.query.sort))
+const query = reactive<ProductFilterQuery>(parseFilters(route.query))
+
+function listParams(): PublicProductListQuery {
+  return {
+    keyword: query.keyword || undefined,
+    categoryId: query.categoryId.length ? [...query.categoryId] : undefined,
+    categorySlug: query.categoryId.length ? undefined : query.categorySlug || undefined,
+    brandId: query.brandId.length ? [...query.brandId] : undefined,
+    brandSlug: query.brandId.length ? undefined : query.brandSlug || undefined,
+    gender: query.gender.length ? [...query.gender] : undefined,
+    size: query.size.length ? [...query.size] : undefined,
+    color: query.color.length ? [...query.color] : undefined,
+    minPrice: query.minPrice,
+    maxPrice: query.maxPrice,
+    page: query.page,
+    limit: query.limit,
+  }
+}
+
+// Lần tải đầu chạy cả khi SSR (HTML có sẵn sản phẩm cho người dùng và công cụ tìm kiếm);
+// `lazy` để điều hướng phía client không bị chặn mà hiện skeleton.
+const initialParams = listParams()
+const masterDataAsync = useAsyncData('master-data:public', () => masterDataApi.public(), {
+  lazy: true,
+  deep: false,
 })
+const initialListAsync = useAsyncData(
+  `product-list:${JSON.stringify(initialParams)}`,
+  () => productApi.list(initialParams),
+  { lazy: true, deep: false },
+)
+await Promise.all([masterDataAsync, initialListAsync])
+const { data: masterData } = masterDataAsync
+const { data: initialList, pending: initialPending, error: initialError } = initialListAsync
 
-const { data: masterData, error: masterError, load: loadMasterData } = useMasterData('public')
-
+const loading = ref(false)
+const loadError = ref('')
+const localList = shallowRef<Paginated<Product> | null>(null)
+const listResult = computed(() => localList.value ?? initialList.value ?? null)
+const products = computed(() => listResult.value?.items ?? [])
+const total = computed(() => listResult.value?.total ?? 0)
+const totalPages = computed(() => listResult.value?.totalPages ?? 0)
 const page = computed(() => Number(query.page || 1))
-const initialLoading = computed(() => loading.value && !products.value.length)
+const initialLoading = computed(
+  () => !products.value.length && (loading.value || (initialPending.value && !localList.value)),
+)
+const error = computed(
+  () =>
+    loadError.value ||
+    (!localList.value && initialError.value ? getErrorMessage(initialError.value) : ''),
+)
+const activeFilterCount = computed(
+  () =>
+    query.categoryId.length +
+    query.brandId.length +
+    query.gender.length +
+    query.size.length +
+    query.color.length +
+    (query.categorySlug ? 1 : 0) +
+    (query.brandSlug ? 1 : 0) +
+    (query.minPrice !== undefined || query.maxPrice !== undefined ? 1 : 0),
+)
 
 const currentCategory = computed(() => {
   if (query.categoryId.length === 1) {
@@ -195,65 +309,58 @@ const currentCategory = computed(() => {
 
 const pageTitle = computed(() => currentCategory.value?.name || 'Cửa hàng')
 
+// API chưa hỗ trợ sắp xếp nên chỉ sắp xếp các sản phẩm của trang hiện tại; giá lấy theo
+// minSalePrice/minPrice giống ProductCard.
 const sortedProducts = computed(() => {
   const items = [...products.value]
 
   if (sortBy.value === 'price-asc') {
-    return items.sort((a, b) => productPrice(a) - productPrice(b))
+    return items.sort((a, b) => productListPrice(a) - productListPrice(b))
   }
 
   if (sortBy.value === 'price-desc') {
-    return items.sort((a, b) => productPrice(b) - productPrice(a))
+    return items.sort((a, b) => productListPrice(b) - productListPrice(a))
   }
 
   if (sortBy.value === 'name-asc') {
-    return items.sort((a, b) => a.name.localeCompare(b.name))
+    return items.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
   }
 
   return items
 })
 
-const sortOptions = [
-  { label: 'Featured', value: 'featured' },
-  { label: 'Price: Low-High', value: 'price-asc' },
-  { label: 'Price: High-Low', value: 'price-desc' },
-  { label: 'Name', value: 'name-asc' },
-]
 const selectedSortLabel = computed(
-  () => sortOptions.find((option) => option.value === sortBy.value)?.label || 'Featured',
+  () => sortOptions.find((option) => option.value === sortBy.value)?.label || 'Nổi bật',
 )
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 let loadToken = 0
 let suppressFilterApply = false
 
+function withFilterApplySuppressed(task: () => void) {
+  suppressFilterApply = true
+  try {
+    task()
+  } finally {
+    suppressFilterApply = false
+  }
+}
+
 async function load() {
   const token = ++loadToken
   loading.value = true
-  error.value = masterError.value || ''
+  loadError.value = ''
 
   try {
-    const data = await productApi.list({
-      ...query,
-      categoryId: query.categoryId.length ? query.categoryId : undefined,
-      categorySlug: query.categoryId.length ? undefined : query.categorySlug || undefined,
-      brandId: query.brandId.length ? query.brandId : undefined,
-      brandSlug: query.brandId.length ? undefined : query.brandSlug || undefined,
-      gender: query.gender.length ? query.gender : undefined,
-      size: query.size.length ? query.size : undefined,
-      color: query.color.length ? query.color : undefined,
-    })
-
+    const data = await productApi.list(listParams())
     if (token !== loadToken) return
 
-    products.value = data.items
-    total.value = data.total
-    totalPages.value = data.totalPages
+    localList.value = data
     query.page = data.page || query.page
     query.limit = data.limit || query.limit
   } catch (err) {
     if (token !== loadToken) return
-    error.value = getErrorMessage(err)
+    loadError.value = getErrorMessage(err)
   } finally {
     if (token === loadToken) {
       loading.value = false
@@ -263,15 +370,17 @@ async function load() {
 
 function routeQuery() {
   return {
-    ...query,
+    keyword: query.keyword || undefined,
     categoryId: query.categoryId.length ? query.categoryId : undefined,
     categorySlug: query.categoryId.length ? undefined : query.categorySlug || undefined,
     brandId: query.brandId.length ? query.brandId : undefined,
     brandSlug: query.brandId.length ? undefined : query.brandSlug || undefined,
-    brand: undefined,
     gender: query.gender.length ? query.gender : undefined,
     size: query.size.length ? query.size : undefined,
     color: query.color.length ? query.color : undefined,
+    minPrice: query.minPrice !== undefined ? String(query.minPrice) : undefined,
+    maxPrice: query.maxPrice !== undefined ? String(query.maxPrice) : undefined,
+    sort: sortBy.value === 'featured' ? undefined : sortBy.value,
   }
 }
 
@@ -312,6 +421,19 @@ function updateBrandIds(value: string[]) {
   query.brandSlug = ''
 }
 
+function clearFilters() {
+  query.categoryId = []
+  query.categorySlug = ''
+  query.brandId = []
+  query.brandSlug = ''
+  query.gender = []
+  query.size = []
+  query.color = []
+  query.minPrice = undefined
+  query.maxPrice = undefined
+}
+
+// Link cũ dùng slug (?categorySlug=, ?brand=): đổi sang id để bộ lọc bên trái được tick đúng.
 function hydrateLegacyFilterIds() {
   if (!query.categoryId.length && query.categorySlug) {
     const category = masterData.value?.categories.find((item) => item.slug === query.categorySlug)
@@ -330,6 +452,9 @@ function hydrateLegacyFilterIds() {
   }
 }
 
+withFilterApplySuppressed(hydrateLegacyFilterIds)
+watch(masterData, () => withFilterApplySuppressed(hydrateLegacyFilterIds))
+
 watch(
   () => [
     query.categorySlug,
@@ -346,46 +471,37 @@ watch(
   { flush: 'sync' },
 )
 
-watch(
-  () => route.query.keyword,
-  (keyword) => {
-    query.keyword = String(keyword || '')
-    scheduleApplyFilters()
-  },
-)
-
-watch(
-  () => route.query.gender,
-  (gender) => {
-    const nextGenders = queryValues(gender)
-    if (
-      nextGenders.length === query.gender.length &&
-      nextGenders.every((value) => query.gender.includes(value))
-    ) {
-      return
-    }
-
-    query.gender = nextGenders
-  },
-)
-
-onMounted(async () => {
-  await loadMasterData().catch(() => null)
-  suppressFilterApply = true
-  hydrateLegacyFilterIds()
-  suppressFilterApply = false
-  await load()
+watch(sortBy, () => {
+  void pageQuery.replace(query.page || 1, routeQuery())
 })
+
+// URL đổi từ bên ngoài (link Nam/Nữ ở header, ô tìm kiếm, nút back): đồng bộ lại bộ lọc.
+// URL do chính trang ghi (applyFilters/changePage) cho ra cùng chữ ký nên được bỏ qua.
+watch(
+  () => route.query,
+  (nextQuery) => {
+    if (route.path !== '/products') return
+
+    const nextSort = parseSort(nextQuery.sort)
+    if (nextSort !== sortBy.value) sortBy.value = nextSort
+
+    const nextFilters = parseFilters(nextQuery)
+    if (filterSignature(nextFilters) === filterSignature(query)) return
+
+    if (searchTimer) clearTimeout(searchTimer)
+    withFilterApplySuppressed(() => {
+      Object.assign(query, nextFilters)
+      hydrateLegacyFilterIds()
+    })
+    void load()
+  },
+)
 
 onBeforeUnmount(() => {
   if (searchTimer) {
     clearTimeout(searchTimer)
   }
 })
-
-function productPrice(product: Product) {
-  return product.salePrice || product.price || 0
-}
 </script>
 
 <style scoped>

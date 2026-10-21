@@ -31,7 +31,15 @@
 
     <StorefrontListingLayout :show-sidebar="false">
       <div
-        v-if="loading"
+        v-if="error"
+        class="mb-5 border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700"
+        role="alert"
+      >
+        {{ error }}
+      </div>
+
+      <div
+        v-if="showSkeleton"
         class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
         <UiSkeleton
@@ -125,7 +133,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
+import { useAsyncData } from '#imports'
 import PublicPageHeader from '@/components/common/PublicPageHeader.vue'
 import StorefrontCard from '@/components/storefront/StorefrontCard.vue'
 import StorefrontListingLayout from '@/components/storefront/StorefrontListingLayout.vue'
@@ -133,22 +142,49 @@ import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiSkeleton } from '@/components/ui'
 import { brandApi } from '@/modules/content/brand/api'
 import type { Brand } from '@/modules/content/brand/types'
+import { getErrorMessage } from '@/modules/shared/hooks'
 
-const rows = ref<Brand[]>([])
+// Danh sách đầy đủ được lấy ngay khi SSR; tìm kiếm sau đó tải phía client.
+const {
+  data: initialRows,
+  pending: initialPending,
+  error: initialError,
+} = await useAsyncData('brand-list', () => brandApi.list({ keyword: '' }), {
+  lazy: true,
+  deep: false,
+})
+
+const localRows = shallowRef<Brand[] | null>(null)
+const rows = computed(() => localRows.value ?? initialRows.value ?? [])
 const loading = ref(false)
+const loadError = ref('')
 const keyword = ref('')
+const showSkeleton = computed(
+  () => loading.value || (initialPending.value && !localRows.value && !initialRows.value),
+)
+const error = computed(
+  () =>
+    loadError.value ||
+    (!localRows.value && initialError.value ? getErrorMessage(initialError.value) : ''),
+)
 let searchTimer: ReturnType<typeof setTimeout> | undefined
+let loadToken = 0
 
 async function load() {
   if (searchTimer) clearTimeout(searchTimer)
+  const token = ++loadToken
   loading.value = true
+  loadError.value = ''
 
   try {
-    rows.value = await brandApi.list({
+    const data = await brandApi.list({
       keyword: keyword.value,
     })
+    if (token === loadToken) localRows.value = data
+  } catch (err) {
+    if (token === loadToken) loadError.value = getErrorMessage(err)
   } finally {
-    loading.value = false
+    if (token === loadToken) loading.value = false
   }
 }
 
@@ -171,7 +207,9 @@ function brandInitials(value: string) {
     .join('')
 }
 
-onMounted(load)
+onBeforeUnmount(() => {
+  if (searchTimer) clearTimeout(searchTimer)
+})
 </script>
 
 <style scoped>

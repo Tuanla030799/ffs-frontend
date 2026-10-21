@@ -37,6 +37,10 @@ function cacheKey(event: H3Event) {
   if (url.search || !CACHEABLE_PATHS.some((pattern) => pattern.test(url.pathname))) {
     return undefined
   }
+  // Gắn build ID vào khoá: sau mỗi lần deploy, HTML cũ (trỏ tới chunk JS đã bị xoá) không còn
+  // được trả về nữa, tránh trang không hydrate được trong vài phút đầu.
+  const buildId = String(useRuntimeConfig(event).app?.buildId || '')
+  if (buildId) url.searchParams.set('__build', buildId)
   return new Request(url.toString(), { method: 'GET' })
 }
 

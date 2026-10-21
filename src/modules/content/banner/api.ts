@@ -3,9 +3,10 @@ import { unwrapList, type Paginated, type ListQuery } from '@/modules/shared/typ
 import type { ApiEnvelope } from '@/types/http'
 import type { LandingBanner, LandingBannerPayload } from './types'
 export const bannerApi = {
+  // API trả về dạng phân trang ({ items, page, ... }), không phải mảng.
   async publicList() {
-    const res = await httpClient.get<ApiEnvelope<LandingBanner[]>>('/landing-banners')
-    return res.data.data || []
+    const res = await httpClient.get<ApiEnvelope<unknown>>('/landing-banners')
+    return unwrapList<LandingBanner>(res.data.data).items
   },
   async adminList(params?: ListQuery) {
     const res = await httpClient.get<ApiEnvelope<unknown>>('/admin/landing-banners', { params })
@@ -16,10 +17,7 @@ export const bannerApi = {
     ) as Paginated<LandingBanner>
   },
   async create(payload: LandingBannerPayload) {
-    const res = await httpClient.post<ApiEnvelope<LandingBanner>>(
-      '/admin/landing-banners',
-      payload,
-    )
+    const res = await httpClient.post<ApiEnvelope<LandingBanner>>('/admin/landing-banners', payload)
     return res.data.data
   },
   async update(id: string, payload: LandingBannerPayload) {

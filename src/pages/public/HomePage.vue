@@ -9,6 +9,7 @@
           :alt="hero?.title || 'WALK banner'"
           :fallback-src="null"
           loading="eager"
+          fetchpriority="high"
           class="absolute inset-0 h-full w-full object-cover"
         />
         <div class="absolute inset-0 bg-gradient-to-r from-white/88 via-white/42 to-transparent" />
@@ -32,19 +33,19 @@
             >
               {{ hero?.subtitle || 'We curate shoes you didn’t know you needed.' }}
             </p>
-            <RouterLink
+            <NuxtLink
               :to="hero?.linkUrl || '/about'"
               class="mt-7 inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:mt-8 md:px-7 md:py-4"
             >
-              About us
-            </RouterLink>
+              {{ hero?.linkUrl ? 'Khám phá ngay' : 'Về chúng tôi' }}
+            </NuxtLink>
           </div>
         </div>
       </div>
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
-      <SectionHeader title="Bộ sưu tập nổi bật?" to="/collections" label="Xem tất cả" />
+      <SectionHeader title="Bộ sưu tập nổi bật" to="/collections" label="Xem tất cả" />
       <CollectionSwiper :collections="collections" :loading="loading" />
     </section>
 
@@ -65,8 +66,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, defineComponent, h } from 'vue'
+import { useAsyncData, useRequestEvent } from '#imports'
+import { NuxtLink } from '#components'
 import CollectionSwiper from '@/components/home/CollectionSwiper.vue'
 import FeaturedProductSwiper from '@/components/home/FeaturedProductSwiper.vue'
 import BlogCard from '@/components/storefront/BlogCard.vue'
@@ -76,17 +78,42 @@ import { productApi } from '@/modules/catalog/product/api'
 import { collectionApi } from '@/modules/content/collection/api'
 import { blogApi } from '@/modules/content/blog/api'
 import { bannerApi } from '@/modules/content/banner/api'
-import type { ProductFeatured } from '@/modules/catalog/product/types'
-import type { Collection } from '@/modules/content/collection/types'
-import type { Blog } from '@/modules/content/blog/types'
-import type { LandingBanner } from '@/modules/content/banner/types'
 
-const loading = ref(true)
-const featured = ref<ProductFeatured[]>([])
-const collections = ref<Collection[]>([])
-const banners = ref<LandingBanner[]>([])
-const randomBlog = ref<Blog | null>(null)
-const hero = computed(() => banners.value[0])
+const requestEvent = import.meta.server ? useRequestEvent() : undefined
+
+// Tải song song và chịu lỗi từng phần: một API lỗi không làm trống cả trang chủ. Dữ liệu
+// được lấy ngay khi SSR; `lazy` để điều hướng phía client hiện skeleton thay vì chờ.
+const { data: home, pending } = await useAsyncData(
+  'home-page',
+  async () => {
+    const [bannerResult, featuredResult, collectionResult, blogResult] = await Promise.allSettled([
+      bannerApi.publicList(),
+      productApi.featured(10),
+      collectionApi.list({ page: 1, limit: 8 }),
+      blogApi.list({ page: 1, limit: 12 }),
+    ])
+    const results = [bannerResult, featuredResult, collectionResult, blogResult]
+    // Có phần lỗi thì không lưu HTML vào cache edge (xem server/plugins/edge-cache.ts).
+    if (requestEvent && results.some((result) => result.status === 'rejected')) {
+      requestEvent.context.skipEdgeCache = true
+    }
+
+    const blogs = blogResult.status === 'fulfilled' ? blogResult.value.items : []
+    return {
+      hero: bannerResult.status === 'fulfilled' ? bannerResult.value[0] || null : null,
+      featured: featuredResult.status === 'fulfilled' ? featuredResult.value : [],
+      collections: collectionResult.status === 'fulfilled' ? collectionResult.value.items : [],
+      randomBlog: blogs.length ? blogs[Math.floor(Math.random() * blogs.length)] || null : null,
+    }
+  },
+  { lazy: true, deep: false },
+)
+
+const loading = computed(() => pending.value && !home.value)
+const hero = computed(() => home.value?.hero || null)
+const featured = computed(() => home.value?.featured || [])
+const collections = computed(() => home.value?.collections || [])
+const randomBlog = computed(() => home.value?.randomBlog || null)
 
 const SectionHeader = defineComponent({
   props: {
@@ -99,30 +126,11 @@ const SectionHeader = defineComponent({
       h('div', { class: 'mb-8 flex items-center justify-between gap-4' }, [
         h('h2', { class: 'text-2xl font-black tracking-tight' }, props.title),
         h(
-          RouterLink,
+          NuxtLink,
           { to: props.to, class: 'text-sm font-semibold text-black no-underline hover:opacity-60' },
           () => `${props.label} →`,
         ),
       ])
   },
-})
-
-onMounted(async () => {
-  try {
-    const [bannerRows, productRows, collectionRows, blogRows] = await Promise.all([
-      bannerApi.publicList(),
-      productApi.featured(10),
-      collectionApi.list({ page: 1, limit: 8 }),
-      blogApi.list({ page: 1, limit: 20 }),
-    ])
-    banners.value = bannerRows
-    featured.value = productRows
-    collections.value = collectionRows.items
-    const availableBlogs = blogRows.items
-    const randomIndex = Math.floor(Math.random() * availableBlogs.length)
-    randomBlog.value = availableBlogs.length ? availableBlogs[randomIndex] || null : null
-  } finally {
-    loading.value = false
-  }
 })
 </script>
