@@ -16,6 +16,7 @@ export interface Collection {
   productCount?: number
   products?: ProductFeatured[]
   createdAt?: string
+  updatedAt?: string
 }
 
 export type CollectionDetail = Collection

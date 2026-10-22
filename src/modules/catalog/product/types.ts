@@ -111,6 +111,8 @@ export interface ProductFeatured {
   primaryFileId: string
   primaryImageUrl: string
   createdAt: string
+  // Mốc thay đổi mới nhất của sản phẩm, biến thể và SKU (kể cả tồn kho).
+  updatedAt?: string
 }
 
 export interface ProductListQuery {

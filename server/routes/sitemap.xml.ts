@@ -3,7 +3,13 @@ import { publicSiteUrl } from '../../src/lib/seo'
 
 type SitemapEntry = { path: string; lastmod?: string; images?: string[] }
 type ApiList<T> = { data?: { items?: T[]; totalPages?: number } }
-type SlugRow = { slug?: string; createdAt?: string; publishedAt?: string; primaryImageUrl?: string }
+type SlugRow = {
+  slug?: string
+  createdAt?: string
+  updatedAt?: string
+  publishedAt?: string
+  primaryImageUrl?: string
+}
 
 // BE giới hạn limit tối đa 100.
 const PAGE_SIZE = 100
@@ -29,9 +35,13 @@ async function fetchAll(baseUrl: string, path: string) {
   return rows.filter((row) => row.slug)
 }
 
-function isoDate(value?: string) {
-  const date = value ? new Date(value) : null
-  return date && !Number.isNaN(date.getTime()) ? date.toISOString() : undefined
+// Mốc muộn nhất trong các giá trị hợp lệ. `updatedAt` của sản phẩm đã gồm cả thay đổi biến thể,
+// SKU và tồn kho; bài blog hẹn giờ có thể có `publishedAt` muộn hơn lần sửa cuối.
+function lastmod(...values: (string | undefined)[]) {
+  const times = values
+    .map((value) => (value ? new Date(value).getTime() : Number.NaN))
+    .filter((time) => !Number.isNaN(time))
+  return times.length ? new Date(Math.max(...times)).toISOString() : undefined
 }
 
 // Kết quả lỗi (throw) không bị cache, nên lần sau sẽ thử lại API.
@@ -47,16 +57,16 @@ const loadDynamicEntries = defineCachedFunction(
     return [
       ...products.map((row) => ({
         path: `/products/${encodeURIComponent(row.slug!)}`,
-        lastmod: isoDate(row.createdAt),
+        lastmod: lastmod(row.updatedAt, row.createdAt),
         images: row.primaryImageUrl ? [row.primaryImageUrl] : [],
       })),
       ...collections.map((row) => ({
         path: `/collections/${encodeURIComponent(row.slug!)}`,
-        lastmod: isoDate(row.createdAt),
+        lastmod: lastmod(row.updatedAt, row.createdAt),
       })),
       ...blogs.map((row) => ({
         path: `/blogs/${encodeURIComponent(row.slug!)}`,
-        lastmod: isoDate(row.publishedAt || row.createdAt),
+        lastmod: lastmod(row.updatedAt, row.publishedAt, row.createdAt),
       })),
     ]
   },
