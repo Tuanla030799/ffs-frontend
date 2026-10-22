@@ -138,4 +138,7 @@ export interface PublicProductListQuery extends Omit<
   gender?: string[]
   size?: string[]
   color?: string[]
+  // featured | newest (mặc định của BE) | price-asc | price-desc | name-asc; BE sắp xếp toàn bộ
+  // kết quả trước khi phân trang.
+  sort?: string
 }
