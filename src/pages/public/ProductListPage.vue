@@ -103,7 +103,7 @@
         :class="loading && 'opacity-60 transition-opacity'"
         :aria-busy="loading || undefined"
       >
-        <ProductCard v-for="product in sortedProducts" :key="product.id" :product="product" />
+        <ProductCard v-for="product in products" :key="product.id" :product="product" />
       </TransitionGroup>
 
       <div
@@ -146,7 +146,6 @@ import StorefrontListingLayout from '@/components/storefront/StorefrontListingLa
 import { UiButton, UiDrawer, UiPagination, UiSkeleton } from '@/components/ui'
 import { usePageQuery } from '@/composables/usePageQuery'
 import { productApi } from '@/modules/catalog/product/api'
-import { productListPrice } from '@/modules/catalog/product/helpers'
 import type { Product, PublicProductListQuery } from '@/modules/catalog/product/types'
 import { listingCanonicalUrl, publicSiteUrl } from '@/lib/seo'
 import { getErrorMessage } from '@/modules/shared/hooks'
@@ -250,6 +249,8 @@ function listParams(): PublicProductListQuery {
     color: query.color.length ? [...query.color] : undefined,
     minPrice: query.minPrice,
     maxPrice: query.maxPrice,
+    // Luôn gửi kể cả `featured`: mặc định của BE là mới nhất.
+    sort: sortBy.value,
     page: query.page,
     limit: query.limit,
   }
@@ -309,26 +310,6 @@ const currentCategory = computed(() => {
 })
 
 const pageTitle = computed(() => currentCategory.value?.name || 'Cửa hàng')
-
-// API chưa hỗ trợ sắp xếp nên chỉ sắp xếp các sản phẩm của trang hiện tại; giá lấy theo
-// minSalePrice/minPrice giống ProductCard.
-const sortedProducts = computed(() => {
-  const items = [...products.value]
-
-  if (sortBy.value === 'price-asc') {
-    return items.sort((a, b) => productListPrice(a) - productListPrice(b))
-  }
-
-  if (sortBy.value === 'price-desc') {
-    return items.sort((a, b) => productListPrice(b) - productListPrice(a))
-  }
-
-  if (sortBy.value === 'name-asc') {
-    return items.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
-  }
-
-  return items
-})
 
 // Canonical bỏ tham số lọc/sắp xếp, chỉ giữ số trang; tiêu đề riêng theo danh mục và trang.
 const siteUrl = publicSiteUrl(String(useRuntimeConfig().public.siteUrl || ''))
@@ -483,9 +464,16 @@ watch(
   { flush: 'sync' },
 )
 
-watch(sortBy, () => {
-  void pageQuery.replace(query.page || 1, routeQuery())
-})
+// Đổi cách sắp xếp thì tải lại từ trang 1 (BE sắp xếp trên toàn bộ kết quả).
+watch(
+  sortBy,
+  () => {
+    if (suppressFilterApply) return
+    if (searchTimer) clearTimeout(searchTimer)
+    applyFilters()
+  },
+  { flush: 'sync' },
+)
 
 // URL đổi từ bên ngoài (link Nam/Nữ ở header, ô tìm kiếm, nút back): đồng bộ lại bộ lọc.
 // URL do chính trang ghi (applyFilters/changePage) cho ra cùng chữ ký nên được bỏ qua.
@@ -495,10 +483,11 @@ watch(
     if (route.path !== '/products') return
 
     const nextSort = parseSort(nextQuery.sort)
-    if (nextSort !== sortBy.value) sortBy.value = nextSort
+    const sortChanged = nextSort !== sortBy.value
+    if (sortChanged) withFilterApplySuppressed(() => (sortBy.value = nextSort))
 
     const nextFilters = parseFilters(nextQuery)
-    if (filterSignature(nextFilters) === filterSignature(query)) return
+    if (!sortChanged && filterSignature(nextFilters) === filterSignature(query)) return
 
     if (searchTimer) clearTimeout(searchTimer)
     withFilterApplySuppressed(() => {

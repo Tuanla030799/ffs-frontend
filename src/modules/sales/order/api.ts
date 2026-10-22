@@ -19,9 +19,10 @@ function normalizeOrderDetail(data: OrderDetail | Order | null | undefined): Ord
 }
 
 export const orderApi = {
+  // BE trả `{ order, items }`; mã đơn hiển thị cho khách là `order.orderCode`.
   async create(payload: CreateOrderPayload) {
-    const res = await httpClient.post<ApiEnvelope<Order>>('/orders', payload)
-    return res.data.data
+    const res = await httpClient.post<ApiEnvelope<OrderDetail>>('/orders', payload)
+    return normalizeOrderDetail(res.data.data)
   },
   async adminList(params?: ListQuery) {
     const res = await httpClient.get<ApiEnvelope<unknown>>('/admin/orders', { params })

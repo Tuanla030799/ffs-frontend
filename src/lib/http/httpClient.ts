@@ -55,15 +55,8 @@ function resolveBaseURL(baseURL?: string) {
 
 async function refreshAccessToken() {
   const appStore = useAppStore()
-  if (!appStore.refreshToken) {
-    appStore.clearAuthSession()
-    throw new ApiError({
-      message: 'Phiên đăng nhập đã hết hạn.',
-      status: 401,
-      code: 'AUTH_EXPIRED',
-    })
-  }
-
+  // Không cần refresh token trong bộ nhớ: sau khi tải lại trang, BE đọc token từ cookie HttpOnly.
+  // Không còn cookie hợp lệ thì BE trả 400 AUTH_REFRESH_TOKEN_INVALID và phiên bị xoá.
   if (!refreshPromise) {
     appStore.startRefreshToken()
     refreshPromise = adminAuthService
@@ -182,14 +175,12 @@ function createHttpClient(config?: AxiosRequestConfig): AxiosInstance {
       finishTrackedRequest(error.config as RetryableConfig | undefined)
       if (!import.meta.client) return Promise.reject(normalizeAxiosError(error))
 
-      const appStore = useAppStore()
       const originalRequest = error.config as RetryableConfig | undefined
       if (
         error.response?.status === 401 &&
         originalRequest &&
         !originalRequest._retry &&
-        !shouldSkipRefresh(originalRequest) &&
-        appStore.refreshToken
+        !shouldSkipRefresh(originalRequest)
       ) {
         try {
           originalRequest._retry = true

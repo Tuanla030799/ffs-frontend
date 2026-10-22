@@ -33,7 +33,6 @@ export interface OrderItem {
 export interface Order {
   id: string
   orderCode?: string
-  code?: string
   customerName: string
   customerPhone?: string
   customerEmail?: string

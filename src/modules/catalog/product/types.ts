@@ -111,6 +111,8 @@ export interface ProductFeatured {
   primaryFileId: string
   primaryImageUrl: string
   createdAt: string
+  // Mốc thay đổi mới nhất của sản phẩm, biến thể và SKU (kể cả tồn kho).
+  updatedAt?: string
 }
 
 export interface ProductListQuery {
@@ -138,4 +140,7 @@ export interface PublicProductListQuery extends Omit<
   gender?: string[]
   size?: string[]
   color?: string[]
+  // featured | newest (mặc định của BE) | price-asc | price-desc | name-asc; BE sắp xếp toàn bộ
+  // kết quả trước khi phân trang.
+  sort?: string
 }

@@ -613,7 +613,8 @@ async function revalidateCoupon() {
     if (!data.valid) {
       setCoupon(null)
       couponMessageType.value = 'error'
-      couponMessage.value = `Mã ${current.code} không còn áp dụng: ${data.message || 'không hợp lệ'}.`
+      // message của BE là câu hoàn chỉnh, có dấu chấm cuối.
+      couponMessage.value = `Mã ${current.code} không còn áp dụng. ${data.message || ''}`.trim()
       return
     }
 
@@ -651,7 +652,7 @@ async function applyCoupon() {
       return
     }
 
-    setCoupon({ code, discountAmount: Number(data.discountAmount || 0) })
+    setCoupon({ code: data.couponCode || code, discountAmount: Number(data.discountAmount || 0) })
     couponMessageType.value = 'ok'
     couponMessage.value = data.message || `Mã hợp lệ, giảm ${money(data.discountAmount)}.`
   } catch (error) {
@@ -676,7 +677,7 @@ async function submitOrder() {
 
   submitting.value = true
   try {
-    const order = await orderApi.create({
+    const { order } = await orderApi.create({
       customerName: form.fullName.trim(),
       customerPhone: form.phone.trim(),
       customerEmail: form.email.trim() || undefined,
@@ -696,7 +697,7 @@ async function submitOrder() {
     toast.push('Shop đã nhận thông tin và sẽ liên hệ xác nhận.', 'success', 'Đặt hàng thành công')
     await router.push({
       name: 'order-success',
-      query: { code: order.orderCode || order.code || order.id },
+      query: { code: order.orderCode || order.id },
     })
   } catch (error) {
     submitError.value = getErrorMessage(error)

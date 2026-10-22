@@ -13,6 +13,7 @@ export interface Blog {
   status: Status
   publishedAt?: string
   createdAt?: string
+  updatedAt?: string
 }
 
 export interface BlogListQuery {
