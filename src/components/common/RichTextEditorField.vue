@@ -23,6 +23,7 @@
         :id="editorId"
         :model-value="localValue"
         :disabled="isDisabled"
+        :license-key="TINYMCE_LICENSE_KEY"
         :init="editorInit"
         @init="onInit"
         @update:model-value="onUpdate"
@@ -46,6 +47,7 @@
           :id="fullscreenEditorId"
           :model-value="fullscreenValue"
           :disabled="isDisabled"
+          :license-key="TINYMCE_LICENSE_KEY"
           :init="fullscreenEditorInit"
           @init="onFullscreenInit"
           @update:model-value="onFullscreenUpdate"
@@ -81,8 +83,10 @@ import 'tinymce/plugins/preview'
 import 'tinymce/plugins/table'
 import 'tinymce/plugins/wordcount'
 import 'tinymce/skins/ui/oxide/skin.css'
-import 'tinymce/skins/ui/oxide/content.css'
-import 'tinymce/skins/content/default/content.css'
+// CSS cho phần nội dung nằm trong iframe của editor: nạp dạng chuỗi để đưa vào `content_style`.
+// Import thẳng vào trang sẽ áp lên chính trang admin (content.css có rule `body { margin: 1rem }`).
+import tinymceContentUiCss from 'tinymce/skins/ui/oxide/content.css?inline'
+import tinymceContentCss from 'tinymce/skins/content/default/content.css?inline'
 import { UiButton, UiCard, UiModal } from '@/components/ui'
 import { fileService } from '@/services/file.service'
 import { normalizeRichTextInput } from '@/lib/richText'
@@ -140,8 +144,11 @@ let fullscreenEditorInstance: TinyEditorInstance | null = null
 const heading = computed(() => props.title || props.label)
 const isDisabled = computed(() => props.disabled || props.readonly)
 
+// tinymce-vue ghi đè `license_key` trong `init` bằng prop `licenseKey`, nên key phải truyền qua
+// prop; đặt trong `init` sẽ bị bỏ qua và TinyMCE báo "evaluation mode".
+const TINYMCE_LICENSE_KEY = 'gpl'
+
 const editorInit = computed(() => ({
-  license_key: 'gpl',
   promotion: false,
   branding: false,
   skin: false,
@@ -182,6 +189,9 @@ const editorInit = computed(() => ({
   image_advtab: true,
 
   content_style: `
+    ${tinymceContentUiCss}
+    ${tinymceContentCss}
+
     body {
       font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 15px;
