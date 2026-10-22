@@ -7,28 +7,34 @@ Danh sách các điểm phía backend cần sửa hoặc hỗ trợ, phát hiệ
 
 - BE đã sửa các mục 1–4, 6, 7, 9 và 10 trên nhánh `dev` (commit `d62cfb9`).
 - FE đã chuyển sang hợp đồng mới và bỏ các workaround tương ứng.
-- **Phải deploy BE lên production trước rồi mới deploy FE.** Với BE cũ:
-  - Trang chi tiết có slug không tồn tại sẽ hiện lỗi và trả 200 thay vì 404.
-  - Sắp xếp sản phẩm không có tác dụng.
-  - Phiên admin hết hạn sau khi tải lại trang, vì BE cũ không đọc refresh token từ cookie.
+- Đã kiểm chứng trên production: BE và FE đều đang chạy hợp đồng mới.
+  - API trả 404 kèm `code`, lỗi validate có `errors[]`, `POST /coupons/validate` trả 200, danh
+    sách có `updatedAt`, tham số `sort` sắp xếp trên toàn bộ kết quả.
+  - CORS cho phép cookie từ `https://thepocketshoes.store` và `http://localhost:3000`
+    (`Access-Control-Allow-Credentials: true`, đúng origin).
+  - Trang web trả 404 cho slug sai, sitemap lấy `lastmod` theo `updatedAt`, mã giảm giá sai hiện
+    message tiếng Việt.
+- Chưa kiểm chứng trên production: đăng nhập admin bằng cookie sau khi tải lại trang (cần tài
+  khoản admin).
 
 ## Tóm tắt
 
-| #   | Vấn đề                                                               | Trạng thái                          |
-| --- | -------------------------------------------------------------------- | ----------------------------------- |
-| 1   | Không tìm thấy bản ghi trả 400 thay vì 404                           | Đã sửa                              |
-| 2   | Response lỗi không có mã lỗi, message tiếng Anh hiện thẳng cho khách | Đã sửa                              |
-| 3   | API danh sách sản phẩm không hỗ trợ sắp xếp                          | Đã sửa                              |
-| 4   | Thiếu trường `updatedAt`                                             | Đã sửa                              |
-| 5   | Chưa làm sạch HTML rich text khi lưu                                 | BE đã có, cần deploy và dọn dữ liệu |
-| 6   | Refresh token trả trong JSON, FE phải lưu ở `localStorage`           | Đã sửa                              |
-| 7   | Kiểm tra mã giảm giá sai trả 400 thay vì `valid: false`              | Đã sửa                              |
-| 8   | Hình dạng response danh sách chưa thống nhất                         | Đã ghi vào tài liệu API             |
-| 9   | Tên trường mã đơn và việc tính lại giá khi tạo đơn                   | Đã xác nhận                         |
-| 10  | API public chỉ trả dữ liệu đang bán/đã xuất bản                      | Đã sửa                              |
-| 11  | (Tuỳ chọn) Endpoint nhẹ cho sitemap                                  | Chưa làm                            |
-| 12  | `shippingFee` do client gửi lên                                      | Mở                                  |
-| 13  | Upload file không cần đăng nhập                                      | Mở                                  |
+| #   | Vấn đề                                                               | Trạng thái                    |
+| --- | -------------------------------------------------------------------- | ----------------------------- |
+| 1   | Không tìm thấy bản ghi trả 400 thay vì 404                           | Đã sửa                        |
+| 2   | Response lỗi không có mã lỗi, message tiếng Anh hiện thẳng cho khách | Đã sửa                        |
+| 3   | API danh sách sản phẩm không hỗ trợ sắp xếp                          | Đã sửa                        |
+| 4   | Thiếu trường `updatedAt`                                             | Đã sửa                        |
+| 5   | Chưa làm sạch HTML rich text khi lưu                                 | Đã deploy, còn dọn dữ liệu cũ |
+| 6   | Refresh token trả trong JSON, FE phải lưu ở `localStorage`           | Đã sửa                        |
+| 7   | Kiểm tra mã giảm giá sai trả 400 thay vì `valid: false`              | Đã sửa                        |
+| 8   | Hình dạng response danh sách chưa thống nhất                         | Đã ghi vào tài liệu API       |
+| 9   | Tên trường mã đơn và việc tính lại giá khi tạo đơn                   | Đã xác nhận                   |
+| 10  | API public chỉ trả dữ liệu đang bán/đã xuất bản                      | Đã sửa                        |
+| 11  | (Tuỳ chọn) Endpoint nhẹ cho sitemap                                  | Chưa làm                      |
+| 12  | `shippingFee` do client gửi lên                                      | Mở                            |
+| 13  | Upload file không cần đăng nhập                                      | Mở                            |
+| 14  | SKU đang bán có giá 0                                                | Mở                            |
 
 ## Đã xử lý và thay đổi phía FE
 
@@ -67,10 +73,8 @@ Danh sách các điểm phía backend cần sửa hoặc hỗ trợ, phát hiệ
 
 ## 5. Làm sạch HTML rich text
 
-BE đã làm sạch `descriptionHtml`/`contentHtml` theo whitelist khi lưu. Production còn cần:
-
-- Deploy bản BE mới.
-- Lưu lại (hoặc chạy script làm sạch) các nội dung cũ đã lưu trước đó.
+BE đã làm sạch `descriptionHtml`/`contentHtml` theo whitelist khi lưu, và bản này đã chạy trên
+production. Còn cần lưu lại (hoặc chạy script làm sạch) các nội dung cũ đã lưu trước đó.
 
 FE vẫn giữ bước làm sạch khi render.
 
@@ -89,6 +93,32 @@ BE dùng nguyên `shippingFee` trong request khi tạo đơn. Nên tính phí v�
 
 `POST /files/upload` không yêu cầu token admin. Nên giới hạn cho admin, hoặc ít nhất giới hạn tần
 suất.
+
+Đã kiểm chứng trên production (request không kèm file, không tạo dữ liệu):
+
+- `POST /files/upload` không token: trả `415 UNSUPPORTED_MEDIA_TYPE`, tức đã qua bước kiểm tra
+  quyền.
+- `POST /admin/files/upload` không token: trả `401 AUTH_REQUIRED`.
+
+FE không dùng `POST /files/upload`: mọi chỗ upload trong admin đều truyền `scope="admin"`
+(gọi `/admin/files/upload`), storefront không có chức năng upload. BE có thể khoá hoặc bỏ hẳn
+endpoint này mà không ảnh hưởng FE.
+
+## 14. SKU đang bán có giá 0
+
+Sản phẩm `asics-kahana-tr-v4-silver-red` ("Asics Kahana TR V4 Silver Red") có SKU `ACTIVE`,
+`price: 0`, tồn kho 10. Hệ quả:
+
+- Trang web hiển thị giá "0 ₫"; khi sắp xếp "Giá: thấp đến cao", sản phẩm này đứng đầu.
+- Khách có thể đặt đơn với giá 0 (BE tính lại giá theo SKU nên vẫn ra 0).
+
+Đề xuất:
+
+- Dữ liệu: nhập lại giá đúng cho sản phẩm này trong admin.
+- BE: không cho lưu SKU `ACTIVE` có `price <= 0`, và từ chối tạo đơn chứa SKU giá 0.
+- FE: đã làm. Form sản phẩm trong admin không cho lưu giá bán `<= 0` (`validateProductDraft` trong
+  `src/modules/catalog/product/form.ts`); mở sản phẩm này trong admin sẽ báo lỗi ở ô Giá bán cho đến
+  khi nhập giá đúng.
 
 ## Dữ liệu cần bổ sung qua trang admin (không phải lỗi code)
 
