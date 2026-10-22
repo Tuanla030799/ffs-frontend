@@ -365,7 +365,7 @@ function toSelectOptions(values: readonly string[]) {
 }
 
 function orderCode(order: Order) {
-  return order.orderCode || order.code || order.id
+  return order.orderCode || order.id
 }
 
 function badgeClass(status: string) {

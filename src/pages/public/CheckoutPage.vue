@@ -676,7 +676,7 @@ async function submitOrder() {
 
   submitting.value = true
   try {
-    const order = await orderApi.create({
+    const { order } = await orderApi.create({
       customerName: form.fullName.trim(),
       customerPhone: form.phone.trim(),
       customerEmail: form.email.trim() || undefined,
@@ -696,7 +696,7 @@ async function submitOrder() {
     toast.push('Shop đã nhận thông tin và sẽ liên hệ xác nhận.', 'success', 'Đặt hàng thành công')
     await router.push({
       name: 'order-success',
-      query: { code: order.orderCode || order.code || order.id },
+      query: { code: order.orderCode || order.id },
     })
   } catch (error) {
     submitError.value = getErrorMessage(error)
