@@ -613,7 +613,8 @@ async function revalidateCoupon() {
     if (!data.valid) {
       setCoupon(null)
       couponMessageType.value = 'error'
-      couponMessage.value = `Mã ${current.code} không còn áp dụng: ${data.message || 'không hợp lệ'}.`
+      // message của BE là câu hoàn chỉnh, có dấu chấm cuối.
+      couponMessage.value = `Mã ${current.code} không còn áp dụng. ${data.message || ''}`.trim()
       return
     }
 
@@ -651,7 +652,7 @@ async function applyCoupon() {
       return
     }
 
-    setCoupon({ code, discountAmount: Number(data.discountAmount || 0) })
+    setCoupon({ code: data.couponCode || code, discountAmount: Number(data.discountAmount || 0) })
     couponMessageType.value = 'ok'
     couponMessage.value = data.message || `Mã hợp lệ, giảm ${money(data.discountAmount)}.`
   } catch (error) {
