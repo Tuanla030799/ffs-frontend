@@ -55,18 +55,30 @@
   `.playwright-mcp/`, `.env`, `.dev.vars`. Do not edit or commit them.
 - Known backend issues, and the FE workaround for each, are tracked in `docs/backend-issues.md`.
   When the backend fixes one, remove the matching workaround and update that file.
-- Backend API contract (verified against the real API):
+- Backend API contract (the backend documents it in `docs/API.md` of its repo):
   - Responses are `{ success, message, data }`. Lists return
     `data = { items, page, limit, total, totalPages }`: unwrap with `unwrapList`
     (`src/modules/shared/types.ts`), even for endpoints that sound like arrays such as
-    `/landing-banners`.
+    `/landing-banners`. Only `/products/featured` and `/admin/orders/{id}/status-history`
+    return plain arrays.
   - `limit` is capped at 100; larger values return 400. Page through results to load "all".
-  - Missing detail records (product, blog, collection by slug) return 400 with a
-    "... not found" message. Treat them as 404 with `isNotFoundError`
-    (`src/composables/useNotFoundStatus.ts`).
-  - Product list items expose `minPrice`, `minSalePrice`, `totalStock` and `primaryImageUrl`
-    (no `price`/`salePrice`). Product detail exposes `skus[].price`, `salePrice` (null when not
-    on sale) and `stock`. The list endpoint has no sort parameter.
+  - Errors are `{ success: false, code, message, data: null, errors? }`. Branch on `code`, not
+    on `message`; `getErrorMessage` (`src/modules/shared/hooks.ts`) maps codes to Vietnamese
+    (`src/modules/shared/errors.ts`). Customer-facing codes (`OUT_OF_STOCK`, `SKU_UNAVAILABLE`,
+    `COUPON_*`) already come with a Vietnamese message.
+  - Missing detail records (product, blog, collection by slug, admin records by id) return 404:
+    check with `isNotFoundError` (`src/composables/useNotFoundStatus.ts`). Unique conflicts
+    return 409, other request errors 400, missing or expired admin tokens 401.
+  - Product list items expose `minPrice`, `minSalePrice`, `totalStock`, `primaryImageUrl` and
+    `updatedAt` (no `price`/`salePrice`). Product detail exposes `skus[].price`, `salePrice`
+    (null when not on sale) and `stock`. Public endpoints only return ACTIVE variants/SKUs.
+  - `GET /products?sort=featured|newest|price-asc|price-desc|name-asc` sorts the whole result
+    before paging. The backend default is `newest`, so always send `sort`.
+  - `POST /coupons/validate` always answers 200: `valid`, the reason in `code`, a Vietnamese
+    `message`, the normalized `couponCode`, `discountAmount` and `finalAmount`.
+  - `POST /orders` returns `{ order, items }`; the order number is `order.orderCode`.
+  - Admin auth sets the refresh token in an HttpOnly cookie (`Path=/api/admin/auth`): auth
+    requests use `withCredentials`, and the FE keeps the refresh token only in memory.
   - The current catalog has one SKU per product with size `DEFAULT`.
   - Backend file paths go through `resolveFileUrl` (`src/lib/fileUrl.ts`). FE public assets
     such as `/thepocketshoes-og.jpg` must not be resolved against the backend origin.
