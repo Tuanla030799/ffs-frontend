@@ -10,7 +10,8 @@ export function useAdminAuth() {
   }
   async function logout() {
     try {
-      if (appStore.refreshToken) await authApi.logout(appStore.refreshToken)
+      // Luôn gọi logout: BE thu hồi token trong cookie HttpOnly và xoá cookie.
+      await authApi.logout(appStore.refreshToken)
     } finally {
       appStore.clearAuthSession()
     }

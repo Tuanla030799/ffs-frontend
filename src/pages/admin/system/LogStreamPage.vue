@@ -253,7 +253,7 @@ async function connect() {
   try {
     let response = await openStream(nextController.signal)
     // fetch không đi qua interceptor của axios: tự làm mới access token khi hết hạn.
-    if (response.status === 401 && appStore.refreshToken) {
+    if (response.status === 401) {
       await refreshAccessToken()
       if (ownConnectionId !== connectionId || unmounted) return
       response = await openStream(nextController.signal)

@@ -65,9 +65,8 @@ function quickLinkClass(to: string) {
 
 async function logout() {
   try {
-    if (appStore.refreshToken) {
-      await adminAuthService.logout(appStore.refreshToken)
-    }
+    // Luôn gọi logout: BE thu hồi token trong cookie HttpOnly và xoá cookie.
+    await adminAuthService.logout(appStore.refreshToken)
   } finally {
     appStore.clearAuthSession()
     await router.replace({ name: 'admin-login' })

@@ -6,7 +6,8 @@ export type ThemeName = 'ocean' | 'rose' | 'forest' | 'grape'
 
 const THEME_KEY = 'fds-ui-theme'
 const ACCESS_TOKEN_KEY = 'fds-access-token'
-const REFRESH_TOKEN_KEY = 'fds-refresh-token'
+// Chỉ còn dùng để xoá giá trị cũ: refresh token không còn lưu ở localStorage.
+const LEGACY_REFRESH_TOKEN_KEY = 'fds-refresh-token'
 const ADMIN_PROFILE_KEY = 'fds-admin-profile'
 const DEFAULT_THEME: ThemeName = 'ocean'
 
@@ -34,6 +35,9 @@ export const useAppStore = defineStore('app', () => {
   const initialized = ref(false)
   const theme = ref<ThemeName>(DEFAULT_THEME)
   const accessToken = ref('')
+  // Refresh token chỉ giữ trong bộ nhớ của tab. BE cũng đặt nó trong cookie HttpOnly
+  // (`fss_refresh_token`), nên sau khi tải lại trang vẫn làm mới được phiên mà JS không đọc được
+  // token. Bản trong bộ nhớ giúp chạy local với API khác site, nơi cookie SameSite không được gửi.
   const refreshToken = ref('')
   const adminProfile = ref<AdminProfile | null>(null)
   const requestCount = ref(0)
@@ -55,7 +59,7 @@ export const useAppStore = defineStore('app', () => {
     if (isThemeName(storedTheme)) theme.value = storedTheme
 
     accessToken.value = window.localStorage.getItem(ACCESS_TOKEN_KEY) || ''
-    refreshToken.value = window.localStorage.getItem(REFRESH_TOKEN_KEY) || ''
+    window.localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY)
     adminProfile.value = parseAdminProfile(window.localStorage.getItem(ADMIN_PROFILE_KEY))
     applyTheme(theme.value)
   }
@@ -70,12 +74,11 @@ export const useAppStore = defineStore('app', () => {
 
   function setAuthSession(payload: AuthTokenPayload) {
     accessToken.value = payload.accessToken.trim()
-    refreshToken.value = payload.refreshToken.trim()
+    refreshToken.value = (payload.refreshToken || '').trim()
     adminProfile.value = payload.admin
 
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken.value)
-      window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken.value)
       window.localStorage.setItem(ADMIN_PROFILE_KEY, JSON.stringify(payload.admin))
     }
   }
@@ -90,10 +93,6 @@ export const useAppStore = defineStore('app', () => {
 
   function setRefreshToken(token: string) {
     refreshToken.value = token.trim()
-    if (typeof window !== 'undefined') {
-      if (refreshToken.value) window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken.value)
-      else window.localStorage.removeItem(REFRESH_TOKEN_KEY)
-    }
   }
 
   function setAdminProfile(profile: AdminProfile | null) {
