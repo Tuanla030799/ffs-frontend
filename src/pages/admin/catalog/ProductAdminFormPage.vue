@@ -1,602 +1,841 @@
 <template>
   <section class="space-y-5">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p class="text-sm font-bold text-slate-400 uppercase">Products</p>
-        <h2 class="text-2xl font-black text-slate-950">
-          {{ isEdit ? 'Cập nhật product' : 'Tạo product' }}
-        </h2>
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div class="min-w-0">
+        <NuxtLink
+          to="/admin/products"
+          class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 no-underline hover:text-slate-900"
+        >
+          <span aria-hidden="true">←</span> Danh sách sản phẩm
+        </NuxtLink>
+        <h2 class="mt-1 text-2xl font-black break-words text-slate-950">{{ pageTitle }}</h2>
       </div>
-      <div class="flex gap-2">
-        <UiButton variant="secondary" @click="goBack">Quay lại</UiButton>
-        <UiButton :loading="saving" @click="save">Lưu product</UiButton>
-      </div>
+      <a
+        v-if="isEdit && savedSlug"
+        :href="`/products/${savedSlug}`"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-sm font-semibold text-[var(--ui-primary)] hover:underline"
+      >
+        Xem trên cửa hàng ↗
+      </a>
     </div>
 
-    <UiAlert v-if="error" variant="error">{{ error }}</UiAlert>
+    <UiAlert v-if="masterError" variant="warning">
+      Không tải được danh mục, thương hiệu và màu: {{ masterError }}
+    </UiAlert>
 
-    <UiForm as="form" class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]" @submit.prevent="save">
+    <div v-if="loadingDetail" class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div class="space-y-5">
-        <UiCard title="Thông tin cơ bản" padding="md">
-          <div class="grid gap-3 md:grid-cols-3">
-            <UiInput v-model="form.name" placeholder="Name" required label="Tên sản phẩm" />
-            <UiInput v-model="form.slug" placeholder="Slug" required label="Slug" />
-            <UiSelect v-model="form.categoryId" placeholder="Category" label="Danh mục">
-              <option
-                v-for="category in masterData?.categories || []"
-                :key="category.id"
-                :value="category.id"
-              >
-                {{ category.name }}
-              </option>
-            </UiSelect>
-            <UiSelect v-model="form.brandId" placeholder="Không chọn brand" label="Thương hiệu">
-              <option v-for="brand in masterData?.brands || []" :key="brand.id" :value="brand.id">
-                {{ brand.name }}
-              </option>
-            </UiSelect>
-            <UiSelect v-model="form.gender" placeholder="Gender" label="Giới tính">
-              <option
-                v-for="gender in masterData?.productGenders || []"
-                :key="gender.value"
-                :value="gender.value"
-              >
-                {{ gender.label }}
-              </option>
-            </UiSelect>
-            <UiTextarea
-              v-model="form.shortDescription"
-              class="md:col-span-2"
-              placeholder="Short description"
-              label="Mô tả ngắn"
-            />
-            <UiSelect v-model="form.status" label="Trạng thái">
-              <option
-                v-for="status in masterData?.productStatuses || []"
-                :key="status.value"
-                :value="status.value"
-              >
-                {{ status.label }}
-              </option>
-            </UiSelect>
-            <UiCheckbox v-model="form.isFeatured" label="Featured (Hiển thị sản phẩm nổi bật)" />
-            <UiInput
-              v-model.number="form.featuredOrder"
-              placeholder="Thứ tự nổi bật(Số nhỏ sẽ được ưu tiên hiển thị)"
-              label="Thứ tự nổi bật"
-            />
+        <UiSkeleton variant="block" class="h-72" />
+        <UiSkeleton variant="block" class="h-80" />
+      </div>
+      <UiSkeleton variant="block" class="h-96" />
+    </div>
+
+    <UiAlert v-else-if="loadError" variant="error">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <span>Không tải được sản phẩm: {{ loadError }}</span>
+        <UiButton variant="secondary" size="sm" @click="loadDetail">Thử lại</UiButton>
+      </div>
+    </UiAlert>
+
+    <form
+      v-else
+      novalidate
+      class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]"
+      @submit.prevent="save()"
+    >
+      <div
+        v-if="serverError || errorEntries.length"
+        data-field="form-errors"
+        tabindex="-1"
+        class="rounded-[var(--ui-radius-md)] border border-red-200 bg-[var(--ui-danger-soft)] px-4 py-3 text-sm text-[var(--ui-danger)] outline-none xl:col-span-2"
+        role="alert"
+      >
+        <p class="font-semibold">
+          {{ serverError || `Còn ${errorEntries.length} thông tin cần sửa trước khi lưu:` }}
+        </p>
+        <ul v-if="!serverError" class="mt-1 space-y-0.5">
+          <li v-for="[key, message] in errorEntries.slice(0, 6)" :key="key">
+            <button
+              type="button"
+              class="text-left underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+              @click="focusField(key)"
+            >
+              {{ errorLabel(key) }}: {{ message }}
+            </button>
+          </li>
+          <li v-if="errorEntries.length > 6">và {{ errorEntries.length - 6 }} mục khác.</li>
+        </ul>
+      </div>
+
+      <div class="min-w-0 space-y-5">
+        <UiCard title="Thông tin sản phẩm">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div data-field="name" class="md:col-span-2">
+              <UiInput
+                v-model="draft.name"
+                label="Tên sản phẩm"
+                required
+                placeholder="VD: PANE No-gi Trainer Wolf Moon"
+                :maxlength="200"
+                :aria-invalid="invalid('name')"
+              />
+              <p v-if="fieldError('name')" :class="errorClass">{{ fieldError('name') }}</p>
+            </div>
+
+            <div data-field="categoryId">
+              <UiSelect
+                v-model="draft.categoryId"
+                label="Danh mục"
+                required
+                placeholder="Chọn danh mục"
+                :options="categoryOptions"
+                :aria-invalid="invalid('categoryId')"
+              />
+              <p v-if="fieldError('categoryId')" :class="errorClass">
+                {{ fieldError('categoryId') }}
+              </p>
+            </div>
+
+            <div data-field="brandId">
+              <UiSelect
+                v-model="draft.brandId"
+                label="Thương hiệu"
+                placeholder="Không có thương hiệu"
+                :options="brandOptions"
+              />
+            </div>
+
+            <div class="md:col-span-2">
+              <UiRadio v-model="draft.gender" label="Giới tính" :options="genderOptions" />
+            </div>
+
+            <div data-field="slug" class="md:col-span-2">
+              <UiInput
+                v-model="draft.slug"
+                label="Đường dẫn"
+                required
+                placeholder="tu-dong-tao-theo-ten"
+                :maxlength="200"
+                spellcheck="false"
+                :aria-invalid="invalid('slug')"
+              />
+              <p v-if="fieldError('slug')" :class="errorClass">{{ fieldError('slug') }}</p>
+              <p v-else class="mt-1 text-xs break-all text-slate-500">
+                thepocketshoes.store/products/<strong class="text-slate-700">{{
+                  draft.slug || '...'
+                }}</strong>
+                · Tự tạo theo tên, có thể sửa.
+              </p>
+            </div>
+          </div>
+        </UiCard>
+
+        <UiCard
+          title="Màu sắc, giá và tồn kho"
+          :description="
+            draft.variants.length > 1
+              ? 'Mỗi màu có giá và tồn kho riêng. Màu đầu tiên được chọn sẵn trên trang sản phẩm.'
+              : 'Mỗi màu có giá và tồn kho riêng. Đa số sản phẩm chỉ cần một màu.'
+          "
+        >
+          <template #extra>
+            <UiButton native-type="button" variant="outline" size="sm" @click="addVariant">
+              + Thêm màu
+            </UiButton>
+          </template>
+
+          <p v-if="fieldError('variants')" data-field="variants" :class="errorClass">
+            {{ fieldError('variants') }}
+          </p>
+
+          <div class="space-y-4">
+            <article
+              v-for="(variant, index) in draft.variants"
+              :key="variant.key"
+              :data-variant-key="variant.key"
+              class="rounded-xl border border-slate-200 p-4"
+              :aria-label="variantTitle(index)"
+            >
+              <header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-sm font-bold text-slate-950">{{ variantTitle(index) }}</h3>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UiSwitch
+                    :model-value="variantActive(variant)"
+                    label="Đang bán"
+                    @update:model-value="(active) => setVariantActive(variant, active)"
+                  />
+                  <template v-if="draft.variants.length > 1">
+                    <UiButton
+                      native-type="button"
+                      variant="ghost"
+                      size="sm"
+                      square
+                      data-move="-1"
+                      :aria-label="`Đưa ${variantTitle(index)} lên trước`"
+                      title="Đưa lên trước"
+                      :disabled="index === 0"
+                      @click="moveVariant(index, -1)"
+                    >
+                      <span aria-hidden="true">↑</span>
+                    </UiButton>
+                    <UiButton
+                      native-type="button"
+                      variant="ghost"
+                      size="sm"
+                      square
+                      data-move="1"
+                      :aria-label="`Đưa ${variantTitle(index)} ra sau`"
+                      title="Đưa ra sau"
+                      :disabled="index === draft.variants.length - 1"
+                      @click="moveVariant(index, 1)"
+                    >
+                      <span aria-hidden="true">↓</span>
+                    </UiButton>
+                    <UiButton
+                      native-type="button"
+                      variant="ghost"
+                      size="sm"
+                      @click="removeVariant(variant)"
+                    >
+                      Xoá màu
+                    </UiButton>
+                  </template>
+                </div>
+              </header>
+
+              <div class="space-y-4">
+                <div :data-field="variantErrorKey(variant, 'colorId')">
+                  <p class="mb-1.5 text-sm font-semibold text-[var(--ui-text)]">
+                    Màu <span class="text-[var(--ui-danger)]" aria-hidden="true">*</span>
+                  </p>
+                  <ColorSwatchSelect
+                    v-model="variant.colorId"
+                    :options="colors"
+                    :label="`Chọn màu cho ${variantTitle(index)}`"
+                    :invalid="Boolean(fieldError(variantErrorKey(variant, 'colorId')))"
+                  />
+                  <p v-if="fieldError(variantErrorKey(variant, 'colorId'))" :class="errorClass">
+                    {{ fieldError(variantErrorKey(variant, 'colorId')) }}
+                  </p>
+                </div>
+
+                <div>
+                  <UiInput
+                    v-model="variant.name"
+                    label="Tên phân loại"
+                    :placeholder="colorLabel(variant.colorId) || 'VD: Wolf Moon, Mule 101 Black'"
+                    :maxlength="120"
+                  />
+                  <p class="mt-1 text-xs text-slate-500">
+                    Tên riêng của màu này (VD: Wolf Moon). Để trống sẽ dùng tên màu.
+                  </p>
+                </div>
+
+                <div
+                  v-for="sku in variant.skus"
+                  :key="sku.key"
+                  class="space-y-2"
+                  :class="variant.skus.length > 1 && 'rounded-lg bg-slate-50 p-3'"
+                >
+                  <div
+                    v-if="variant.skus.length > 1"
+                    class="flex items-center justify-between gap-2 text-xs font-semibold text-slate-600"
+                  >
+                    <span>Size {{ sku.size || 'mặc định' }}</span>
+                    <UiButton
+                      native-type="button"
+                      variant="ghost"
+                      size="sm"
+                      @click="removeSku(variant, sku)"
+                    >
+                      Xoá SKU
+                    </UiButton>
+                  </div>
+                  <ProductSkuFields
+                    :sku="sku"
+                    :errors="errors"
+                    :suggested-code="suggestedSkuCode(variant)"
+                    @update="(field, value) => updateSku(sku, field, value)"
+                  />
+                </div>
+
+                <div
+                  v-if="!variant.skus.length"
+                  :data-field="variantErrorKey(variant, 'skus')"
+                  class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                >
+                  <span>Màu này chưa có giá bán và tồn kho.</span>
+                  <UiButton
+                    native-type="button"
+                    variant="secondary"
+                    size="sm"
+                    @click="addSku(variant)"
+                  >
+                    Thêm giá và tồn kho
+                  </UiButton>
+                </div>
+
+                <div>
+                  <p class="mb-1.5 text-sm font-semibold text-[var(--ui-text)]">Ảnh của màu</p>
+                  <VariantImageField
+                    v-model="variant.image"
+                    :product-images="draft.images"
+                    :preview-alt="variant.name || colorLabel(variant.colorId) || 'Ảnh màu'"
+                  />
+                </div>
+              </div>
+            </article>
+
+            <article
+              v-if="draft.unassignedSkus.length"
+              class="rounded-xl border border-amber-200 bg-amber-50/50 p-4"
+            >
+              <h3 class="text-sm font-bold text-slate-950">SKU chưa gắn màu</h3>
+              <p class="mt-1 mb-3 text-xs text-slate-600">
+                Dữ liệu cũ: các SKU này không thuộc màu nào nhưng vẫn được giữ khi lưu.
+              </p>
+              <div v-for="sku in draft.unassignedSkus" :key="sku.key" class="mt-3">
+                <ProductSkuFields
+                  :sku="sku"
+                  :errors="errors"
+                  @update="(field, value) => updateSku(sku, field, value)"
+                />
+              </div>
+            </article>
+          </div>
+        </UiCard>
+
+        <UiCard title="Mô tả">
+          <UiTextarea
+            v-model="draft.shortDescription"
+            label="Mô tả ngắn"
+            :rows="3"
+            :maxlength="500"
+            placeholder="1–2 câu giới thiệu điểm nổi bật của sản phẩm"
+          />
+          <div class="mt-1 flex items-start justify-between gap-3 text-xs text-slate-500">
+            <span>
+              Hiển thị trên Google và khi chia sẻ link. Để trống sẽ lấy đoạn đầu của mô tả chi tiết.
+            </span>
+            <span
+              class="shrink-0 tabular-nums"
+              :class="
+                draft.shortDescription.length > SHORT_DESCRIPTION_RECOMMENDED_LENGTH &&
+                'font-semibold text-amber-700'
+              "
+            >
+              {{ draft.shortDescription.length }}/{{ SHORT_DESCRIPTION_RECOMMENDED_LENGTH }}
+            </span>
           </div>
         </UiCard>
 
         <RichTextEditorField
-          v-model="form.descriptionHtml"
-          title="Mô tả sản phẩm"
-          description="Nội dung chi tiết hiển thị ở trang product detail."
+          v-model="draft.descriptionHtml"
+          title="Mô tả chi tiết"
+          description="Nội dung hiển thị ở tab Mô tả sản phẩm trên trang sản phẩm."
           placeholder="Nhập mô tả sản phẩm..."
         />
-
-        <UiCard title="Variants" padding="md">
-          <template #extra>
-            <UiButton native-type="button" variant="outline" size="sm" @click="addVariant"
-              >+ Variant</UiButton
-            >
-          </template>
-          <div class="grid gap-3 md:grid-cols-2">
-            <div
-              v-for="variant in variantList"
-              :key="variant.clientId || variant.id"
-              class="grid gap-2 rounded-xl border border-slate-200 p-3"
-            >
-              <UiInput v-model="variant.name" placeholder="Name" label="Name" />
-              <SizeColorPicker
-                v-model="variant.colorId"
-                :options="masterData?.colors || []"
-                title="Chọn màu"
-                placeholder="Chọn màu"
-                variant="color"
-              />
-              <ImageUpload
-                :model-value="variantUploadValue(variant)"
-                scope="admin"
-                accept="image/*"
-                title="Upload variant image"
-                trigger-text="Chọn ảnh variant"
-                :preview-alt="
-                  variant.name || selectedColorLabel(variant.colorId) || 'Variant image'
-                "
-                :preview-title="
-                  variant.name || selectedColorLabel(variant.colorId) || 'Variant image'
-                "
-                @uploaded="(file) => assignVariantImage(variant, file)"
-                @update:model-value="(file) => !file && clearVariantImage(variant)"
-              />
-              <UiSelect v-model="variant.status" label="Trạng thái">
-                <option>ACTIVE</option>
-                <option>INACTIVE</option>
-              </UiSelect>
-              <UiInput
-                v-model.number="variant.sortOrder"
-                placeholder="Sort order"
-                label="Thứ tự sắp xếp variant"
-              />
-              <UiButton
-                native-type="button"
-                variant="danger"
-                size="sm"
-                @click="removeVariant(variant)"
-              >
-                Xóa variant
-              </UiButton>
-            </div>
-          </div>
-        </UiCard>
-
-        <UiCard title="SKUs" padding="md">
-          <template #extra>
-            <UiButton native-type="button" variant="outline" size="sm" @click="addSku"
-              >+ SKU</UiButton
-            >
-          </template>
-          <div class="grid gap-3 md:grid-cols-2">
-            <div
-              v-for="sku in skuList"
-              :key="skuKey(sku)"
-              class="grid gap-2 rounded-xl border border-slate-200 p-3"
-            >
-              <UiSelect
-                :model-value="skuVariantValue(sku)"
-                placeholder="Chọn variant"
-                label="Variant"
-                @update:model-value="(value) => selectSkuVariant(sku, value)"
-              >
-                <option
-                  v-for="option in skuVariantOptions"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </option>
-              </UiSelect>
-              <UiInput v-model="sku.skuCode" placeholder="SKU code" label="SKU code" />
-              <UiInput v-model.number="sku.price" type="currency" placeholder="Price" label="Giá" />
-              <UiInput
-                v-model.number="sku.salePrice"
-                type="currency"
-                placeholder="Sale price"
-                label="Giá khuyến mãi"
-              />
-              <UiInput v-model.number="sku.stock" placeholder="Stock" label="Số lượng tồn kho" />
-              <UiSelect v-model="sku.status" label="Trạng thái">
-                <option>ACTIVE</option>
-                <option>INACTIVE</option>
-              </UiSelect>
-              <UiButton native-type="button" variant="danger" size="sm" @click="removeSku(sku)">
-                Xóa SKU
-              </UiButton>
-            </div>
-          </div>
-        </UiCard>
       </div>
 
-      <aside class="space-y-5">
-        <UiCard title="Images" padding="md">
-          <FileUpload
-            v-model="uploaded"
-            scope="admin"
-            accept="image/*"
-            title="Thêm ảnh sản phẩm"
-            description="Ảnh đầu tiên sẽ là ảnh chính, các ảnh sau là gallery."
-            trigger-text="Thêm ảnh"
-            @uploaded="addImage"
+      <aside class="min-w-0 space-y-5">
+        <UiCard title="Ảnh sản phẩm">
+          <ProductImagesManager
+            v-model:images="draft.images"
+            v-model:uploading="imagesUploading"
+            :product-name="draft.name"
           />
-          <div class="mt-3 grid gap-2">
-            <div
-              v-for="(image, i) in imageList"
-              :key="i"
-              class="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[104px_minmax(0,1fr)]"
-            >
-              <ImagePreview
-                :src="resolveFileUrl(image.imageUrl || image.url)"
-                :alt="image.altText || form.name"
-                :title="image.altText || form.name || 'Product image'"
+        </UiCard>
+
+        <UiCard title="Hiển thị">
+          <div class="space-y-4">
+            <div>
+              <UiSelect v-model="draft.status" label="Trạng thái" :options="statusOptions" />
+              <p class="mt-1 text-xs text-slate-500">{{ statusHint }}</p>
+            </div>
+            <UiSwitch
+              v-model="draft.isFeatured"
+              label="Sản phẩm nổi bật"
+              description="Hiển thị trong mục Sản phẩm nổi bật ở trang chủ."
+            />
+            <div v-if="draft.isFeatured" data-field="featuredOrder">
+              <UiInput
+                :model-value="draft.featuredOrder"
+                type="currency"
+                label="Thứ tự nổi bật"
+                placeholder="0"
+                :aria-invalid="invalid('featuredOrder')"
+                @update:model-value="(value) => (draft.featuredOrder = toNumberOrNull(value))"
               />
-              <div class="space-y-2">
-                <UiInput v-model="image.altText" placeholder="alt" label="Alt text" />
-                <div class="flex items-center justify-between gap-3">
-                  <UiCheckbox
-                    :model-value="Boolean(image.isPrimary)"
-                    label="Primary"
-                    @update:model-value="(value) => setPrimaryImage(i, value)"
-                  />
-                  <UiButton native-type="button" variant="danger" size="sm" @click="removeImage(i)">
-                    Xóa
-                  </UiButton>
-                </div>
-              </div>
+              <p v-if="fieldError('featuredOrder')" :class="errorClass">
+                {{ fieldError('featuredOrder') }}
+              </p>
+              <p v-else class="mt-1 text-xs text-slate-500">Số nhỏ hơn hiển thị trước.</p>
             </div>
           </div>
         </UiCard>
       </aside>
-    </UiForm>
+
+      <!-- Vùng cuộn admin có padding (p-4/sm:p-6) và sticky tính từ mép trong padding: kéo thanh
+        xuống đúng bằng padding để dính sát đáy, không lộ nội dung đang cuộn bên dưới. -->
+      <div
+        class="sticky -bottom-4 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:-bottom-6 sm:-mx-6 sm:px-6 xl:col-span-2"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <p
+            class="w-full text-xs sm:w-auto sm:text-sm"
+            :class="actionStatus.className"
+            aria-live="polite"
+          >
+            {{ actionStatus.text }}
+          </p>
+          <div class="flex w-full gap-2 sm:w-auto">
+            <!-- Mobile đã có link "Danh sách sản phẩm" ở đầu trang: bỏ nút Huỷ cho thanh gọn. -->
+            <div class="hidden sm:block">
+              <UiButton native-type="button" variant="secondary" @click="goBack">Huỷ</UiButton>
+            </div>
+            <UiButton
+              v-if="!isEdit"
+              native-type="button"
+              variant="outline"
+              class="flex-1 sm:flex-none"
+              :disabled="saving || imagesUploading"
+              @click="save({ addAnother: true })"
+            >
+              Lưu &amp; thêm tiếp
+            </UiButton>
+            <UiButton
+              native-type="submit"
+              class="flex-1 sm:flex-none"
+              :loading="saving"
+              :disabled="imagesUploading"
+              title="Ctrl/⌘ + S"
+            >
+              {{ isEdit ? 'Lưu thay đổi' : 'Lưu sản phẩm' }}
+            </UiButton>
+          </div>
+        </div>
+      </div>
+    </form>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import ColorSwatchSelect from '@/components/admin/product/ColorSwatchSelect.vue'
+import ProductImagesManager from '@/components/admin/product/ProductImagesManager.vue'
+import ProductSkuFields from '@/components/admin/product/ProductSkuFields.vue'
+import VariantImageField from '@/components/admin/product/VariantImageField.vue'
 import RichTextEditorField from '@/components/common/RichTextEditorField.vue'
-import FileUpload from '@/components/common/FileUpload.vue'
-import ImageUpload from '@/components/common/ImageUpload.vue'
-import ImagePreview from '@/components/common/ImagePreview.vue'
-import SizeColorPicker from '@/components/common/SizeColorPicker.vue'
-import { UiAlert, UiButton, UiCard, UiCheckbox, UiForm, UiInput, UiSelect } from '@/components/ui'
-import { resolveFileUrl } from '@/lib/fileUrl'
-import { normalizeRichTextInput } from '@/lib/richText'
-import { sanitizeHtml } from '@/lib/sanitizeHtml'
+import {
+  UiAlert,
+  UiButton,
+  UiCard,
+  UiInput,
+  UiRadio,
+  UiSelect,
+  UiSkeleton,
+  UiSwitch,
+  UiTextarea,
+} from '@/components/ui'
+import { useToast } from '@/composables/useToast'
 import { syncAutoSlug } from '@/lib/slug'
 import { productApi } from '@/modules/catalog/product/api'
-import { getErrorMessage, required } from '@/modules/shared/hooks'
+import {
+  SHORT_DESCRIPTION_RECOMMENDED_LENGTH,
+  createProductDraft,
+  createSkuDraft,
+  createVariantDraft,
+  draftToPayload,
+  productToDraft,
+  suggestSkuCode,
+  validateProductDraft,
+  variantErrorKey,
+  type ProductDraft,
+  type ProductSkuDraft,
+  type ProductVariantDraft,
+} from '@/modules/catalog/product/form'
+import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
-import type {
-  Product,
-  ProductPayload,
-  ProductSku,
-  ProductVariant,
-} from '@/modules/catalog/product/types'
-import type { UploadedFile } from '@/services/file.service'
+import { ApiError } from '@/types/http'
+
+const FIELD_LABELS: Record<string, string> = {
+  name: 'Tên sản phẩm',
+  categoryId: 'Danh mục',
+  slug: 'Đường dẫn',
+  variants: 'Màu sắc, giá và tồn kho',
+  featuredOrder: 'Thứ tự nổi bật',
+}
+const SKU_FIELD_LABELS: Record<string, string> = {
+  skuCode: 'Mã SKU',
+  price: 'Giá bán',
+  salePrice: 'Giá khuyến mãi',
+  stock: 'Tồn kho',
+}
+const STATUS_HINTS: Record<string, string> = {
+  ACTIVE: 'Khách xem và đặt mua được ngay sau khi lưu.',
+  DRAFT: 'Bản nháp: chưa hiển thị trên cửa hàng.',
+  INACTIVE: 'Đang ẩn khỏi cửa hàng.',
+}
+const errorClass = 'mt-1 text-xs font-semibold text-red-600'
 
 const route = useRoute()
 const router = useRouter()
-const isEdit = computed(() => Boolean(route.params.id))
-const saving = ref(false)
-const error = ref('')
-const uploaded = ref<UploadedFile | null>(null)
-const skuKeys = new WeakMap<ProductSku, string>()
-type ProductForm = Omit<Product, 'id'>
+const toast = useToast()
+const productId = computed(() => String(route.params.id || ''))
+const isEdit = computed(() => Boolean(productId.value))
 
-const form = reactive<ProductForm>({
-  categoryId: '',
-  brandId: null,
-  gender: 'UNISEX',
-  name: '',
-  slug: '',
-  shortDescription: '',
-  descriptionHtml: '',
-  status: 'ACTIVE',
-  isFeatured: false,
-  featuredOrder: 0,
-  images: [],
-  variants: [],
-  skus: [],
-})
 const { data: masterData, load: loadMasterData } = useMasterData('admin')
-const imageList = computed(() => ensureImages())
-const variantList = computed(() => ensureVariants())
-const skuList = computed(() => ensureSkus())
-const skuVariantOptions = computed(() =>
-  variantList.value.map((variant, index) => ({
-    value: variantSelectValue(variant),
-    label: variant.name || selectedColorLabel(variant.colorId) || `Variant ${index + 1}`,
+const draft = ref<ProductDraft>(createProductDraft())
+// So với bản đã lưu/đã tải để biết form có thay đổi chưa lưu hay không.
+const savedSnapshot = ref(JSON.stringify(draft.value))
+const savedSlug = ref('')
+const savedName = ref('')
+const loadingDetail = ref(isEdit.value)
+const loadError = ref('')
+const masterError = ref('')
+const saving = ref(false)
+// Chỉ hiện lỗi sau lần bấm lưu đầu tiên; sau đó lỗi cập nhật ngay khi người dùng sửa.
+const submitted = ref(false)
+const serverError = ref('')
+const serverFieldErrors = ref<Record<string, string>>({})
+const imagesUploading = ref(false)
+
+const colors = computed(() => masterData.value?.colors || [])
+const categoryOptions = computed(() =>
+  (masterData.value?.categories || []).map((category) => ({
+    label: category.status === 'ACTIVE' ? category.name : `${category.name} (đang ẩn)`,
+    value: category.id,
   })),
 )
+const brandOptions = computed(() =>
+  (masterData.value?.brands || []).map((brand) => ({
+    label: brand.status === 'ACTIVE' ? brand.name : `${brand.name} (đang ẩn)`,
+    value: brand.id,
+  })),
+)
+const genderOptions = computed(() =>
+  (masterData.value?.productGenders || []).map((gender) => ({
+    label: gender.label,
+    value: gender.value,
+  })),
+)
+const statusOptions = computed(() =>
+  (masterData.value?.productStatuses || []).map((status) => ({
+    label: status.label,
+    value: status.value,
+  })),
+)
+const statusHint = computed(() => STATUS_HINTS[draft.value.status] || '')
+
+const errors = computed(() => ({
+  ...serverFieldErrors.value,
+  ...(submitted.value ? validateProductDraft(draft.value) : {}),
+}))
+const errorEntries = computed(() => Object.entries(errors.value))
+const dirty = computed(() => JSON.stringify(draft.value) !== savedSnapshot.value)
+const pageTitle = computed(() =>
+  isEdit.value ? `Sửa sản phẩm${savedName.value ? `: ${savedName.value}` : ''}` : 'Thêm sản phẩm',
+)
+const actionStatus = computed(() => {
+  if (imagesUploading.value) return { text: 'Đang tải ảnh lên...', className: 'text-slate-600' }
+  if (errorEntries.value.length) {
+    return {
+      text: `Còn ${errorEntries.value.length} thông tin cần sửa.`,
+      className: 'font-semibold text-red-600',
+    }
+  }
+  if (dirty.value)
+    return { text: 'Có thay đổi chưa lưu.', className: 'font-semibold text-amber-700' }
+  return {
+    text: isEdit.value ? 'Chưa có thay đổi.' : 'Điền thông tin rồi bấm Lưu sản phẩm.',
+    className: 'text-slate-500',
+  }
+})
 
 watch(
-  () => form.name,
+  () => draft.value.name,
   (name, previousName) => {
-    form.slug = syncAutoSlug(form.slug, previousName, name)
+    draft.value.slug = syncAutoSlug(draft.value.slug, previousName, name)
+  },
+)
+// Sửa đường dẫn sau lỗi trùng thì bỏ cả lỗi ở ô lẫn thông báo chung phía trên.
+watch(
+  () => draft.value.slug,
+  () => {
+    if (!serverFieldErrors.value.slug) return
+    serverFieldErrors.value = {}
+    serverError.value = ''
   },
 )
 
-function reset(row?: Product) {
-  form.categoryId = row?.categoryId || ''
-  form.brandId = row?.brandId || null
-  form.gender = row?.gender || 'UNISEX'
-  form.name = row?.name || ''
-  form.slug = row?.slug || ''
-  form.shortDescription = row?.shortDescription || ''
-  form.descriptionHtml = normalizeRichTextInput(row?.descriptionHtml)
-  form.status = row?.status || 'ACTIVE'
-  form.isFeatured = !!row?.isFeatured
-  form.featuredOrder = row?.featuredOrder || 0
-  form.images = [...(row?.images || [])]
-  form.variants = (row?.variants || []).map((variant, index) => ({
-    ...variant,
-    id: variant.id || undefined,
-    clientId: variant.clientId || crypto.randomUUID(),
-    name: variant.name || '',
-    colorId: variant.colorId || '',
-    imageFileId: variant.imageFileId || undefined,
-    status: variant.status || 'ACTIVE',
-    sortOrder: variant.sortOrder ?? index,
-  }))
-  form.skus = (row?.skus || []).map((sku) => ({
-    ...sku,
-    id: sku.id || undefined,
-    variantId: sku.variantId || undefined,
-    variantClientId: sku.variantClientId || undefined,
-    skuCode: sku.skuCode || '',
-    sizeId: sku.sizeId || '',
-    size: sku.size || '',
-    price: Number(sku.price || 0),
-    salePrice: sku.salePrice ?? null,
-    stock: Number(sku.stock || 0),
-    status: sku.status || 'ACTIVE',
-  }))
-  normalizeImages()
+function fieldError(key: string) {
+  return errors.value[key] || ''
 }
 
-function ensureImages() {
-  form.images ||= []
-  return form.images
+function invalid(key: string) {
+  return errors.value[key] ? 'true' : undefined
 }
-function ensureVariants() {
-  form.variants ||= []
-  return form.variants
-}
-function ensureSkus() {
-  form.skus ||= []
-  return form.skus
-}
-function addVariant() {
-  const variants = ensureVariants()
-  const clientId = crypto.randomUUID()
-  variants.push({
-    clientId,
-    name: '',
-    colorId: '',
-    status: 'ACTIVE',
-    sortOrder: variants.length,
-  })
-}
-function removeVariant(variant: ProductVariant) {
-  const variants = ensureVariants()
-  const index = variants.indexOf(variant)
-  if (index >= 0) variants.splice(index, 1)
-  const value = variantSelectValue(variant)
-  form.skus = ensureSkus().filter((sku) => skuVariantValue(sku) !== value)
-}
-function addSku() {
-  const variants = ensureVariants()
-  const firstVariant = variants[0]
-  ensureSkus().push({
-    variantId: firstVariant?.id,
-    variantClientId: firstVariant?.id ? undefined : firstVariant?.clientId,
-    skuCode: '',
-    sizeId: '',
-    size: '',
-    price: 0,
-    salePrice: null,
-    stock: 0,
-    status: 'ACTIVE',
-  })
-}
-function removeSku(sku: ProductSku) {
-  const skus = ensureSkus()
-  const index = skus.indexOf(sku)
-  if (index >= 0) skus.splice(index, 1)
-}
-function skuKey(sku: ProductSku) {
-  if (sku.id) return `id:${sku.id}`
 
-  const existingKey = skuKeys.get(sku)
-  if (existingKey) return existingKey
-
-  const key = `new:${crypto.randomUUID()}`
-  skuKeys.set(sku, key)
-  return key
-}
-function selectedColorLabel(colorId?: string) {
-  const color = masterData.value?.colors.find((item) => item.id === colorId)
+function colorLabel(colorId: string) {
+  const color = colors.value.find((item) => (item.id || item.value) === colorId)
   return color?.label || color?.value || ''
 }
-function addImage(file: UploadedFile) {
-  const images = ensureImages()
-  images.push({
-    fileId: String(file.fileId),
-    url: file.url || file.path,
-    altText: form.name,
-    imageType: images.length ? 'GALLERY' : 'MAIN',
-    sortOrder: images.length,
-    isPrimary: images.length === 0,
-  })
-  uploaded.value = null
-  normalizeImages()
+
+function variantTitle(index: number) {
+  const variant = draft.value.variants[index]
+  const label = variant ? colorLabel(variant.colorId) : ''
+  if (draft.value.variants.length === 1) return label ? `Phân loại · ${label}` : 'Phân loại'
+  return label ? `Màu ${index + 1} · ${label}` : `Màu ${index + 1}`
 }
-function uploadedValue(fileId?: string | number | null, url?: string) {
-  if (!fileId) return null
-  return {
-    fileId,
-    url: resolveFileUrl(url || ''),
-    path: '',
-  } satisfies UploadedFile
+
+function errorLabel(key: string) {
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key]
+
+  const [type, itemKey, field = ''] = key.split('.')
+  if (type === 'variant') {
+    const index = draft.value.variants.findIndex((variant) => variant.key === itemKey)
+    return `${variantTitle(Math.max(index, 0))} · ${field === 'colorId' ? 'Màu' : 'Giá và tồn kho'}`
+  }
+  if (type === 'sku') {
+    const index = draft.value.variants.findIndex((variant) =>
+      variant.skus.some((sku) => sku.key === itemKey),
+    )
+    const owner = index >= 0 ? variantTitle(index) : 'SKU chưa gắn màu'
+    return `${owner} · ${SKU_FIELD_LABELS[field] || field}`
+  }
+  return key
 }
-function variantUploadValue(variant: ProductVariant) {
-  return uploadedValue(variant.imageFileId, variant.imageUrl)
+
+// Chỉ cuộn vùng nội dung admin: `scrollIntoView` cuộn cả <html> (đang overflow hidden) khiến
+// layout bị lệch mà người dùng không cuộn lại được.
+function scrollToCenter(element: HTMLElement) {
+  const scroller = element.closest<HTMLElement>('.admin-layout-main')
+  if (!scroller) return
+  const elementRect = element.getBoundingClientRect()
+  const scrollerRect = scroller.getBoundingClientRect()
+  const top =
+    scroller.scrollTop +
+    (elementRect.top - scrollerRect.top) -
+    (scroller.clientHeight - elementRect.height) / 2
+  scroller.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' })
 }
-function assignVariantImage(variant: ProductVariant, file: UploadedFile) {
-  variant.imageFileId = String(file.fileId)
-  variant.imageUrl = file.url || file.path
+
+// Cuộn tới và focus vào ô đang lỗi (ô đầu tiên trong khối `data-field` tương ứng). Khối không có
+// ô nào (thông báo lỗi chung) thì focus chính khối đó để người dùng bàn phím không bị mất vị trí.
+async function focusField(key: string) {
+  await nextTick()
+  const container = document.querySelector<HTMLElement>(`[data-field="${CSS.escape(key)}"]`)
+  if (!container) return
+  scrollToCenter(container)
+  const control = container.querySelector<HTMLElement>(
+    'input:not([type="hidden"]):not([disabled]), select, textarea, button:not([disabled])',
+  )
+  const target = control ?? (container.hasAttribute('tabindex') ? container : null)
+  target?.focus({ preventScroll: true })
 }
-function clearVariantImage(variant: ProductVariant) {
-  variant.imageFileId = ''
-  variant.imageUrl = ''
+
+function suggestedSkuCode(variant: ProductVariantDraft) {
+  if (!draft.value.slug) return ''
+  // Một màu thì đường dẫn đã đủ phân biệt; nhiều màu thì thêm tên màu.
+  return suggestSkuCode(
+    draft.value.slug,
+    draft.value.variants.length > 1 ? colorLabel(variant.colorId) : '',
+  )
 }
-function removeImage(index: number) {
-  const images = ensureImages()
-  images.splice(index, 1)
-  normalizeImages()
+
+function addVariant() {
+  const variant = createVariantDraft()
+  draft.value.variants.push(variant)
+  void focusField(variantErrorKey(variant, 'colorId'))
 }
-function setPrimaryImage(index: number, value: boolean) {
-  const images = ensureImages()
-  if (!value) {
-    const image = images[index]
-    if (image) image.isPrimary = false
-    normalizeImages()
+
+function variantHasData(variant: ProductVariantDraft) {
+  return Boolean(
+    variant.id ||
+    variant.name ||
+    variant.colorId ||
+    variant.image ||
+    variant.skus.some((sku) => sku.id || sku.skuCode || sku.price || sku.stock),
+  )
+}
+
+function removeVariant(variant: ProductVariantDraft) {
+  const label = variant.name || colorLabel(variant.colorId) || 'này'
+  if (variantHasData(variant) && !window.confirm(`Xoá màu ${label} cùng giá và tồn kho của nó?`)) {
     return
   }
+  draft.value.variants = draft.value.variants.filter((item) => item.key !== variant.key)
+}
 
-  images.forEach((image, imageIndex) => {
-    image.isPrimary = imageIndex === index
+function addSku(variant: ProductVariantDraft) {
+  variant.skus.push(createSkuDraft())
+}
+
+function removeSku(variant: ProductVariantDraft, sku: ProductSkuDraft) {
+  variant.skus = variant.skus.filter((item) => item.key !== sku.key)
+}
+
+function updateSku(sku: ProductSkuDraft, field: string, value: string | number | null) {
+  if (field === 'skuCode') sku.skuCode = String(value ?? '')
+  else if (field === 'price' || field === 'salePrice' || field === 'stock') {
+    sku[field] = typeof value === 'number' ? value : null
+  }
+}
+
+// Cửa hàng chỉ trả về màu và SKU đang ACTIVE: chỉ coi là "Đang bán" khi cả hai cùng ACTIVE, để dữ
+// liệu cũ lệch trạng thái không hiện là đang bán trong khi khách không mua được.
+function variantActive(variant: ProductVariantDraft) {
+  return variant.status === 'ACTIVE' && variant.skus.every((sku) => sku.status === 'ACTIVE')
+}
+
+// Màu đầu tiên được chọn sẵn trên trang sản phẩm. Sau khi đổi chỗ, Vue di chuyển khối màu nên nút
+// đang focus bị mất focus: đưa focus về nút tương ứng ở vị trí mới.
+async function moveVariant(index: number, direction: -1 | 1) {
+  const target = index + direction
+  const variants = [...draft.value.variants]
+  const [moved] = variants.splice(index, 1)
+  if (!moved || target < 0 || target > variants.length) return
+  variants.splice(target, 0, moved)
+  draft.value.variants = variants
+
+  await nextTick()
+  const article = document.querySelector(`[data-variant-key="${CSS.escape(moved.key)}"]`)
+  const button =
+    article?.querySelector<HTMLElement>(`[data-move="${direction}"]:not(:disabled)`) ??
+    article?.querySelector<HTMLElement>('[data-move]:not(:disabled)')
+  button?.focus()
+}
+
+// Bật/tắt bán cả màu: áp dụng cho biến thể và các SKU của nó.
+function setVariantActive(variant: ProductVariantDraft, active: boolean) {
+  const status = active ? 'ACTIVE' : 'INACTIVE'
+  variant.status = status
+  variant.skus.forEach((sku) => {
+    sku.status = status
   })
-  normalizeImages()
-}
-function normalizeImages() {
-  const images = ensureImages()
-  const primaryIndex = images.findIndex((image) => image.isPrimary)
-  images.forEach((image, index) => {
-    image.sortOrder = index
-    image.isPrimary = primaryIndex === -1 ? index === 0 : index === primaryIndex
-    if (image.isPrimary) {
-      image.imageType = 'MAIN'
-    } else if (!image.imageType || image.imageType === 'MAIN') {
-      image.imageType = 'GALLERY'
-    }
-  })
-}
-function variantSelectValue(variant: ProductVariant) {
-  if (variant.id) return `id:${variant.id}`
-  if (variant.clientId) return `client:${variant.clientId}`
-  return ''
-}
-function skuVariantValue(sku: ProductSku) {
-  if (sku.variantId) return `id:${sku.variantId}`
-  if (sku.variantClientId) return `client:${sku.variantClientId}`
-  return ''
-}
-function selectSkuVariant(sku: ProductSku, value: string) {
-  sku.variantClientId = undefined
-  sku.variantId = undefined
-
-  if (value.startsWith('client:')) {
-    sku.variantClientId = value.slice('client:'.length)
-    return
-  }
-
-  if (value.startsWith('id:')) {
-    sku.variantId = value.slice('id:'.length)
-  }
-}
-function trimText(value?: string | null) {
-  return (value || '').trim()
-}
-function numberOrZero(value: unknown) {
-  const numericValue = Number(value)
-  return Number.isFinite(numericValue) ? numericValue : 0
-}
-function validateProduct() {
-  const msg =
-    required(form.name, 'Name') ||
-    required(form.slug, 'Slug') ||
-    required(form.categoryId, 'Category ID')
-  if (msg) return msg
-
-  const skus = ensureSkus()
-  if (!skus.length) return 'Cần có ít nhất 1 SKU.'
-
-  for (const [index, variant] of variantList.value.entries()) {
-    const label = `Variant #${index + 1}`
-    if (!trimText(variant.name)) return `${label}: Name là bắt buộc.`
-    if (!trimText(variant.colorId)) return `${label}: Color là bắt buộc.`
-  }
-
-  const skuCodes = new Set<string>()
-  for (const [index, sku] of skus.entries()) {
-    const label = `SKU #${index + 1}`
-    const skuCode = trimText(sku.skuCode)
-    const price = numberOrZero(sku.price)
-    const stock = numberOrZero(sku.stock)
-    const salePrice =
-      sku.salePrice === null || sku.salePrice === undefined ? null : Number(sku.salePrice)
-
-    if (!skuCode) return `${label}: SKU code là bắt buộc.`
-    if (variantList.value.length && !skuVariantValue(sku)) return `${label}: Variant là bắt buộc.`
-    if (skuCodes.has(skuCode)) return `SKU code "${skuCode}" bị trùng.`
-    if (price < 0) return `${label}: Price phải >= 0.`
-    if (stock < 0) return `${label}: Stock phải >= 0.`
-    if (salePrice !== null && salePrice > price) return `${label}: Sale price phải <= price.`
-    skuCodes.add(skuCode)
-  }
-
-  if (ensureImages().filter((image) => image.isPrimary).length > 1) {
-    return 'Chỉ được có một ảnh Primary.'
-  }
-
-  return ''
-}
-function buildPayload(): ProductPayload {
-  normalizeImages()
-  return {
-    ...form,
-    name: trimText(form.name),
-    slug: trimText(form.slug),
-    shortDescription: trimText(form.shortDescription),
-    descriptionHtml: sanitizeHtml(form.descriptionHtml || ''),
-    brandId: form.brandId || null,
-    gender: form.gender || 'UNISEX',
-    featuredOrder: numberOrZero(form.featuredOrder),
-    images: ensureImages().map((image, index) => ({
-      fileId: image.fileId,
-      altText: trimText(image.altText),
-      imageType: image.isPrimary ? 'MAIN' : 'GALLERY',
-      sortOrder: index,
-      isPrimary: Boolean(image.isPrimary),
-    })),
-    variants: ensureVariants().map((variant, index) => ({
-      id: variant.id || null,
-      clientId: variant.clientId || crypto.randomUUID(),
-      name: trimText(variant.name),
-      colorId: trimText(variant.colorId),
-      imageFileId: variant.imageFileId || null,
-      status: variant.status || 'ACTIVE',
-      sortOrder: numberOrZero(variant.sortOrder ?? index),
-    })),
-    skus: ensureSkus().map((sku) => ({
-      id: sku.id || null,
-      variantId: sku.variantId || null,
-      variantClientId: sku.variantClientId || null,
-      skuCode: trimText(sku.skuCode),
-      sizeId: trimText(sku.sizeId) || undefined,
-      price: numberOrZero(sku.price),
-      salePrice:
-        sku.salePrice === null || sku.salePrice === undefined ? null : Number(sku.salePrice),
-      stock: numberOrZero(sku.stock),
-      status: sku.status || 'ACTIVE',
-    })),
-  }
-}
-function goBack() {
-  void router.push({ name: 'admin-products' })
 }
 
-async function save() {
-  const msg = validateProduct()
-  if (msg) {
-    error.value = msg
-    return
-  }
-  saving.value = true
-  error.value = ''
+function toNumberOrNull(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function resetDraft(next: ProductDraft) {
+  draft.value = next
+  savedSnapshot.value = JSON.stringify(next)
+  submitted.value = false
+  serverError.value = ''
+  serverFieldErrors.value = {}
+}
+
+// "Lưu & thêm sản phẩm khác": giữ danh mục/thương hiệu/giới tính/trạng thái vì thường nhập
+// nhiều sản phẩm cùng loại liên tiếp.
+function startNewProduct() {
+  const { categoryId, brandId, gender, status } = draft.value
+  resetDraft(createProductDraft({ categoryId, brandId, gender, status }))
+  document.querySelector('.admin-layout-main')?.scrollTo({ top: 0, behavior: 'smooth' })
+  void focusField('name')
+}
+
+async function loadDetail() {
+  loadingDetail.value = true
+  loadError.value = ''
   try {
-    const payload = buildPayload()
-    if (isEdit.value) await productApi.update(String(route.params.id), payload)
-    else await productApi.create(payload)
-    if (isEdit.value) reset(await productApi.adminDetail(String(route.params.id)))
-    goBack()
+    const row = await productApi.adminDetail(productId.value)
+    resetDraft(productToDraft(row))
+    savedSlug.value = row.slug
+    savedName.value = row.name
   } catch (err) {
-    error.value = getErrorMessage(err)
+    loadError.value = getErrorMessage(err)
+  } finally {
+    loadingDetail.value = false
+  }
+}
+
+async function save(options: { addAnother?: boolean } = {}) {
+  if (saving.value) return
+  submitted.value = true
+  serverError.value = ''
+  serverFieldErrors.value = {}
+
+  if (imagesUploading.value) {
+    serverError.value = 'Ảnh đang được tải lên, vui lòng đợi tải xong rồi lưu.'
+    return
+  }
+
+  const firstErrorKey = Object.keys(validateProductDraft(draft.value))[0]
+  if (firstErrorKey) {
+    void focusField(firstErrorKey)
+    return
+  }
+
+  saving.value = true
+  try {
+    const payload = draftToPayload(draft.value, { colorLabel })
+    if (isEdit.value) await productApi.update(productId.value, payload)
+    else await productApi.create(payload)
+
+    // Đánh dấu đã lưu trước khi chuyển trang để không hỏi "rời trang chưa lưu".
+    savedSnapshot.value = JSON.stringify(draft.value)
+    toast.push(payload.name, 'success', isEdit.value ? 'Đã lưu thay đổi' : 'Đã thêm sản phẩm')
+
+    if (!isEdit.value && options.addAnother) {
+      startNewProduct()
+      return
+    }
+    await router.push({ name: 'admin-products' })
+  } catch (err) {
+    serverError.value = getErrorMessage(err)
+    if (err instanceof ApiError && err.code === 'SLUG_ALREADY_EXISTS') {
+      serverFieldErrors.value = { slug: 'Đường dẫn này đã được dùng cho sản phẩm khác.' }
+    }
+    void focusField(serverFieldErrors.value.slug ? 'slug' : 'form-errors')
   } finally {
     saving.value = false
   }
 }
 
+function goBack() {
+  void router.push({ name: 'admin-products' })
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+    event.preventDefault()
+    void save()
+  }
+}
+
+function onBeforeUnload(event: BeforeUnloadEvent) {
+  if (!dirty.value) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onBeforeRouteLeave(() => {
+  if (!dirty.value) return true
+  return window.confirm('Sản phẩm có thay đổi chưa lưu. Rời trang và bỏ các thay đổi này?')
+})
+
 onMounted(async () => {
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('beforeunload', onBeforeUnload)
   try {
     // Luôn lấy master data mới: danh mục/thương hiệu/màu vừa tạo ở trang khác phải có ngay.
     await loadMasterData(true)
-    if (isEdit.value) reset(await productApi.adminDetail(String(route.params.id)))
-    else reset()
   } catch (err) {
-    error.value = getErrorMessage(err)
+    masterError.value = getErrorMessage(err)
   }
+  if (isEdit.value) await loadDetail()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('beforeunload', onBeforeUnload)
 })
 </script>

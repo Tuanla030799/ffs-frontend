@@ -33,7 +33,21 @@
               >
                 <span class="block text-black/55">Sắp xếp:</span>
                 <span class="block truncate">{{ selectedSortLabel }}</span>
-                <span aria-hidden="true">⌄</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  class="h-4 w-4 shrink-0 transition-transform"
+                  :class="open && 'rotate-180'"
+                  fill="none"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m6 9 6 6 6-6"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
               </button>
             </template>
           </DropdownSelect>

@@ -67,7 +67,9 @@ const labelId = useId()
 
 function itemClasses(value: string | number) {
   return cn(
-    'flex cursor-pointer items-center gap-3 rounded-[var(--ui-radius-md)] border px-3 py-3 transition',
+    // relative: input sr-only (position absolute) bám theo label; nếu không nó tính theo <body> và
+    // làm cả trang cuộn được khi radio nằm trong vùng cuộn riêng (layout admin).
+    'relative flex cursor-pointer items-center gap-3 rounded-[var(--ui-radius-md)] border px-3 py-3 transition',
     props.disabled && 'cursor-not-allowed opacity-60',
     props.modelValue === value
       ? 'border-[var(--ui-primary)] bg-[var(--ui-primary-soft)]'
