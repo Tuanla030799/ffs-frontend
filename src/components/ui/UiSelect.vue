@@ -2,11 +2,13 @@
   <label :class="wrapperClasses">
     <span v-if="label" class="mb-1.5 block text-sm font-semibold text-[var(--ui-text)]">
       {{ label }}
+      <span v-if="required" class="text-[var(--ui-danger)]" aria-hidden="true"> * </span>
     </span>
     <div class="relative">
       <select
         :value="modelValue"
         :disabled="disabled"
+        :aria-required="required || undefined"
         :class="classes"
         v-bind="$attrs"
         @change="onChange"
@@ -43,6 +45,7 @@ const props = withDefaults(
     label?: string
     placeholder?: string
     disabled?: boolean
+    required?: boolean
     class?: string
   }>(),
   {
@@ -51,6 +54,7 @@ const props = withDefaults(
     label: '',
     placeholder: '',
     disabled: false,
+    required: false,
     class: '',
   },
 )
