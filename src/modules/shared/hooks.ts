@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 import { ApiError } from '@/types/http'
+import { apiErrorMessage } from './errors'
 export function getErrorMessage(error: unknown) {
-  if (error instanceof ApiError) return error.message
+  if (error instanceof ApiError) return apiErrorMessage(error)
   if (error instanceof Error) return error.message
   return 'Đã có lỗi xảy ra.'
 }
