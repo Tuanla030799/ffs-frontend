@@ -2,12 +2,15 @@
   <main>
     <section class="pb-8">
       <div
-        class="animate-hero-image relative w-full overflow-hidden bg-white shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px] md:bg-[#e8e8e5]"
+        class="animate-hero-image relative w-full overflow-hidden shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px] md:bg-[#e8e8e5]"
+        :class="heroMobileImageUrl ? 'bg-[#e8e8e5]' : 'bg-white'"
       >
-        <!-- Mobile: ảnh ở trên, chữ ở dưới. Desktop: ảnh phủ toàn khung, chữ đè bên trái. -->
+        <!-- Desktop: ảnh phủ toàn khung, chữ đè bên trái. Mobile có ảnh riêng (9:16, chừa chỗ
+             phía dưới): chữ đè lên phần dưới ảnh. Mobile chỉ có ảnh desktop: ảnh cắt lấp kín khung
+             nên chữ xếp xuống dưới ảnh để không che sản phẩm. -->
         <div
-          class="relative bg-[#e8e8e5] md:absolute md:inset-0 md:aspect-auto"
-          :class="heroMobileImageUrl ? 'aspect-[4/5]' : 'aspect-[5/4]'"
+          class="bg-[#e8e8e5] md:absolute md:inset-0 md:aspect-auto"
+          :class="heroMobileImageUrl ? 'absolute inset-0' : 'relative aspect-[5/4]'"
         >
           <!-- Trình duyệt chỉ tải một ảnh theo độ rộng màn hình; HTML giống nhau mọi thiết bị
                nên cache edge vẫn dùng chung. -->
@@ -35,6 +38,7 @@
         />
         <div
           class="relative z-10 flex flex-col px-4 pt-6 pb-8 md:min-h-[620px] md:justify-center md:px-10 md:py-10 lg:px-16"
+          :class="heroMobileImageUrl ? 'aspect-[9/16] justify-end md:aspect-auto' : ''"
         >
           <div
             class="animate-banner-copy max-w-[34rem] text-black drop-shadow-[0_10px_28px_rgba(255,255,255,0.75)]"

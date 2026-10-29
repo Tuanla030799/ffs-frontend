@@ -46,7 +46,7 @@
             scope="admin"
             accept="image/*"
             title="Ảnh mobile (tuỳ chọn)"
-            description="Ảnh dọc cho điện thoại, khuyến nghị 1080x1350 (tỉ lệ 4:5). Bỏ trống thì trang chủ tự cắt ảnh desktop."
+            description="Ảnh dọc cho điện thoại, khuyến nghị 1080x1920 (tỉ lệ 9:16). Chữ banner nằm đè lên khoảng 40% phía dưới ảnh, nên chừa trống phần đó với nền sáng. Bỏ trống thì trang chủ tự cắt ảnh desktop."
             @uploaded="assignMobileImage"
           />
           <div
