@@ -6,7 +6,8 @@
     class="h-full"
   >
     <template #media>
-      <div class="aspect-[4/3] overflow-hidden bg-[#ededeb]">
+      <!-- Ảnh bộ sưu tập upload theo khổ 800x800: khung vuông để không cắt mất ảnh. -->
+      <div class="aspect-square overflow-hidden bg-[#ededeb]">
         <StorefrontImage
           :src="collection.coverUrl || collection.imageUrl"
           :alt="collection.name"
