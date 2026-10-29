@@ -31,14 +31,27 @@
         <UiInput v-model.number="form.sortOrder" placeholder="Sort" label="Sort" />
         <UiInput v-model="form.startsAt" type="datetime-local" label="Bắt đầu" />
         <UiInput v-model="form.endsAt" type="datetime-local" label="Kết thúc" />
-        <div class="md:col-span-3">
+        <div class="space-y-3 md:col-span-3">
           <FileUpload
             v-model="uploaded"
             scope="admin"
             accept="image/*"
-            title="Upload banner image"
+            title="Ảnh desktop"
             @uploaded="(file) => (form.fileId = String(file.fileId))"
           />
+          <div
+            v-if="form.fileId && desktopPreviewUrl && !uploaded"
+            class="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
+          >
+            <ImagePreview
+              class="w-28"
+              :src="resolveFileUrl(desktopPreviewUrl)"
+              title="Ảnh desktop"
+            />
+            <span class="flex-1 text-sm text-slate-600">
+              Ảnh desktop hiện tại (chọn file mới để thay)
+            </span>
+          </div>
         </div>
         <div class="space-y-3 md:col-span-3">
           <FileUpload
@@ -160,6 +173,7 @@ const editing = ref<LandingBanner | 'new' | null>(null)
 const deleting = ref<LandingBanner | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
 const uploadedMobile = ref<UploadedFile | null>(null)
+const desktopPreviewUrl = ref('')
 const mobilePreviewUrl = ref('')
 const total = ref(0)
 const totalPages = ref(0)
@@ -214,7 +228,10 @@ function fill(r?: LandingBanner) {
     startsAt: toDateTimeLocalInput(r?.startsAt),
     endsAt: toDateTimeLocalInput(r?.endsAt),
   })
+  // Ảnh đang lưu của banner; reset ô upload để không còn hiện ảnh vừa chọn ở lần mở trước.
+  desktopPreviewUrl.value = r?.imageUrl || ''
   mobilePreviewUrl.value = r?.mobileImageUrl || ''
+  uploaded.value = null
   uploadedMobile.value = null
 }
 function assignMobileImage(file: UploadedFile) {
