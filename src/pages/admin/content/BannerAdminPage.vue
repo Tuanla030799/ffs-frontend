@@ -40,6 +40,26 @@
             @uploaded="(file) => (form.fileId = String(file.fileId))"
           />
         </div>
+        <div class="space-y-3 md:col-span-3">
+          <FileUpload
+            v-model="uploadedMobile"
+            scope="admin"
+            accept="image/*"
+            title="Ảnh mobile (tuỳ chọn)"
+            description="Ảnh dọc cho điện thoại, khuyến nghị 1080x1350 (tỉ lệ 4:5). Bỏ trống thì trang chủ tự cắt ảnh desktop."
+            @uploaded="assignMobileImage"
+          />
+          <div
+            v-if="form.mobileFileId && mobilePreviewUrl && !uploadedMobile"
+            class="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
+          >
+            <ImagePreview class="w-16" :src="resolveFileUrl(mobilePreviewUrl)" title="Ảnh mobile" />
+            <span class="flex-1 text-sm text-slate-600">Ảnh mobile hiện tại</span>
+            <UiButton native-type="button" variant="danger" size="sm" @click="clearMobileImage">
+              Xóa ảnh mobile
+            </UiButton>
+          </div>
+        </div>
         <div class="flex justify-end gap-2 md:col-span-3">
           <UiButton native-type="button" variant="secondary" @click="editing = null">
             Cancel </UiButton
@@ -73,6 +93,15 @@
         />
         <span v-else>-</span>
       </template>
+      <template #cell-mobilePreview="{ row }">
+        <ImagePreview
+          v-if="row.mobileImageUrl"
+          class="w-12"
+          :src="resolveFileUrl(row.mobileImageUrl)"
+          :title="`${row.title} (mobile)`"
+        />
+        <span v-else class="text-xs text-slate-400">Tự cắt</span>
+      </template>
       <template #cell-status="{ row }">
         <span :class="badgeClass(row.status)">{{ row.status }}</span>
       </template>
@@ -101,7 +130,15 @@
 </template>
 
 <script setup lang="ts">
-import { UiButton, UiDropdown, UiForm, UiInput, UiPagination, UiSelect, UiTable } from '@/components/ui'
+import {
+  UiButton,
+  UiDropdown,
+  UiForm,
+  UiInput,
+  UiPagination,
+  UiSelect,
+  UiTable,
+} from '@/components/ui'
 import { computed, onMounted, reactive, ref } from 'vue'
 import CrudShell from '@/pages/admin/CrudShell.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
@@ -122,6 +159,8 @@ const error = ref('')
 const editing = ref<LandingBanner | 'new' | null>(null)
 const deleting = ref<LandingBanner | null>(null)
 const uploaded = ref<UploadedFile | null>(null)
+const uploadedMobile = ref<UploadedFile | null>(null)
+const mobilePreviewUrl = ref('')
 const total = ref(0)
 const totalPages = ref(0)
 const query = reactive({ keyword: '', status: '', page: pageQuery.value(), limit: 50 })
@@ -131,6 +170,7 @@ const form = reactive<LandingBannerPayload>({
   subtitle: '',
   linkUrl: '',
   fileId: '',
+  mobileFileId: '',
   status: 'ACTIVE',
   sortOrder: 0,
   startsAt: '',
@@ -147,6 +187,7 @@ const commonStatuses = computed(
 const columns = [
   { key: 'title', label: 'Tên', cellAlign: 'left', width: '260px' },
   { key: 'preview', label: 'Ảnh', cellAlign: 'center', width: '130px' },
+  { key: 'mobilePreview', label: 'Ảnh mobile', cellAlign: 'center', width: '120px' },
   { key: 'status', label: 'Trạng thái', cellAlign: 'center', width: '140px' },
   { key: 'sortOrder', label: 'Thứ tự', cellAlign: 'center', width: '120px' },
   { key: 'actions', label: 'Hành động', cellAlign: 'center', width: '120px' },
@@ -167,11 +208,23 @@ function fill(r?: LandingBanner) {
     subtitle: r?.subtitle || '',
     linkUrl: r?.linkUrl || '',
     fileId: r?.fileId || '',
+    mobileFileId: r?.mobileFileId || '',
     status: r?.status || 'ACTIVE',
     sortOrder: r?.sortOrder || 0,
     startsAt: toDateTimeLocalInput(r?.startsAt),
     endsAt: toDateTimeLocalInput(r?.endsAt),
   })
+  mobilePreviewUrl.value = r?.mobileImageUrl || ''
+  uploadedMobile.value = null
+}
+function assignMobileImage(file: UploadedFile) {
+  form.mobileFileId = String(file.fileId)
+  mobilePreviewUrl.value = file.url || file.path || ''
+}
+function clearMobileImage() {
+  form.mobileFileId = ''
+  mobilePreviewUrl.value = ''
+  uploadedMobile.value = null
 }
 function openCreate() {
   editing.value = 'new'
@@ -219,6 +272,8 @@ async function save() {
   try {
     const payload = {
       ...form,
+      // null để BE xoá ảnh mobile cũ khi admin bấm "Xóa ảnh mobile".
+      mobileFileId: form.mobileFileId || null,
       startsAt: toBackendDateTime(form.startsAt || null) || undefined,
       endsAt: toBackendDateTime(form.endsAt || null) || undefined,
     }

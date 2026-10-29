@@ -2,21 +2,39 @@
   <main>
     <section class="pb-8">
       <div
-        class="animate-hero-image relative min-h-[calc(100svh-128px)] w-full overflow-hidden bg-[#e8e8e5] shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px]"
+        class="animate-hero-image relative w-full overflow-hidden bg-white shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:min-h-[620px] md:bg-[#e8e8e5]"
       >
-        <StorefrontImage
-          :src="hero?.imageUrl"
-          :alt="hero?.title || 'WALK banner'"
-          :fallback-src="null"
-          loading="eager"
-          fetchpriority="high"
-          class="absolute inset-0 h-full w-full object-cover"
+        <!-- Mobile: ảnh ở trên, chữ ở dưới. Desktop: ảnh phủ toàn khung, chữ đè bên trái. -->
+        <div
+          class="relative bg-[#e8e8e5] md:absolute md:inset-0 md:aspect-auto"
+          :class="heroMobileImageUrl ? 'aspect-[4/5]' : 'aspect-[5/4]'"
+        >
+          <!-- Trình duyệt chỉ tải một ảnh theo độ rộng màn hình; HTML giống nhau mọi thiết bị
+               nên cache edge vẫn dùng chung. -->
+          <picture>
+            <source
+              v-if="heroMobileImageUrl"
+              media="(max-width: 767px)"
+              :srcset="heroMobileImageUrl"
+            />
+            <!-- Không có ảnh mobile: banner desktop thường đặt sản phẩm ở nửa phải (nửa trái
+                 chừa chỗ cho chữ), nên khung mobile lấy nét về bên phải. -->
+            <StorefrontImage
+              :src="hero?.imageUrl"
+              :alt="hero?.title || 'WALK banner'"
+              :fallback-src="null"
+              loading="eager"
+              fetchpriority="high"
+              class="absolute inset-0 h-full w-full object-cover md:object-center"
+              :class="heroMobileImageUrl ? 'object-center' : 'object-[95%_center]'"
+            />
+          </picture>
+        </div>
+        <div
+          class="absolute inset-0 hidden bg-gradient-to-t from-black/20 via-transparent to-transparent md:block"
         />
         <div
-          class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
-        />
-        <div
-          class="relative z-10 flex min-h-[calc(100svh-128px)] flex-col justify-end px-4 py-10 md:min-h-[620px] md:justify-center md:px-10 lg:px-16"
+          class="relative z-10 flex flex-col px-4 pt-6 pb-8 md:min-h-[620px] md:justify-center md:px-10 md:py-10 lg:px-16"
         >
           <div
             class="animate-banner-copy max-w-[34rem] text-black drop-shadow-[0_10px_28px_rgba(255,255,255,0.75)]"
@@ -73,6 +91,7 @@ import FeaturedProductSwiper from '@/components/home/FeaturedProductSwiper.vue'
 import BlogCard from '@/components/storefront/BlogCard.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiSkeleton } from '@/components/ui'
+import { resolveFileUrl } from '@/lib/fileUrl'
 import { productApi } from '@/modules/catalog/product/api'
 import { collectionApi } from '@/modules/content/collection/api'
 import { blogApi } from '@/modules/content/blog/api'
@@ -110,6 +129,7 @@ const { data: home, pending } = await useAsyncData(
 
 const loading = computed(() => pending.value && !home.value)
 const hero = computed(() => home.value?.hero || null)
+const heroMobileImageUrl = computed(() => resolveFileUrl(hero.value?.mobileImageUrl || ''))
 const featured = computed(() => home.value?.featured || [])
 const collections = computed(() => home.value?.collections || [])
 const randomBlog = computed(() => home.value?.randomBlog || null)
