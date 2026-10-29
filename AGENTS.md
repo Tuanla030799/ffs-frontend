@@ -38,9 +38,9 @@
   - Cloudflare-only behavior is gated by `isCloudflareBuild` in `nuxt.config.ts` or by
     `event.context.cloudflare` on the server.
 - Local `node_modules` may not match `package-lock.json`: it has been installed with yarn
-  (Nuxt 4.6.x locally vs 4.4.5 locked). With Nuxt 4.6.x, `npm run build:cf` fails while
-  prerendering `/about` (HTTP 500) even on old commits, so do not treat that as a regression and
-  do not upgrade Nuxt until it is investigated. To reproduce CI on macOS:
+  (Nuxt 4.6.x locally vs 4.4.5 locked). With Nuxt 4.6.x, `npm run build:cf` used to fail while
+  prerendering `/about` (HTTP 500); `/about` is no longer prerendered, but do not upgrade Nuxt
+  until that is investigated. To reproduce CI on macOS:
   - create a git worktree and run `npx npm@10 ci` there (npm 12 rejects the lockfile);
   - the lockfile was generated on Linux, so add the missing native binaries with
     `npm i --no-save lightningcss-darwin-arm64@<v> @tailwindcss/oxide-darwin-arm64@<v> @rollup/rollup-darwin-arm64@<v>`,

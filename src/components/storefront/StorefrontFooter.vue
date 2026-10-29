@@ -31,6 +31,9 @@
           <RouterLink class="text-black/60 no-underline hover:text-black" to="/about">
             Về chúng tôi
           </RouterLink>
+          <RouterLink class="text-black/60 no-underline hover:text-black" to="/faq">
+            Câu hỏi thường gặp
+          </RouterLink>
           <RouterLink class="text-black/60 no-underline hover:text-black" to="/about#lien-he">
             Liên hệ
           </RouterLink>

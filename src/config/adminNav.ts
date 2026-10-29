@@ -8,6 +8,8 @@ export const adminNavItems = [
   { label: 'Products', to: '/admin/products' },
   { label: 'Collections', to: '/admin/collections' },
   { label: 'Blogs', to: '/admin/blogs' },
+  { label: 'Site pages', to: '/admin/pages' },
+  { label: 'FAQ', to: '/admin/faqs' },
   { label: 'Orders', to: '/admin/orders' },
   { label: 'Coupons', to: '/admin/coupons' },
   { label: 'Landing banners', to: '/admin/banners' },

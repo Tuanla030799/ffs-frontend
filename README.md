@@ -91,8 +91,11 @@ Public (SSR, có dữ liệu ngay trong HTML):
   (`GET /collections`) và một bài blog (`GET /blogs`)
 - `/products`: danh sách sản phẩm (`GET /products`, `GET /master-data`). Bộ lọc danh mục, thương
   hiệu, giới tính, size, màu, khoảng giá và cách sắp xếp đồng bộ với query trên URL
-- `/products/:slug`: chi tiết sản phẩm, chọn màu, hướng dẫn chọn size, thêm vào giỏ hàng
-- `/collections`, `/collections/:slug`, `/blogs`, `/blogs/:slug`, `/brands`, `/about`
+- `/products/:slug`: chi tiết sản phẩm, chọn màu, hướng dẫn chọn size, thêm vào giỏ hàng. Tab
+  "Cách mua hàng và hình thức vận chuyển" tải `GET /pages/purchase-shipping` khi được mở
+- `/collections`, `/collections/:slug`, `/blogs`, `/blogs/:slug`, `/brands`
+- `/about`: nội dung từ `GET /pages/about` (admin soạn), khung hero và khối liên hệ cố định
+- `/faq`: câu hỏi thường gặp (`GET /faqs`), có JSON-LD `FAQPage`
 - `/brands/:slug`: chuyển hướng 301 sang `/products?brand=:slug`
 - `/robots.txt`, `/sitemap.xml` (sinh từ API: toàn bộ sản phẩm kèm ảnh, bộ sưu tập, bài blog; cache
   1 giờ)
@@ -106,7 +109,8 @@ Chỉ chạy phía client (`ssr: false`):
 - `/order-success`
 - `/admin/**`: `login`, `dashboard`, `categories`, `sizes`, `colors`, `brands`, `products`
   (danh sách, tạo, sửa), `collections`, `blogs` (danh sách, tạo, sửa), `orders`, `coupons`,
-  `banners`, `customers`, `users`, `logs` (log BE qua SSE)
+  `banners`, `pages` (trang Giới thiệu, Cách mua hàng & vận chuyển), `faqs`, `customers`, `users`,
+  `logs` (log BE qua SSE)
 
 ## Ghi chú tích hợp backend
 

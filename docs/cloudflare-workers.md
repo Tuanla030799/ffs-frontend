@@ -119,9 +119,8 @@ Khi FE và BE khác origin, trình duyệt gửi preflight. BE cần (chỉnh �
   - Hệ quả: sửa sản phẩm/bài viết trong admin có thể hiện chậm tối đa 5 phút. Giá và tồn kho ở trang
     chi tiết vẫn cập nhật vì trang gọi lại API sau khi tải.
   - Đổi thời gian: `EDGE_CACHE_TTL_SECONDS`. Tắt: xoá plugin hoặc để `CACHEABLE_PATHS` rỗng.
-- **`/about` render sẵn lúc build** (chỉ bản Cloudflare, `routeRules['/about'].prerender`): phục vụ
-  như static asset, không gọi Worker. Biến `NUXT_PUBLIC_*` của trang này lấy từ lúc build, nên build
-  phải có đủ biến thật (workflow deploy đã làm vậy).
+- `/about` và `/faq` render SSR như các trang public khác (nội dung do admin soạn ở BE), không
+  render sẵn lúc build; HTML được cache edge như trên.
 - SSR không mang dữ liệu cá nhân: token admin chỉ nằm ở `localStorage` và được nạp ở plugin client;
   Pinia được Nuxt tạo theo từng request. Biến module-level `refreshPromise` chỉ dùng khi có refresh
   token (client). `useToast` dùng `ref` module-level nhưng chỉ được gọi ở trang client-only (checkout).

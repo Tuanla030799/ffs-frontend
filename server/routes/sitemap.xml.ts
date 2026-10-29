@@ -14,7 +14,7 @@ type SlugRow = {
 // BE giới hạn limit tối đa 100.
 const PAGE_SIZE = 100
 const MAX_PAGES = 50
-const STATIC_PATHS = ['/', '/products', '/collections', '/brands', '/blogs', '/about']
+const STATIC_PATHS = ['/', '/products', '/collections', '/brands', '/blogs', '/about', '/faq']
 
 function apiBaseUrl(event: H3Event) {
   const configured = String(useRuntimeConfig(event).public.apiBaseUrl || '/api').replace(/\/+$/, '')

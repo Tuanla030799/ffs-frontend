@@ -9,7 +9,7 @@ const CACHEABLE_PATHS = [
   /^\/$/,
   /^\/(products|collections|brands|blogs)\/?$/,
   /^\/(products|collections|brands|blogs)\/[^/]+\/?$/,
-  /^\/about\/?$/,
+  /^\/(about|faq)\/?$/,
 ]
 
 type EdgeCache = {

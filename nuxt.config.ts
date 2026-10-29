@@ -79,10 +79,6 @@ export default defineNuxtConfig({
     '/blogs/**': publicDetailCache,
     '/collections/**': publicDetailCache,
     '/brands/**': publicDetailCache,
-    // Bản Cloudflare: /about không phụ thuộc dữ liệu BE nên render sẵn thành file tĩnh lúc build
-    // (phục vụ như static asset, không tốn CPU Worker). Giá trị NUXT_PUBLIC_* của trang này lấy
-    // từ lúc build.
-    ...(isCloudflareBuild ? { '/about': { prerender: true } } : {}),
     '/admin/**': {
       ssr: false,
       headers: { 'x-robots-tag': 'noindex, nofollow' },
@@ -98,9 +94,6 @@ export default defineNuxtConfig({
   },
   nitro: {
     // Chỉ có tác dụng khi build với preset Cloudflare; build Node bỏ qua khối này.
-    // Ghi about.html thay vì about/index.html để Workers assets phục vụ đúng URL /about
-    // (không redirect sang /about/).
-    prerender: { autoSubfolderIndex: false },
     cloudflare: {
       // Dùng wrangler.jsonc ở root làm cấu hình deploy duy nhất.
       deployConfig: false,

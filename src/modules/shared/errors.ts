@@ -42,6 +42,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   BLOG_POST_NOT_FOUND: 'Không tìm thấy bài viết.',
   COLLECTION_NOT_FOUND: 'Không tìm thấy bộ sưu tập.',
   BANNER_NOT_FOUND: 'Không tìm thấy banner.',
+  SITE_PAGE_NOT_FOUND: 'Không tìm thấy trang nội dung.',
+  FAQ_NOT_FOUND: 'Không tìm thấy câu hỏi.',
 
   FILE_NOT_FOUND: 'Không tìm thấy file.',
   FILE_UNAVAILABLE: 'File không còn sử dụng được.',
