@@ -69,7 +69,7 @@ import { useAsyncData, useHead, useRuntimeConfig, useSeoMeta } from '#imports'
 import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import SafeHtmlContent from '@/components/common/SafeHtmlContent.vue'
 import { UiButton, UiSkeleton } from '@/components/ui'
-import { FOUNDING_YEAR, SOCIAL_LINKS, TEAM } from '@/config/brand'
+import { FOUNDING_YEAR, SOCIAL_LINKS } from '@/config/brand'
 import {
   SITE_NAME,
   breadcrumbJsonLd,
@@ -127,16 +127,6 @@ useHead({
         slogan: "Shoes you didn't know you need.",
         foundingDate: String(FOUNDING_YEAR),
         sameAs: SOCIAL_LINKS.map((link) => link.url),
-        ...(TEAM.length
-          ? {
-              founder: TEAM.map((member) => ({
-                '@type': 'Person',
-                name: member.name,
-                jobTitle: member.role,
-                ...(member.links?.length ? { sameAs: member.links.map((link) => link.url) } : {}),
-              })),
-            }
-          : {}),
       },
     }),
     jsonLdScript(breadcrumbJsonLd(siteUrl, [{ name: DEFAULT_TITLE, path: '/about' }])),

@@ -1,4 +1,4 @@
-import type { Product, ProductFeatured, ProductSku } from './types'
+import type { ProductSku } from './types'
 
 const PRODUCT_GENDER_LABELS: Record<string, string> = {
   MALE: 'Nam',
@@ -31,15 +31,4 @@ export function isDefaultSize(sku: Pick<ProductSku, 'size'>) {
 
 export function skuSizeLabel(sku: Pick<ProductSku, 'size'>) {
   return isDefaultSize(sku) ? 'Mặc định' : sku.size.trim()
-}
-
-// Giá hiển thị ở danh sách: API list trả minSalePrice/minPrice, API chi tiết trả price/salePrice.
-export function productListPrice(product: Product | ProductFeatured) {
-  return Number(
-    product.minSalePrice ||
-      product.minPrice ||
-      ('salePrice' in product ? product.salePrice : 0) ||
-      ('price' in product ? product.price : 0) ||
-      0,
-  )
 }

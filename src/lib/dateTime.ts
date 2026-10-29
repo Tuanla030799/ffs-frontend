@@ -14,10 +14,6 @@ function pad(value: number): string {
   return String(value).padStart(2, '0')
 }
 
-export function parseBackendDateTime(value: string | null): Date | null {
-  return toDate(value)
-}
-
 export function toBackendDateTime(value: string | Date | null): string | null {
   const date = toDate(value)
   return date ? date.toISOString() : null

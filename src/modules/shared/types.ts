@@ -1,5 +1,4 @@
 import type { PageResult } from '@/types/http'
-import { formatLocalDateTime } from '@/lib/dateTime'
 export type Status = 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'DELETED' | string
 export type Paginated<T> = PageResult<T>
 export interface ListQuery {
@@ -44,7 +43,4 @@ export function money(value?: number | null) {
 }
 export function asArray<T>(value: T[] | null | undefined): T[] {
   return Array.isArray(value) ? value : []
-}
-export function formatDateTime(value?: string | Date | null) {
-  return formatLocalDateTime(value)
 }

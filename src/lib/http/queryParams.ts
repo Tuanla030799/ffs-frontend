@@ -30,11 +30,3 @@ export function buildSearchParams(params?: QueryParams): URLSearchParams {
 
   return searchParams
 }
-
-export function withQueryParams(url: string, params?: QueryParams) {
-  const searchParams = buildSearchParams(params)
-  const query = searchParams.toString()
-
-  if (!query) return url
-  return `${url}${url.includes('?') ? '&' : '?'}${query}`
-}
