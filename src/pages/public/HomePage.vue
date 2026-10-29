@@ -12,7 +12,6 @@
           fetchpriority="high"
           class="absolute inset-0 h-full w-full object-cover"
         />
-        <div class="absolute inset-0 bg-gradient-to-r from-white/88 via-white/42 to-transparent" />
         <div
           class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
         />
