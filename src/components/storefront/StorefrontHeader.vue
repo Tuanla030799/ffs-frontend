@@ -21,13 +21,13 @@
       </div>
 
       <nav
-        class="hidden justify-center gap-9 text-sm font-bold md:flex"
+        class="hidden justify-center gap-4 text-sm font-bold md:flex lg:gap-6 xl:gap-9"
         aria-label="Danh mục chính"
       >
         <NuxtLink
           v-for="item in navItems"
           :key="item.label"
-          class="storefront-nav-link text-black no-underline transition hover:opacity-60"
+          class="storefront-nav-link whitespace-nowrap text-black no-underline transition hover:opacity-60"
           :class="{ 'storefront-nav-link-active': isNavActive(item) }"
           :aria-current="isNavActive(item) ? 'page' : undefined"
           :to="item.to"
@@ -201,7 +201,7 @@ const navItems: NavItem[] = [
   { label: 'Thương hiệu', path: '/brands', to: '/brands' },
   { label: 'Bộ sưu tập', path: '/collections', to: '/collections' },
   { label: 'Blog', path: '/blogs', to: '/blogs' },
-  { label: 'Giới thiệu', path: '/about', to: '/about' },
+  { label: 'Câu hỏi thường gặp', path: '/faq', to: '/faq' },
 ]
 
 function isNavActive(item: NavItem) {
