@@ -48,7 +48,12 @@ export function htmlToPlainText(html?: string | null) {
   if (!html) return ''
   const blocks = Array.from(html.matchAll(/<(p|li)\b[^>]*>([\s\S]*?)<\/\1>/gi), (match) => match[2])
   const source = blocks.length ? blocks.join(' ') : html
-  return decodeTextEntities(source.replace(/<[^>]*>/g, ' '))
+  // Thẻ định dạng inline nằm giữa câu: bỏ hẳn, không thay bằng khoảng trắng ("<b>2-4 ngày</b>.").
+  const withoutInlineTags = source.replace(
+    /<\/?(a|abbr|b|code|em|i|mark|s|small|span|strong|sub|sup|u)\b[^>]*>/gi,
+    '',
+  )
+  return decodeTextEntities(withoutInlineTags.replace(/<[^>]*>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim()
 }
