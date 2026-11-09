@@ -44,7 +44,9 @@
       >
         <div class="flex flex-col">
           <span
-            v-if="originalPrice && discountPercentage"
+            v-if="
+              originalPrice && discountPercentage && Number(originalPrice) > Number(displayPrice)
+            "
             class="mb-0.5 text-[13px] text-[#A1A1AA] line-through"
           >
             {{ money(originalPrice) }}
@@ -118,6 +120,11 @@ const props = defineProps<{ product: Product | ProductFeatured }>()
 const displayPrice = computed(() => productPrice(props.product))
 const originalPrice = computed(() => productOriginalPrice(props.product))
 const discountPercentage = computed(() => {
+  // BE tính sẵn mức giảm lớn nhất theo từng size; giá thấp nhất và giá sale thấp nhất có thể thuộc
+  // hai size khác nhau nên tự tính từ hai giá đó có thể sai.
+  const fromApi = props.product.maxDiscountPercent
+  if (typeof fromApi === 'number') return fromApi > 0 ? fromApi : 0
+
   const current = Number(displayPrice.value)
   const original = Number(originalPrice.value)
 

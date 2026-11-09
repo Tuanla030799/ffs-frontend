@@ -87,6 +87,7 @@ export interface Product {
   stock?: number
   minPrice?: number
   minSalePrice?: number
+  maxDiscountPercent?: number
   totalStock?: number
 }
 
@@ -107,6 +108,9 @@ export interface ProductFeatured {
   featuredOrder?: number
   minPrice: number
   minSalePrice: number
+  // Mức giảm lớn nhất (%) trong các size; mỗi size có thể có giá riêng nên không tự tính từ
+  // minPrice/minSalePrice.
+  maxDiscountPercent?: number
   totalStock: number
   primaryFileId: string
   primaryImageUrl: string
@@ -140,7 +144,9 @@ export interface PublicProductListQuery extends Omit<
   gender?: string[]
   size?: string[]
   color?: string[]
-  // featured | newest (mặc định của BE) | price-asc | price-desc | name-asc; BE sắp xếp toàn bộ
-  // kết quả trước khi phân trang.
+  // featured | newest (mặc định của BE) | price-asc | price-desc | name-asc | discount-desc; BE
+  // sắp xếp toàn bộ kết quả trước khi phân trang.
   sort?: string
+  // Chỉ lấy sản phẩm có ít nhất một size giảm từ chừng ấy % trở lên (1–100).
+  minDiscount?: number
 }

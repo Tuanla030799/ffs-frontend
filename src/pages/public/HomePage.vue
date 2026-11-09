@@ -54,12 +54,23 @@
             >
               {{ hero?.subtitle || 'We curate shoes you didn’t know you needed.' }}
             </p>
-            <NuxtLink
-              :to="hero?.linkUrl || '/about'"
-              class="mt-7 inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:mt-8 md:px-7 md:py-4"
-            >
-              {{ hero?.linkUrl ? 'Khám phá ngay' : 'Về chúng tôi' }}
-            </NuxtLink>
+            <div class="mt-7 flex flex-wrap gap-3 md:mt-8">
+              <NuxtLink
+                :to="heroBuyUrl"
+                class="inline-flex w-fit bg-[#d71920] px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(215,25,32,0.3)] transition hover:-translate-y-0.5 hover:bg-[#b5141a] hover:shadow-[0_22px_55px_rgba(215,25,32,0.38)] md:px-7 md:py-4"
+              >
+                Buy now
+              </NuxtLink>
+              <NuxtLink
+                :to="heroPdfUrl"
+                target="_blank"
+                rel="noopener"
+                class="inline-flex w-fit bg-black px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-black/80 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)] md:px-7 md:py-4"
+              >
+                Download a PDF
+                <span class="sr-only">(mở trong tab mới)</span>
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -73,6 +84,27 @@
     <section class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8">
       <SectionHeader title="Sản phẩm nổi bật" to="/products" label="Xem tất cả" />
       <FeaturedProductSwiper :products="featured" :loading="loading" />
+    </section>
+
+    <section
+      v-if="loading || saleProducts.length"
+      class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8"
+    >
+      <SectionHeader title="Đang sale mạnh" :to="SALE_LIST_URL" label="Xem tất cả" />
+      <FeaturedProductSwiper
+        :products="saleProducts"
+        :loading="loading"
+        nav-key="sale-product"
+        empty-text="Chưa có sản phẩm đang giảm giá."
+      />
+    </section>
+
+    <section
+      v-if="loading || feedbacks.length"
+      class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8"
+    >
+      <h2 class="mb-8 text-2xl font-black tracking-tight">Khách hàng nói gì</h2>
+      <CustomerFeedbackSwiper :feedbacks="feedbacks" :loading="loading" />
     </section>
 
     <section
@@ -91,15 +123,21 @@ import { computed, defineComponent, h } from 'vue'
 import { useAsyncData, useRequestEvent } from '#imports'
 import { NuxtLink } from '#components'
 import CollectionSwiper from '@/components/home/CollectionSwiper.vue'
+import CustomerFeedbackSwiper from '@/components/home/CustomerFeedbackSwiper.vue'
 import FeaturedProductSwiper from '@/components/home/FeaturedProductSwiper.vue'
 import BlogCard from '@/components/storefront/BlogCard.vue'
 import StorefrontImage from '@/components/storefront/StorefrontImage.vue'
 import { UiSkeleton } from '@/components/ui'
+import { DEFAULT_BANNER_BUY_URL, DEFAULT_BANNER_PDF_URL } from '@/config/brand'
 import { resolveFileUrl } from '@/lib/fileUrl'
 import { productApi } from '@/modules/catalog/product/api'
 import { collectionApi } from '@/modules/content/collection/api'
 import { blogApi } from '@/modules/content/blog/api'
 import { bannerApi } from '@/modules/content/banner/api'
+import { customerFeedbackApi } from '@/modules/content/feedback/api'
+
+const SALE_MIN_DISCOUNT = 20
+const SALE_LIST_URL = '/products?sort=discount-desc'
 
 const requestEvent = import.meta.server ? useRequestEvent() : undefined
 
@@ -108,13 +146,29 @@ const requestEvent = import.meta.server ? useRequestEvent() : undefined
 const { data: home, pending } = await useAsyncData(
   'home-page',
   async () => {
-    const [bannerResult, featuredResult, collectionResult, blogResult] = await Promise.allSettled([
-      bannerApi.publicList(),
-      productApi.featured(10),
-      collectionApi.list({ page: 1, limit: 8 }),
-      blogApi.list({ page: 1, limit: 12 }),
-    ])
-    const results = [bannerResult, featuredResult, collectionResult, blogResult]
+    const [bannerResult, featuredResult, saleResult, collectionResult, blogResult, feedbackResult] =
+      await Promise.allSettled([
+        bannerApi.publicList(),
+        productApi.featured(10),
+        // Sản phẩm có ít nhất một size giảm từ 20% trở lên, giảm nhiều nhất đứng trước.
+        productApi.list({
+          minDiscount: SALE_MIN_DISCOUNT,
+          sort: 'discount-desc',
+          page: 1,
+          limit: 12,
+        }),
+        collectionApi.list({ page: 1, limit: 8 }),
+        blogApi.list({ page: 1, limit: 12 }),
+        customerFeedbackApi.list({ page: 1, limit: 20 }),
+      ])
+    const results = [
+      bannerResult,
+      featuredResult,
+      saleResult,
+      collectionResult,
+      blogResult,
+      feedbackResult,
+    ]
     // Có phần lỗi thì không lưu HTML vào cache edge (xem server/plugins/edge-cache.ts).
     if (requestEvent && results.some((result) => result.status === 'rejected')) {
       requestEvent.context.skipEdgeCache = true
@@ -124,6 +178,8 @@ const { data: home, pending } = await useAsyncData(
     return {
       hero: bannerResult.status === 'fulfilled' ? bannerResult.value[0] || null : null,
       featured: featuredResult.status === 'fulfilled' ? featuredResult.value : [],
+      saleProducts: saleResult.status === 'fulfilled' ? saleResult.value.items : [],
+      feedbacks: feedbackResult.status === 'fulfilled' ? feedbackResult.value.items : [],
       collections: collectionResult.status === 'fulfilled' ? collectionResult.value.items : [],
       randomBlog: blogs.length ? blogs[Math.floor(Math.random() * blogs.length)] || null : null,
     }
@@ -134,7 +190,11 @@ const { data: home, pending } = await useAsyncData(
 const loading = computed(() => pending.value && !home.value)
 const hero = computed(() => home.value?.hero || null)
 const heroMobileImageUrl = computed(() => resolveFileUrl(hero.value?.mobileImageUrl || ''))
+const heroBuyUrl = computed(() => hero.value?.linkUrl?.trim() || DEFAULT_BANNER_BUY_URL)
+const heroPdfUrl = computed(() => hero.value?.pdfUrl?.trim() || DEFAULT_BANNER_PDF_URL)
 const featured = computed(() => home.value?.featured || [])
+const saleProducts = computed(() => home.value?.saleProducts || [])
+const feedbacks = computed(() => home.value?.feedbacks || [])
 const collections = computed(() => home.value?.collections || [])
 const randomBlog = computed(() => home.value?.randomBlog || null)
 

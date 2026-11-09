@@ -3,7 +3,9 @@ export interface LandingBanner {
   id: string
   title: string
   subtitle?: string
-  linkUrl?: string
+  // Link nút "Buy now" (đỏ) và nút "Download a PDF" (đen); trống thì trang chủ dùng link mặc định.
+  linkUrl?: string | null
+  pdfUrl?: string | null
   fileId?: string
   imageUrl?: string
   // Ảnh dọc riêng cho điện thoại (tuỳ chọn); không có thì trang chủ cắt ảnh desktop.

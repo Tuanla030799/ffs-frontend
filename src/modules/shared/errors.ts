@@ -44,6 +44,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   BANNER_NOT_FOUND: 'Không tìm thấy banner.',
   SITE_PAGE_NOT_FOUND: 'Không tìm thấy trang nội dung.',
   FAQ_NOT_FOUND: 'Không tìm thấy câu hỏi.',
+  CUSTOMER_FEEDBACK_NOT_FOUND: 'Không tìm thấy ảnh feedback.',
 
   FILE_NOT_FOUND: 'Không tìm thấy file.',
   FILE_UNAVAILABLE: 'File không còn sử dụng được.',

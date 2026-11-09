@@ -13,6 +13,7 @@ export const adminNavItems = [
   { label: 'Orders', to: '/admin/orders' },
   { label: 'Coupons', to: '/admin/coupons' },
   { label: 'Landing banners', to: '/admin/banners' },
+  { label: 'Feedback khách hàng', to: '/admin/feedbacks' },
   { label: 'Customers', to: '/admin/customers' },
   { label: 'Admin users', to: '/admin/users' },
   { label: 'Backend logs', to: '/admin/logs' },

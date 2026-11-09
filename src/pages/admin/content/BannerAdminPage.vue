@@ -21,8 +21,6 @@
       <UiForm as="form" class="grid gap-3 md:grid-cols-3" @submit.prevent="save">
         <UiInput v-model="form.title" placeholder="Title" required label="Tiêu đề" />
         <UiInput v-model="form.subtitle" placeholder="Subtitle" label="Tiêu đề phụ" />
-        <!-- <UiInput v-model="form.linkUrl" placeholder="Link URL" label="Link URL" />
-        <UiInput v-model="form.fileId" placeholder="File ID" label="File ID" /> -->
         <UiSelect v-model="form.status" label="Trạng thái">
           <option v-for="status in commonStatuses" :key="status.value" :value="status.value">
             {{ status.label }}
@@ -31,6 +29,31 @@
         <UiInput v-model.number="form.sortOrder" placeholder="Sort" label="Sort" />
         <UiInput v-model="form.startsAt" type="datetime-local" label="Bắt đầu" />
         <UiInput v-model="form.endsAt" type="datetime-local" label="Kết thúc" />
+        <div class="md:col-span-3 md:grid md:grid-cols-2 md:gap-3">
+          <div>
+            <UiInput
+              v-model="form.linkUrl"
+              label="Link nút “Buy now” (nút đỏ)"
+              :placeholder="DEFAULT_BANNER_BUY_URL"
+              :maxlength="1000"
+            />
+            <p class="mt-1 text-xs text-slate-500">
+              Để trống: dẫn tới trang Sản phẩm ({{ DEFAULT_BANNER_BUY_URL }}). Link trong web ghi
+              dạng /products?gender=MALE, link ngoài ghi đầy đủ https://…
+            </p>
+          </div>
+          <div class="mt-3 md:mt-0">
+            <UiInput
+              v-model="form.pdfUrl"
+              label="Link nút “Download a PDF” (nút đen)"
+              placeholder="https://drive.google.com/…"
+              :maxlength="1000"
+            />
+            <p class="mt-1 text-xs text-slate-500">
+              Link file PDF (Google Drive…), mở ở tab mới. Để trống: dùng file PDF mặc định.
+            </p>
+          </div>
+        </div>
         <div class="space-y-3 md:col-span-3">
           <FileUpload
             v-model="uploaded"
@@ -164,6 +187,7 @@ import { toBackendDateTime, toDateTimeLocalInput } from '@/lib/dateTime'
 import type { LandingBanner, LandingBannerPayload } from '@/modules/content/banner/types'
 import type { UploadedFile } from '@/services/file.service'
 import ImagePreview from '@/components/common/ImagePreview.vue'
+import { DEFAULT_BANNER_BUY_URL } from '@/config/brand'
 
 const rows = ref<LandingBanner[]>([])
 const pageQuery = usePageQuery()
@@ -183,6 +207,7 @@ const form = reactive<LandingBannerPayload>({
   title: '',
   subtitle: '',
   linkUrl: '',
+  pdfUrl: '',
   fileId: '',
   mobileFileId: '',
   status: 'ACTIVE',
@@ -221,6 +246,7 @@ function fill(r?: LandingBanner) {
     title: r?.title || '',
     subtitle: r?.subtitle || '',
     linkUrl: r?.linkUrl || '',
+    pdfUrl: r?.pdfUrl || '',
     fileId: r?.fileId || '',
     mobileFileId: r?.mobileFileId || '',
     status: r?.status || 'ACTIVE',
@@ -291,6 +317,8 @@ async function save() {
       ...form,
       // null để BE xoá ảnh mobile cũ khi admin bấm "Xóa ảnh mobile".
       mobileFileId: form.mobileFileId || null,
+      linkUrl: form.linkUrl?.trim() || null,
+      pdfUrl: form.pdfUrl?.trim() || null,
       startsAt: toBackendDateTime(form.startsAt || null) || undefined,
       endsAt: toBackendDateTime(form.endsAt || null) || undefined,
     }

@@ -20,10 +20,7 @@
       :modules="modules"
       :slides-per-view="1.2"
       :space-between="16"
-      :navigation="{
-        prevEl: '.featured-product-swiper-prev',
-        nextEl: '.featured-product-swiper-next',
-      }"
+      :navigation="{ prevEl: `.${navKey}-swiper-prev`, nextEl: `.${navKey}-swiper-next` }"
       :pagination="{ clickable: true }"
       :autoplay="{ delay: 3600, disableOnInteraction: true, pauseOnMouseEnter: true }"
       :breakpoints="breakpoints"
@@ -37,7 +34,8 @@
     <button
       v-if="products.length"
       type="button"
-      class="featured-product-swiper-prev swiper-nav-button -left-3 md:-left-5 lg:-left-6"
+      class="swiper-nav-button -left-3 md:-left-5 lg:-left-6"
+      :class="`${navKey}-swiper-prev`"
       aria-label="Previous products"
     >
       ‹
@@ -45,7 +43,8 @@
     <button
       v-if="products.length"
       type="button"
-      class="featured-product-swiper-next swiper-nav-button -right-3 md:-right-5 lg:-right-6"
+      class="swiper-nav-button -right-3 md:-right-5 lg:-right-6"
+      :class="`${navKey}-swiper-next`"
       aria-label="Next products"
     >
       ›
@@ -55,7 +54,7 @@
       v-if="!products.length && !loading"
       class="border border-dashed border-black/20 bg-[#f7f7f5] p-10 text-center text-black/60"
     >
-      Chưa có sản phẩm nổi bật.
+      {{ emptyText }}
     </div>
   </div>
 </template>
@@ -69,12 +68,18 @@ import 'swiper/css/pagination'
 import 'swiper/css/autoplay'
 import { UiSkeleton } from '@/components/ui'
 import ProductCard from '@/components/storefront/ProductCard.vue'
-import type { ProductFeatured } from '@/modules/catalog/product/types'
+import type { Product, ProductFeatured } from '@/modules/catalog/product/types'
 
-defineProps<{
-  products: ProductFeatured[]
-  loading?: boolean
-}>()
+// `navKey` phải khác nhau giữa các slider trên cùng trang: Swiper tìm nút điều hướng theo class.
+withDefaults(
+  defineProps<{
+    products: Array<Product | ProductFeatured>
+    loading?: boolean
+    navKey?: string
+    emptyText?: string
+  }>(),
+  { navKey: 'featured-product', emptyText: 'Chưa có sản phẩm nổi bật.' },
+)
 
 const modules = [Navigation, Pagination, Autoplay]
 const breakpoints = {
