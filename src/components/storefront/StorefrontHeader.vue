@@ -5,7 +5,7 @@
     >
       <div class="flex items-center gap-3">
         <UiButton
-          class="md:hidden"
+          class="lg:hidden"
           variant="ghost"
           square
           aria-label="Mở menu"
@@ -21,7 +21,7 @@
       </div>
 
       <nav
-        class="hidden justify-center gap-4 text-sm font-bold md:flex lg:gap-6 xl:gap-9"
+        class="hidden justify-center gap-6 text-sm font-bold lg:flex xl:gap-9"
         aria-label="Danh mục chính"
       >
         <NuxtLink
@@ -40,7 +40,7 @@
         <UiForm
           as="form"
           layout="none"
-          class="hidden h-10 min-w-48 items-center gap-2 rounded-full bg-black/[0.06] px-3 lg:flex"
+          class="hidden h-10 min-w-48 items-center gap-2 rounded-full bg-black/[0.06] px-3 xl:flex"
           role="search"
           @submit.prevent="submitSearch"
         >
@@ -64,7 +64,7 @@
         </UiForm>
 
         <UiButton
-          class="lg:hidden"
+          class="xl:hidden"
           variant="ghost"
           square
           aria-label="Tìm kiếm"
@@ -134,7 +134,7 @@
       as="form"
       layout="none"
       id="mobile-search"
-      class="border-t border-black/10 px-4 py-3 lg:hidden"
+      class="border-t border-black/10 px-4 py-3 xl:hidden"
       role="search"
       @submit.prevent="submitSearch"
     >
@@ -181,43 +181,19 @@ type NavItem = {
   label: string
   path: string
   to: RouteLocationRaw
-  genders?: string[]
 }
 
 const navItems: NavItem[] = [
   { label: 'Trang chủ', path: '/', to: '/' },
-  {
-    label: 'Nam',
-    path: '/products',
-    to: { path: '/products', query: { gender: ['MALE', 'UNISEX'] } },
-    genders: ['MALE', 'UNISEX'],
-  },
-  {
-    label: 'Nữ',
-    path: '/products',
-    to: { path: '/products', query: { gender: ['FEMALE', 'UNISEX'] } },
-    genders: ['FEMALE', 'UNISEX'],
-  },
+  { label: 'Sản phẩm', path: '/products', to: '/products' },
   { label: 'Thương hiệu', path: '/brands', to: '/brands' },
   { label: 'Bộ sưu tập', path: '/collections', to: '/collections' },
   { label: 'Blog', path: '/blogs', to: '/blogs' },
   { label: 'Câu hỏi thường gặp', path: '/faq', to: '/faq' },
+  { label: 'Về chúng tôi', path: '/about', to: '/about' },
 ]
 
 function isNavActive(item: NavItem) {
-  if (item.genders) {
-    if (route.path !== item.path) return false
-
-    const selectedGenders = (
-      Array.isArray(route.query.gender) ? route.query.gender : [route.query.gender]
-    ).filter((gender): gender is string => typeof gender === 'string' && Boolean(gender))
-
-    return (
-      selectedGenders.length === item.genders.length &&
-      item.genders.every((gender) => selectedGenders.includes(gender))
-    )
-  }
-
   if (item.path === '/') return route.path === '/'
   return route.path === item.path || route.path.startsWith(`${item.path}/`)
 }
