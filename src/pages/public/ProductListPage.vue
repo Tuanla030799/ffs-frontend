@@ -178,11 +178,15 @@ type ProductFilterQuery = Omit<
 }
 
 const PAGE_SIZE = 12
+// Mặc định xếp theo tên A-Z (kể cả khi bấm Nam/Nữ trên menu) để sản phẩm cùng hãng nằm cạnh
+// nhau thay vì lẫn lộn theo thứ tự thêm vào.
+const DEFAULT_SORT = 'name-asc'
 const sortOptions = [
+  { label: 'Tên A-Z', value: 'name-asc' },
   { label: 'Nổi bật', value: 'featured' },
+  { label: 'Giảm giá nhiều', value: 'discount-desc' },
   { label: 'Giá: thấp đến cao', value: 'price-asc' },
   { label: 'Giá: cao đến thấp', value: 'price-desc' },
-  { label: 'Tên A-Z', value: 'name-asc' },
 ]
 
 const route = useRoute()
@@ -208,7 +212,7 @@ function queryNumber(value: unknown) {
 
 function parseSort(value: unknown) {
   const sort = queryValue(value)
-  return sortOptions.some((option) => option.value === sort) ? sort : 'featured'
+  return sortOptions.some((option) => option.value === sort) ? sort : DEFAULT_SORT
 }
 
 function parseFilters(source: LocationQuery): ProductFilterQuery {
@@ -263,7 +267,7 @@ function listParams(): PublicProductListQuery {
     color: query.color.length ? [...query.color] : undefined,
     minPrice: query.minPrice,
     maxPrice: query.maxPrice,
-    // Luôn gửi kể cả `featured`: mặc định của BE là mới nhất.
+    // Luôn gửi kể cả giá trị mặc định: mặc định của BE là mới nhất.
     sort: sortBy.value,
     page: query.page,
     limit: query.limit,
@@ -337,7 +341,7 @@ useSeoMeta({
 })
 
 const selectedSortLabel = computed(
-  () => sortOptions.find((option) => option.value === sortBy.value)?.label || 'Nổi bật',
+  () => sortOptions.find((option) => option.value === sortBy.value)?.label || 'Tên A-Z',
 )
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
@@ -387,7 +391,7 @@ function routeQuery() {
     color: query.color.length ? query.color : undefined,
     minPrice: query.minPrice !== undefined ? String(query.minPrice) : undefined,
     maxPrice: query.maxPrice !== undefined ? String(query.maxPrice) : undefined,
-    sort: sortBy.value === 'featured' ? undefined : sortBy.value,
+    sort: sortBy.value === DEFAULT_SORT ? undefined : sortBy.value,
   }
 }
 
