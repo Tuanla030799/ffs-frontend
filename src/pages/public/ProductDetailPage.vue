@@ -128,9 +128,11 @@
                 {{ product.brandName || product.categoryName }}
               </p>
               <div class="mt-4 flex items-end gap-3">
-                <strong class="text-lg font-bold text-black">Từ {{ money(currentPrice) }}</strong>
+                <strong class="text-lg font-bold text-black">
+                  {{ pricePrefix }}{{ money(currentPrice) }}
+                </strong>
                 <span v-if="currentOriginalPrice" class="text-sm text-black/35 line-through">
-                  Từ {{ money(currentOriginalPrice) }}
+                  {{ money(currentOriginalPrice) }}
                 </span>
               </div>
             </div>
@@ -171,6 +173,38 @@
               </div>
             </div>
 
+            <div v-if="hasSizes" ref="sizePickerRef">
+              <p :id="sizeLabelId" class="mb-3 text-sm font-bold">
+                {{ selectedSizeLabel ? `Size: ${selectedSizeLabel}` : 'Size' }}
+              </p>
+              <div
+                role="group"
+                :aria-labelledby="sizeLabelId"
+                class="grid grid-cols-4 gap-2 sm:grid-cols-5"
+              >
+                <button
+                  v-for="sku in sizeSkus"
+                  :key="sku.id || sku.skuCode"
+                  type="button"
+                  class="h-12 rounded-md border text-sm font-bold transition focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-black/10 disabled:text-black/30 disabled:line-through"
+                  :class="
+                    isSelectedSku(sku)
+                      ? 'border-black bg-black text-white'
+                      : 'border-black/15 bg-white text-black hover:border-black'
+                  "
+                  :disabled="sku.stock <= 0"
+                  :aria-pressed="isSelectedSku(sku)"
+                  :aria-label="`Size ${skuSizeLabel(sku)}${sku.stock <= 0 ? ' (hết hàng)' : ''}`"
+                  @click="selectSize(sku)"
+                >
+                  {{ skuSizeLabel(sku) }}
+                </button>
+              </div>
+              <p v-if="sizeHint" class="mt-2 text-sm font-semibold text-red-600" role="alert">
+                {{ sizeHint }}
+              </p>
+            </div>
+
             <div>
               <button
                 v-if="brandSizeGuideUrl"
@@ -199,7 +233,7 @@
                 variant="dark"
                 block
                 size="lg"
-                :disabled="!selectedSku"
+                :disabled="!selectedSku && !(hasSizes && inStockSkus.length)"
                 @click="handleAddToCart"
               >
                 <template #icon>
@@ -252,7 +286,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { useHead, useNuxtApp, useRoute, useRuntimeConfig } from '#imports'
 import type { Swiper as SwiperInstance } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/vue'
@@ -281,9 +315,11 @@ import {
 } from '@/lib/seo'
 import { productApi } from '@/modules/catalog/product/api'
 import {
+  isDefaultSize,
   isSellableStatus,
   productGenderLabel,
   skuEffectivePrice,
+  skuSizeLabel,
 } from '@/modules/catalog/product/helpers'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { asArray, money } from '@/modules/shared/types'
@@ -301,6 +337,9 @@ const selectedVariantKey = ref('')
 const selectedSku = ref<ProductSku | null>(null)
 const gallerySwiper = ref<SwiperInstance | null>(null)
 const sizeGuideOpen = ref(false)
+const sizePickerRef = ref<HTMLElement | null>(null)
+const sizeLabelId = useId()
+const sizeHint = ref('')
 const activeInfoTab = ref('description')
 const infoTabs = [
   { key: 'description', label: 'Mô tả sản phẩm' },
@@ -363,17 +402,39 @@ const variantSkus = computed(() => {
   return skus.value.filter((sku) => skuVariantKey(sku) === selectedVariantKey.value)
 })
 const inStockSkus = computed(() => variantSkus.value.filter((sku) => sku.stock > 0))
-const currentPrice = computed(
-  () =>
-    selectedSku.value?.salePrice ||
-    selectedSku.value?.price ||
-    product.value?.salePrice ||
-    product.value?.price,
+// Sản phẩm bán theo size khi màu đang chọn có SKU mang size thật (không phải DEFAULT). Mỗi size
+// có giá và tồn kho riêng.
+const hasSizes = computed(() => variantSkus.value.some((sku) => !isDefaultSize(sku)))
+const sizeSkus = computed(() =>
+  [...variantSkus.value].sort((a, b) =>
+    skuSizeLabel(a).localeCompare(skuSizeLabel(b), 'vi', { numeric: true }),
+  ),
 )
-const currentOriginalPrice = computed(() =>
-  selectedSku.value?.salePrice || product.value?.salePrice
-    ? selectedSku.value?.price || product.value?.price
-    : undefined,
+// Chưa chọn size thì hiện giá thấp nhất của màu (kèm "Từ" khi các size khác giá).
+const priceSkus = computed(() => {
+  if (selectedSku.value) return [selectedSku.value]
+  return variantSkus.value.length ? variantSkus.value : skus.value
+})
+const cheapestSku = computed(() =>
+  priceSkus.value.reduce<ProductSku | null>(
+    (best, sku) => (!best || skuEffectivePrice(sku) < skuEffectivePrice(best) ? sku : best),
+    null,
+  ),
+)
+const currentPrice = computed(() =>
+  cheapestSku.value
+    ? skuEffectivePrice(cheapestSku.value)
+    : product.value?.salePrice || product.value?.price,
+)
+const currentOriginalPrice = computed(() => {
+  const sku = cheapestSku.value
+  return sku && skuEffectivePrice(sku) < Number(sku.price) ? sku.price : undefined
+})
+const selectedSizeLabel = computed(() =>
+  selectedSku.value && !isDefaultSize(selectedSku.value) ? skuSizeLabel(selectedSku.value) : '',
+)
+const pricePrefix = computed(() =>
+  new Set(priceSkus.value.map(skuEffectivePrice)).size > 1 ? 'Từ ' : '',
 )
 const productDescriptionHtml = computed(() =>
   normalizeRichTextInput(product.value?.descriptionHtml),
@@ -423,7 +484,29 @@ function selectVariant(
   if (options.updateImage !== false && gallerySlideIndex(variant.imageUrl || '') >= 0) {
     selectImage(variant.imageUrl || selectedImage.value, options)
   }
-  selectedSku.value = variantSkus.value.find((sku) => sku.stock > 0) || null
+  // Giữ size đang chọn nếu màu mới cũng còn size đó.
+  const currentSize = selectedSku.value?.sizeId
+  selectedSku.value =
+    (currentSize && variantSkus.value.find((sku) => sku.sizeId === currentSize && sku.stock > 0)) ||
+    defaultSku()
+  sizeHint.value = ''
+}
+// selectedSku là bản reactive của SKU nên so theo id, không so tham chiếu object.
+function isSelectedSku(sku: ProductSku) {
+  return Boolean(selectedSku.value) && skuKey(selectedSku.value as ProductSku) === skuKey(sku)
+}
+function skuKey(sku: ProductSku) {
+  return sku.id || sku.skuCode
+}
+function selectSize(sku: ProductSku) {
+  selectedSku.value = sku
+  sizeHint.value = ''
+}
+// Không chia size (hoặc chỉ có một size) thì chọn sẵn; có nhiều size thì để khách tự chọn.
+function defaultSku() {
+  const available = inStockSkus.value
+  if (!hasSizes.value || variantSkus.value.length === 1) return available[0] || null
+  return null
 }
 function goImage(direction: number) {
   if (!gallerySlides.value.length) return
@@ -448,6 +531,11 @@ function goImage(direction: number) {
 function handleAddToCart() {
   const currentProduct = product.value
   const sku = selectedSku.value
+  if (currentProduct && !sku && hasSizes.value) {
+    sizeHint.value = 'Vui lòng chọn size.'
+    sizePickerRef.value?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus()
+    return
+  }
   if (!currentProduct || !sku || sku.stock <= 0) return
 
   if (getCartItemQuantity(currentProduct, sku) >= sku.stock) {
@@ -463,8 +551,9 @@ watch(
   product,
   () => {
     selectedImage.value = gallerySlides.value[0]?.url || DEFAULT_OG_IMAGE_PATH
+    selectedSku.value = null
     if (variants.value[0]) selectVariant(variants.value[0], { animate: false, updateImage: false })
-    selectedSku.value = inStockSkus.value[0] || null
+    else selectedSku.value = defaultSku()
   },
   { immediate: true },
 )

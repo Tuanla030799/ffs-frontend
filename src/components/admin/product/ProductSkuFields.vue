@@ -1,5 +1,22 @@
 <template>
   <div class="grid gap-3 sm:grid-cols-2">
+    <div v-if="sizeOptions" :data-field="errorKey('sizeId')" class="sm:col-span-2">
+      <UiSelect
+        :id="ids.sizeId"
+        :model-value="sku.sizeId"
+        :options="sizeOptions"
+        label="Size"
+        :required="sizeRequired"
+        :placeholder="sizeRequired ? 'Chọn size' : 'Mặc định (không chia size)'"
+        :aria-invalid="invalid('sizeId')"
+        :aria-describedby="describedBy('sizeId')"
+        @update:model-value="(value) => emit('update', 'sizeId', value)"
+      />
+      <p v-if="errors[errorKey('sizeId')]" :id="`${ids.sizeId}-error`" :class="errorClass">
+        {{ errors[errorKey('sizeId')] }}
+      </p>
+    </div>
+
     <div :data-field="errorKey('price')">
       <UiInput
         :id="ids.price"
@@ -93,24 +110,29 @@
 
 <script setup lang="ts">
 import { computed, useId } from 'vue'
-import { UiInput } from '@/components/ui'
+import { UiInput, UiSelect } from '@/components/ui'
 import {
   skuErrorKey,
   type ProductDraftErrors,
   type ProductSkuDraft,
 } from '@/modules/catalog/product/form'
 
-type SkuField = 'skuCode' | 'price' | 'salePrice' | 'stock'
+type SkuField = 'sizeId' | 'skuCode' | 'price' | 'salePrice' | 'stock'
 
 const props = withDefaults(
   defineProps<{
     sku: ProductSkuDraft
     errors?: ProductDraftErrors
     suggestedCode?: string
+    // Có thì hiện ô chọn size; bắt buộc chọn khi màu có từ 2 size trở lên.
+    sizeOptions?: Array<{ label: string; value: string }>
+    sizeRequired?: boolean
   }>(),
   {
     errors: () => ({}),
     suggestedCode: '',
+    sizeOptions: undefined,
+    sizeRequired: false,
   },
 )
 
@@ -120,6 +142,7 @@ const emit = defineEmits<{
 
 const baseId = useId()
 const ids = {
+  sizeId: `${baseId}-size`,
   skuCode: `${baseId}-sku-code`,
   price: `${baseId}-price`,
   salePrice: `${baseId}-sale-price`,

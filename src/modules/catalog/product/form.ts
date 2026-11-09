@@ -1,5 +1,6 @@
 import { normalizeRichTextInput } from '@/lib/richText'
 import { sanitizeHtml } from '@/lib/sanitizeHtml'
+import { isDefaultSize } from './helpers'
 import type { Product, ProductImage, ProductPayload, ProductSku, ProductVariant } from './types'
 
 // Trạng thái form tạo/sửa sản phẩm trong admin. SKU được gom vào đúng màu (variant) của nó để
@@ -62,20 +63,23 @@ function newKey() {
   return crypto.randomUUID()
 }
 
-export function createSkuDraft(): ProductSkuDraft {
+// `base`: SKU đứng trước trong cùng màu, dùng lại giá để admin khỏi nhập lại khi thêm size mới
+// (thường các size cùng giá, chỉ vài size khác giá).
+export function createSkuDraft(base?: ProductSkuDraft): ProductSkuDraft {
   return {
     key: newKey(),
     skuCode: '',
     sizeId: '',
     size: '',
-    price: null,
-    salePrice: null,
+    price: base?.price ?? null,
+    salePrice: base?.salePrice ?? null,
     stock: null,
-    status: 'ACTIVE',
+    status: base?.status || 'ACTIVE',
   }
 }
 
-// Mỗi màu mới có sẵn một SKU (size mặc định) vì cửa hàng không bán theo size.
+// Mỗi màu mới có sẵn một SKU size mặc định (không chia size); admin thêm size khi cần, mỗi size
+// có giá và tồn kho riêng.
 export function createVariantDraft(): ProductVariantDraft {
   const clientId = newKey()
   return {
@@ -115,8 +119,9 @@ function toSkuDraft(sku: ProductSku): ProductSkuDraft {
     key: sku.id || newKey(),
     id: sku.id || undefined,
     skuCode: sku.skuCode || '',
-    sizeId: sku.sizeId || '',
-    size: sku.size || '',
+    // Size DEFAULT hiển thị là "Mặc định" (để trống); khi lưu BE tự gán lại size DEFAULT.
+    sizeId: isDefaultSize(sku) ? '' : sku.sizeId || '',
+    size: isDefaultSize(sku) ? '' : sku.size || '',
     price: sku.price ?? null,
     salePrice: sku.salePrice ?? null,
     stock: sku.stock ?? null,
@@ -251,7 +256,7 @@ export function validateProductDraft(draft: ProductDraft): ProductDraftErrors {
     const code = sku.skuCode.trim()
     if (!code) errors[skuErrorKey(sku, 'skuCode')] = 'Nhập mã SKU.'
     else if ((codeCounts.get(code.toUpperCase()) || 0) > 1) {
-      errors[skuErrorKey(sku, 'skuCode')] = 'Mã SKU bị trùng với một màu khác.'
+      errors[skuErrorKey(sku, 'skuCode')] = 'Mã SKU bị trùng với một size hoặc màu khác.'
     }
   }
 
@@ -260,7 +265,18 @@ export function validateProductDraft(draft: ProductDraft): ProductDraftErrors {
     if (!variant.skus.length) {
       errors[variantErrorKey(variant, 'skus')] = 'Màu này chưa có giá bán và tồn kho.'
     }
-    variant.skus.forEach(validateSku)
+    // Một màu chia nhiều size thì size nào cũng phải chọn và không trùng nhau.
+    const seenSizes = new Set<string>()
+    for (const sku of variant.skus) {
+      if (variant.skus.length > 1) {
+        if (!sku.sizeId) errors[skuErrorKey(sku, 'sizeId')] = 'Chọn size.'
+        else if (seenSizes.has(sku.sizeId)) {
+          errors[skuErrorKey(sku, 'sizeId')] = 'Size này đã có trong màu.'
+        }
+        seenSizes.add(sku.sizeId)
+      }
+      validateSku(sku)
+    }
   }
   draft.unassignedSkus.forEach(validateSku)
 
@@ -271,9 +287,9 @@ export function validateProductDraft(draft: ProductDraft): ProductDraftErrors {
   return errors
 }
 
-// Gợi ý mã SKU khi không có mã của nhà cung cấp: đường dẫn sản phẩm + tên màu, viết hoa.
-export function suggestSkuCode(slug: string, colorLabel = '') {
-  return [slug, colorLabel]
+// Gợi ý mã SKU khi không có mã của nhà cung cấp: đường dẫn sản phẩm + tên màu + size, viết hoa.
+export function suggestSkuCode(slug: string, colorLabel = '', sizeLabel = '') {
+  return [slug, colorLabel, sizeLabel]
     .map((part) =>
       part
         .normalize('NFD')

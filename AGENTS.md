@@ -8,8 +8,9 @@
   report the backend issue to the user.
 - Reply to the user in Vietnamese. Code comments and storefront copy are Vietnamese too.
 - Keep changes minimal and focused on the request. Keep product decisions the owner already
-  made. Example: sizes are not sold separately, so the product page shows only the size guide
-  and does not get a size picker.
+  made. Example: each size can have its own price and stock (one SKU per size); the product page
+  shows a size picker only when the selected color has real sizes, otherwise (size `DEFAULT`)
+  only the size guide. Product lists default to name A-Z so a brand's products stay together.
 - Ask before changing product behavior, copy direction, licensing (for example TinyMCE
   `license_key`), dependencies or lockfiles. Do not upgrade or add packages unless asked.
 - `package-lock.json` is the source of truth (CI and Docker run `npm ci`). `yarn.lock` also
@@ -79,7 +80,9 @@
   - `POST /orders` returns `{ order, items }`; the order number is `order.orderCode`.
   - Admin auth sets the refresh token in an HttpOnly cookie (`Path=/api/admin/auth`): auth
     requests use `withCredentials`, and the FE keeps the refresh token only in memory.
-  - The current catalog has one SKU per product with size `DEFAULT`.
+  - Older products have one SKU with size `DEFAULT` (shown as "no size"); newer ones may have one
+    SKU per size. Product summaries carry `maxDiscountPercent`: use it for discount badges, since
+    `minPrice` and `minSalePrice` can come from different sizes.
   - Backend file paths go through `resolveFileUrl` (`src/lib/fileUrl.ts`). FE public assets
     such as `/thepocketshoes-og.jpg` must not be resolved against the backend origin.
 

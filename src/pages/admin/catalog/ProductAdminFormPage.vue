@@ -137,8 +137,8 @@
           title="Màu sắc, giá và tồn kho"
           :description="
             draft.variants.length > 1
-              ? 'Mỗi màu có giá và tồn kho riêng. Màu đầu tiên được chọn sẵn trên trang sản phẩm.'
-              : 'Mỗi màu có giá và tồn kho riêng. Đa số sản phẩm chỉ cần một màu.'
+              ? 'Mỗi màu có thể chia nhiều size, mỗi size có giá và tồn kho riêng. Màu đầu tiên được chọn sẵn trên trang sản phẩm.'
+              : 'Mỗi màu có thể chia nhiều size, mỗi size có giá và tồn kho riêng. Không chia size thì để size “Mặc định”.'
           "
         >
           <template #extra>
@@ -244,22 +244,39 @@
                     v-if="variant.skus.length > 1"
                     class="flex items-center justify-between gap-2 text-xs font-semibold text-slate-600"
                   >
-                    <span>Size {{ sku.size || 'mặc định' }}</span>
+                    <span>Size {{ sku.size || '(chưa chọn)' }}</span>
                     <UiButton
                       native-type="button"
                       variant="ghost"
                       size="sm"
+                      :aria-label="`Xoá size ${sku.size || 'chưa chọn'} của ${variantTitle(index)}`"
                       @click="removeSku(variant, sku)"
                     >
-                      Xoá SKU
+                      Xoá size
                     </UiButton>
                   </div>
                   <ProductSkuFields
                     :sku="sku"
                     :errors="errors"
-                    :suggested-code="suggestedSkuCode(variant)"
+                    :suggested-code="suggestedSkuCode(variant, sku)"
+                    :size-options="sizeOptionsFor(sku)"
+                    :size-required="variant.skus.length > 1"
                     @update="(field, value) => updateSku(sku, field, value)"
                   />
+                </div>
+
+                <div v-if="variant.skus.length" class="flex flex-wrap items-center gap-3">
+                  <UiButton
+                    native-type="button"
+                    variant="outline"
+                    size="sm"
+                    @click="addSku(variant)"
+                  >
+                    + Thêm size
+                  </UiButton>
+                  <span class="text-xs text-slate-500">
+                    Mỗi size có giá và tồn kho riêng; size mới lấy sẵn giá của size trước.
+                  </span>
                 </div>
 
                 <div
@@ -301,6 +318,7 @@
                 <ProductSkuFields
                   :sku="sku"
                   :errors="errors"
+                  :size-options="sizeOptionsFor(sku)"
                   @update="(field, value) => updateSku(sku, field, value)"
                 />
               </div>
@@ -458,6 +476,7 @@ import {
   type ProductSkuDraft,
   type ProductVariantDraft,
 } from '@/modules/catalog/product/form'
+import { isDefaultSize } from '@/modules/catalog/product/helpers'
 import { getErrorMessage } from '@/modules/shared/hooks'
 import { useMasterData } from '@/modules/shared/master-data/hooks'
 import { ApiError } from '@/types/http'
@@ -470,6 +489,7 @@ const FIELD_LABELS: Record<string, string> = {
   featuredOrder: 'Thứ tự nổi bật',
 }
 const SKU_FIELD_LABELS: Record<string, string> = {
+  sizeId: 'Size',
   skuCode: 'Mã SKU',
   price: 'Giá bán',
   salePrice: 'Giá khuyến mãi',
@@ -505,6 +525,10 @@ const serverFieldErrors = ref<Record<string, string>>({})
 const imagesUploading = ref(false)
 
 const colors = computed(() => masterData.value?.colors || [])
+// Size DEFAULT là "không chia size": không đưa vào danh sách chọn (ô để trống = mặc định).
+const sizes = computed(() =>
+  (masterData.value?.sizes || []).filter((size) => !isDefaultSize({ size: size.value })),
+)
 const categoryOptions = computed(() =>
   (masterData.value?.categories || []).map((category) => ({
     label: category.status === 'ACTIVE' ? category.name : `${category.name} (đang ẩn)`,
@@ -638,13 +662,24 @@ async function focusField(key: string) {
   target?.focus({ preventScroll: true })
 }
 
-function suggestedSkuCode(variant: ProductVariantDraft) {
+function suggestedSkuCode(variant: ProductVariantDraft, sku: ProductSkuDraft) {
   if (!draft.value.slug) return ''
-  // Một màu thì đường dẫn đã đủ phân biệt; nhiều màu thì thêm tên màu.
+  // Một màu thì đường dẫn đã đủ phân biệt; nhiều màu thì thêm tên màu, có chia size thì thêm size.
   return suggestSkuCode(
     draft.value.slug,
     draft.value.variants.length > 1 ? colorLabel(variant.colorId) : '',
+    sku.size,
   )
+}
+
+// Size đang ẩn vẫn hiện nếu SKU đang dùng, để không mất giá trị khi mở sửa sản phẩm cũ.
+function sizeOptionsFor(sku: ProductSkuDraft) {
+  return sizes.value
+    .filter((size) => size.id && (size.status === 'ACTIVE' || size.id === sku.sizeId))
+    .map((size) => ({
+      value: String(size.id),
+      label: size.status === 'ACTIVE' ? size.label || size.value : `${size.value} (đang ẩn)`,
+    }))
 }
 
 function addVariant() {
@@ -672,7 +707,7 @@ function removeVariant(variant: ProductVariantDraft) {
 }
 
 function addSku(variant: ProductVariantDraft) {
-  variant.skus.push(createSkuDraft())
+  variant.skus.push(createSkuDraft(variant.skus[variant.skus.length - 1]))
 }
 
 function removeSku(variant: ProductVariantDraft, sku: ProductSkuDraft) {
@@ -681,7 +716,10 @@ function removeSku(variant: ProductVariantDraft, sku: ProductSkuDraft) {
 
 function updateSku(sku: ProductSkuDraft, field: string, value: string | number | null) {
   if (field === 'skuCode') sku.skuCode = String(value ?? '')
-  else if (field === 'price' || field === 'salePrice' || field === 'stock') {
+  else if (field === 'sizeId') {
+    sku.sizeId = String(value ?? '')
+    sku.size = sizes.value.find((size) => size.id === sku.sizeId)?.value || ''
+  } else if (field === 'price' || field === 'salePrice' || field === 'stock') {
     sku[field] = typeof value === 'number' ? value : null
   }
 }
