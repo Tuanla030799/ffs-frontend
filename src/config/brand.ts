@@ -1,4 +1,4 @@
-export const FOUNDING_YEAR = 2020
+export const FOUNDING_YEAR = 2022
 
 // Link mặc định của 2 nút trên banner trang chủ khi admin để trống ô link tương ứng.
 export const DEFAULT_BANNER_BUY_URL = '/products'
