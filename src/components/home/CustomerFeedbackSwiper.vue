@@ -2,7 +2,7 @@
   <div class="relative">
     <div
       v-if="loading"
-      class="grid auto-cols-[66%] grid-flow-col gap-4 overflow-hidden sm:auto-cols-[40%] lg:auto-cols-[24%]"
+      class="grid auto-cols-[82%] grid-flow-col gap-4 overflow-hidden sm:auto-cols-[48%] lg:auto-cols-[24%]"
     >
       <UiSkeleton v-for="index in 4" :key="index" variant="block" class="aspect-[3/4]" />
     </div>
@@ -11,7 +11,7 @@
       v-else-if="feedbacks.length"
       class="home-swiper"
       :modules="modules"
-      :slides-per-view="1.5"
+      :slides-per-view="1.2"
       :space-between="16"
       :navigation="{ prevEl: '.feedback-swiper-prev', nextEl: '.feedback-swiper-next' }"
       :pagination="{ clickable: true }"
@@ -103,9 +103,10 @@ defineProps<{
 const selected = ref<CustomerFeedback | null>(null)
 const modules = [Navigation, Pagination, Autoplay]
 const breakpoints = {
-  640: { slidesPerView: 2.5, spaceBetween: 20 },
-  1024: { slidesPerView: 4, spaceBetween: 20 },
-  1280: { slidesPerView: 5, spaceBetween: 24 },
+  480: { slidesPerView: 1.5, spaceBetween: 16 },
+  768: { slidesPerView: 2.4, spaceBetween: 20 },
+  1024: { slidesPerView: 3, spaceBetween: 20 },
+  1280: { slidesPerView: 4, spaceBetween: 24 },
 }
 
 function feedbackAlt(feedback: CustomerFeedback) {
@@ -176,32 +177,35 @@ function feedbackAlt(feedback: CustomerFeedback) {
   background: #000;
 }
 
-/* Trước khi Swiper khởi tạo (HTML SSR), mô phỏng slidesPerView/spaceBetween để không giật layout. */
+/* Trước khi Swiper khởi tạo (HTML SSR), mô phỏng slidesPerView/spaceBetween để không giật layout.
+   Kích thước card giữ giống FeaturedProductSwiper để card feedback to bằng card sản phẩm. */
 .home-swiper:not(.swiper-initialized) :deep(.swiper-wrapper) {
   gap: 16px;
 }
 
 .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
-  width: calc((100% - 8px) / 1.5);
+  width: calc((100% - 3.2px) / 1.2);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 480px) {
+  .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
+    width: calc((100% - 8px) / 1.5);
+  }
+}
+
+@media (min-width: 768px) {
   .home-swiper:not(.swiper-initialized) :deep(.swiper-wrapper) {
     gap: 20px;
   }
 
   .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
-    width: calc((100% - 30px) / 2.5);
+    width: calc((100% - 28px) / 2.4);
   }
 }
 
 @media (min-width: 1024px) {
-  .home-swiper:not(.swiper-initialized) :deep(.swiper-wrapper) {
-    gap: 20px;
-  }
-
   .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
-    width: calc((100% - 60px) / 4);
+    width: calc((100% - 40px) / 3);
   }
 }
 
@@ -211,7 +215,7 @@ function feedbackAlt(feedback: CustomerFeedback) {
   }
 
   .home-swiper:not(.swiper-initialized) :deep(.swiper-slide) {
-    width: calc((100% - 96px) / 5);
+    width: calc((100% - 72px) / 4);
   }
 }
 

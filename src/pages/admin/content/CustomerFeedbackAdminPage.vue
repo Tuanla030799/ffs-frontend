@@ -2,7 +2,7 @@
   <CrudShell
     v-model:status="query.status"
     title="Feedback khách hàng"
-    description="Ảnh feedback của khách (ảnh chụp tin nhắn, ảnh khách mang giày) hiển thị ở mục “Khách hàng nói gì” trên trang chủ, sắp xếp theo thứ tự tăng dần."
+    description="Ảnh feedback của khách (ảnh chụp tin nhắn, ảnh khách mang giày) hiển thị ở mục “Khách hàng của The Pocket Shoes nói gì” trên trang chủ, sắp xếp theo thứ tự tăng dần."
     create-label="Thêm ảnh feedback"
     :searchable="false"
     :loading="loading"

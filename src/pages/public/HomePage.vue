@@ -57,7 +57,7 @@
             <div class="mt-7 flex flex-wrap gap-3 md:mt-8">
               <NuxtLink
                 :to="heroBuyUrl"
-                class="inline-flex w-fit bg-[#d71920] px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(215,25,32,0.3)] transition hover:-translate-y-0.5 hover:bg-[#b5141a] hover:shadow-[0_22px_55px_rgba(215,25,32,0.38)] md:px-7 md:py-4"
+                class="inline-flex w-fit bg-[#a50f15] px-6 py-3.5 text-xs font-black tracking-wide text-white uppercase no-underline shadow-[0_18px_45px_rgba(165,15,21,0.3)] transition hover:-translate-y-0.5 hover:bg-[#860b10] hover:shadow-[0_22px_55px_rgba(165,15,21,0.38)] md:px-7 md:py-4"
               >
                 Buy now
               </NuxtLink>
@@ -90,7 +90,7 @@
       v-if="loading || saleProducts.length"
       class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8"
     >
-      <SectionHeader title="Đang sale mạnh" :to="SALE_LIST_URL" label="Xem tất cả" />
+      <SectionHeader title="Deal tốt" :to="SALE_LIST_URL" label="Xem tất cả" />
       <FeaturedProductSwiper
         :products="saleProducts"
         :loading="loading"
@@ -103,7 +103,9 @@
       v-if="loading || feedbacks.length"
       class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8"
     >
-      <h2 class="mb-8 text-2xl font-black tracking-tight">Khách hàng nói gì</h2>
+      <h2 class="mb-8 text-2xl font-black tracking-tight">
+        Khách hàng của The Pocket Shoes nói gì
+      </h2>
       <CustomerFeedbackSwiper :feedbacks="feedbacks" :loading="loading" />
     </section>
 
