@@ -129,7 +129,8 @@
               </p>
               <div class="mt-4 flex items-end gap-3">
                 <strong class="text-lg font-bold text-black">
-                  {{ pricePrefix }}{{ money(currentPrice) }}
+                  <span class="text-sm font-medium text-black/50">Từ</span>
+                  {{ money(currentPrice) }}
                 </strong>
                 <span v-if="currentOriginalPrice" class="text-sm text-black/35 line-through">
                   {{ money(currentOriginalPrice) }}
@@ -432,9 +433,6 @@ const currentOriginalPrice = computed(() => {
 })
 const selectedSizeLabel = computed(() =>
   selectedSku.value && !isDefaultSize(selectedSku.value) ? skuSizeLabel(selectedSku.value) : '',
-)
-const pricePrefix = computed(() =>
-  new Set(priceSkus.value.map(skuEffectivePrice)).size > 1 ? 'Từ ' : '',
 )
 const productDescriptionHtml = computed(() =>
   normalizeRichTextInput(product.value?.descriptionHtml),

@@ -52,7 +52,10 @@
             {{ money(originalPrice) }}
           </span>
           <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xl font-bold text-[#18181B]">{{ money(displayPrice) }}</span>
+            <span class="text-xl font-bold text-[#18181B]">
+              <span class="text-sm font-medium text-[#71717A]">Từ</span>
+              {{ money(displayPrice) }}
+            </span>
             <span
               v-if="discountPercentage"
               class="rounded-md bg-[#FEE2E2] px-1.5 py-0.5 text-xs font-bold text-[#DC2626]"
