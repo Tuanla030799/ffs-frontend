@@ -90,7 +90,7 @@
       v-if="loading || saleProducts.length"
       class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:pb-14 lg:px-8"
     >
-      <SectionHeader title="Deal tốt" :to="SALE_LIST_URL" label="Xem tất cả" />
+      <SectionHeader title="Deal nóng hổi" :to="SALE_LIST_URL" label="Xem tất cả" />
       <FeaturedProductSwiper
         :products="saleProducts"
         :loading="loading"
